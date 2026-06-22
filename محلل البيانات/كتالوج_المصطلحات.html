@@ -177,22 +177,33 @@ tr:hover{background:#1a2e3d}
 </tr>
 <tr>
   <td><span class="code">L_points</span></td>
-  <td>المسافة L (بالنقاط)</td>
-  <td>المسافة من نقطة الدخول حتى وقف الخسارة — كلما كانت أصغر كان الخطر أقل</td>
+  <td>طول القطر L (بالنقاط)</td>
+  <td>
+    <b>L = DiagTop − DiagBot</b> = الطول العمودي للزاوية القطرية بالنقاط<br>
+    هو <b>وحدة القياس الأساسية</b> للاكسبيرت — تُحسب جميع الأهداف والمستويات بضربه في L<br>
+    <span class="code">مستوى الاختبار = نقطة الارتكاز + (stage × L × away)</span><br>
+    كلما كان L أكبر كانت المستويات أبعد والأهداف أوسع
+  </td>
 </tr>
 <tr>
   <td><span class="code">B_points</span></td>
-  <td>المسافة B (بالنقاط)</td>
-  <td>المسافة من نقطة الدخول حتى الهدف TP1</td>
+  <td>عازل الاختراق B (بالنقاط)</td>
+  <td>
+    <b>B = 0.236 × U2_Range</b> = 23.6% من مدى U2 — يُحسب بضرب المدى في 0.236<br>
+    يُستخدم لـ:<br>
+    • <b>وقف الخسارة SL</b>: بُعد وقف الخسارة عن مستوى الاختبار هو B<br>
+    • <b>عتبة الاختراق (BREAK)</b>: إذا تجاوز السعر المستوى بمقدار B → يُسجَّل BREAK<br>
+    • <b>BOUNCE</b>: إذا لمس السعر المستوى وارتد ≥ L قبل أن يتجاوز B → يُسجَّل BOUNCE<br>
+    <span class="code">broke = (hi ≥ level + B)  أو  (lo ≤ level − B)</span>
+  </td>
 </tr>
 <tr>
   <td><span class="code">نسبة L/B</span></td>
-  <td>نسبة المخاطرة للعائد</td>
+  <td>نسبة القطر إلى العازل</td>
   <td>
-    تُحسب: L ÷ B<br>
-    <span class="val">صغيرة &lt; 1.5</span> = <span class="green">هدف قريب ووقف بعيد</span> (مفضّل)<br>
-    <span class="val">متوسطة 1.5–3</span> = مقبولة<br>
-    <span class="val">كبيرة &gt; 3</span> = <span class="red">هدف بعيد ووقف قريب</span> (خطر)
+    تُحسب: L ÷ B = (طول القطر) ÷ (عازل الاختراق)<br>
+    <span class="val">صغيرة</span> = L صغير نسبياً مقارنة بـ B — أهداف أقرب<br>
+    <span class="val">كبيرة</span> = L كبير نسبياً — أهداف أوسع وأهمية القطر أعلى
   </td>
 </tr>
 <tr>
@@ -201,7 +212,7 @@ tr:hover{background:#1a2e3d}
   <td>أعلى وأدنى حد للزاوية على المخطط — يُحدّد الإطار السعري للزاوية</td>
 </tr>
 <tr class="example-row">
-  <td colspan="3" style="font-size:12px;color:#6f8294">مثال: Corr=<b>71.23%</b> (ALPHA عميق) · L=<b>210</b> · B=<b>172</b> → L/B=1.22 (صغيرة = ممتاز)</td>
+  <td colspan="3" style="font-size:12px;color:#6f8294">مثال: Corr=<b>71.23%</b> (ALPHA عميق) · L=<b>210</b> نقطة (طول القطر: DiagTop−DiagBot) · B=<b>172</b> نقطة (0.236 × U2_Range) — B هو وقف الخسارة وعتبة الاختراق</td>
 </tr>
 </table>
 
@@ -413,23 +424,23 @@ tr:hover{background:#1a2e3d}
 </tr>
 </table>
 
-<h3>نسبة L/B (وقف الخسارة / الهدف)</h3>
+<h3>نسبة L/B (طول القطر / عازل الاختراق)</h3>
 <table>
 <tr><th style="width:22%">الفئة</th><th style="width:28%">النطاق</th><th>الدلالة</th></tr>
 <tr style="background:#0d2e1a">
   <td><span class="green">صغيرة</span></td>
-  <td>L/B أقل من 1.5</td>
-  <td>الهدف أكبر من وقف الخسارة — مخاطرة منطقية ممتازة</td>
+  <td>الثلث الأدنى من L</td>
+  <td>قطر صغير — أهداف أقرب ومستويات أضيق</td>
 </tr>
 <tr>
   <td><span class="yellow">متوسطة</span></td>
-  <td>L/B من 1.5 إلى 3</td>
-  <td>مقبولة</td>
+  <td>الثلث الأوسط من L</td>
+  <td>قطر متوسط — حالة طبيعية</td>
 </tr>
 <tr style="background:#2e0d0d">
   <td><span class="red">كبيرة</span></td>
-  <td>L/B أكبر من 3</td>
-  <td>الهدف بعيد والوقف قريب — مخاطرة عالية، يُفضّل التجنّب</td>
+  <td>الثلث الأعلى من L</td>
+  <td>قطر كبير — أهداف أبعد ومستويات أوسع</td>
 </tr>
 </table>
 
