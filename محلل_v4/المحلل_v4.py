@@ -131,6 +131,10 @@ tr:hover{background:#1a2e3d}
 .test-table td,.test-table th{font-size:12px;padding:4px 7px}
 .sep{border-top:2px solid #1e3244;margin:28px 0}
 .foot{text-align:center;color:#6f8294;font-size:11px;margin-top:22px}
+.cls-section{background:#0d1a27;border:1px solid #1e3244;border-radius:12px;padding:16px;margin:20px 0}
+.cls-hdr{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-bottom:8px;border-bottom:1px solid #1e3244;margin-bottom:12px}
+.cb-row{margin:8px 0 12px}
+.occ-table td,.occ-table th{font-size:12px;padding:5px 7px}
 """
 
 def html_wrap(title, body, ts):
@@ -689,6 +693,146 @@ def report3(df, label):
     return html_wrap(f"التوليفات — {label}", body, ts)
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Report 4 — جدول تصنيف الزوايا
+# ══════════════════════════════════════════════════════════════════════════════
+
+def report4(df, label):
+    N = len(df)
+    ts = datetime.now().strftime('%Y-%m-%d %H:%M')
+    sdf = df.sort_values('FormTime').reset_index(drop=True)
+
+    def _any_succ(row):
+        return any(
+            str(row.get(f'{t}_React', '')).strip() == 'BOUNCE'
+            and int(row.get(f'{t}_TP1_Hit', 0)) == 1
+            for t in TEST4)
+    sdf['_any_succ'] = sdf.apply(_any_succ, axis=1)
+
+    body = f'<h1>جدول تصنيف الزوايا — ملف التعريف الشامل</h1>\n'
+    body += f'<div class="sub">{label} · {N} زاوية · {ts}</div>\n'
+
+    all_cls = sorted(sdf['Class'].unique())
+    body += '<div style="text-align:center;margin:10px 0">'
+    for c in all_cls:
+        cc = "#37d67a" if c in GOOD_CLS else "#ff6b6b"
+        body += f'<a href="#{c}" style="color:{cc};margin:0 8px;font-weight:bold;text-decoration:none">{c}</a>'
+    body += '</div>\n<div class="sep"></div>\n'
+
+    for cls in all_cls:
+        is_good = cls in GOOD_CLS
+        cls_color = "#37d67a" if is_good else "#ff6b6b"
+        cls_mask = sdf['Class'] == cls
+        cls_df = sdf[cls_mask].copy()
+        cls_idxs = sdf.index[cls_mask].tolist()
+        count = len(cls_df)
+        buy_n = int((cls_df['Dir'] == 'BUY').sum())
+        sell_n = int((cls_df['Dir'] == 'SELL').sum())
+        cb_cnt = cls_df['_corr_bkt'].value_counts().to_dict()
+
+        t_stats = {}
+        for t in TEST4:
+            touched = cls_df[f'{t}_React'].isin(['BOUNCE', 'BREAK'])
+            succ = (cls_df[f'{t}_React'] == 'BOUNCE') & (cls_df[f'{t}_TP1_Hit'] == 1)
+            t_stats[t] = {
+                'touch': int(touched.sum()),
+                'succ': int(succ.sum()),
+                'fail': int((touched & ~succ).sum()),
+                'no': int((~touched).sum()),
+                'ratio': cls_df[succ]['_ratio_bkt'].value_counts().to_dict()
+            }
+
+        family_lbl = (
+            "<span style='color:#37d67a;font-size:12px'>(عائلة الأولى — قوية)</span>"
+            if is_good else
+            "<span style='color:#ff6b6b;font-size:12px'>(عائلة الثانية — ضعيفة)</span>"
+        )
+        body += f'<div id="{cls}" class="cls-section">\n'
+        body += (f'<div class="cls-hdr">'
+                 f'<span style="color:{cls_color};font-size:22px;font-weight:bold">{cls}</span>'
+                 f'<span style="color:#9fb0c0;font-size:15px"> — {count} ظهور</span>'
+                 f'<span class="badge" style="color:#4db1ff">BUY: {buy_n}</span>'
+                 f'<span class="badge" style="color:#ff9f6b">SELL: {sell_n}</span>'
+                 f'{family_lbl}</div>\n')
+
+        body += '<div class="cb-row">'
+        for cb, n in sorted(cb_cnt.items(), key=lambda x: -x[1]):
+            body += f'<span class="badge" style="color:#4db1ff">{cb}: {n}</span>'
+        body += '</div>\n'
+
+        body += '<h3>إجمالي نتائج الاختبارات لهذا التصنيف</h3>'
+        body += ('<table><tr>'
+                 '<th>الاختبار</th><th>لمسات</th><th>✓ نجاح</th>'
+                 '<th>✗ فشل</th><th>— لم يُلمس</th>'
+                 '<th>نسبة U1/U2 عند النجاح</th></tr>')
+        for t in TEST4:
+            st = t_stats[t]
+            ratio_str = '  ·  '.join(f'{k}: {v} مرة' for k, v in st['ratio'].items()) or '—'
+            succ_col = "#37d67a" if st['succ'] > 0 else "#6f8294"
+            body += (f'<tr><td style="font-weight:bold">{t}</td>'
+                     f'<td>{st["touch"]}</td>'
+                     f'<td style="color:{succ_col};font-weight:bold">{st["succ"]}</td>'
+                     f'<td style="color:#ff6b6b">{st["fail"]}</td>'
+                     f'<td style="color:#6f8294">{st["no"]}</td>'
+                     f'<td style="font-size:12px;color:#9fb0c0">{ratio_str}</td></tr>')
+        body += '</table>\n'
+
+        body += f'<h3>الظهورات الفردية ({count})</h3>'
+        body += ('<div style="overflow-x:auto"><table class="occ-table"><tr>'
+                 '<th>#</th><th>الوقت</th><th>الاتجاه</th><th>النطاق</th>'
+                 '<th>نسبة U1/U2</th><th>الاختبارات الناجحة فقط</th>'
+                 '<th>آخر 5 زوايا (الأقدم→الأحدث)</th></tr>')
+
+        for occ_i, idx in enumerate(cls_idxs, 1):
+            row = sdf.loc[idx]
+            dir_s = row['Dir']
+            cb_s = row['_corr_bkt']
+            rb_s = row['_ratio_bkt']
+            dir_col = "#4db1ff" if dir_s == "BUY" else "#ff9f6b"
+
+            succ_tests = []
+            for t in TEST4:
+                react = str(row.get(f'{t}_React', '')).strip()
+                tp1 = int(row.get(f'{t}_TP1_Hit', 0)) == 1
+                if react == 'BOUNCE' and tp1:
+                    succ_tests.append(f'<span style="color:#37d67a;font-weight:bold">{t} ✓</span>')
+            succ_cell = '&nbsp;&nbsp;'.join(succ_tests) if succ_tests else '<span style="color:#6f8294">—</span>'
+
+            prev_parts = []
+            for pos in range(5, 0, -1):
+                prev_idx = idx - pos
+                if prev_idx >= 0:
+                    pr = sdf.loc[prev_idx]
+                    pc = pr['Class']
+                    pa = pr['_any_succ']
+                    pr_rb = pr['_ratio_bkt']
+                    if pa:
+                        prev_parts.append(
+                            f'<span style="color:#37d67a;font-weight:bold">{pc}</span>'
+                            f'<span style="color:#6f8294;font-size:10px">(✓{pr_rb})</span>')
+                    else:
+                        prev_parts.append(f'<span style="color:#9fb0c0">{pc}</span>')
+                else:
+                    prev_parts.append('<span style="color:#3a4e60">—</span>')
+            prev_cell = ' → '.join(prev_parts)
+
+            any_s = row['_any_succ']
+            tr_bg = 'style="background:#0d2e1a"' if any_s else ''
+
+            body += (f'<tr {tr_bg}>'
+                     f'<td style="color:#6f8294">{occ_i}</td>'
+                     f'<td style="font-size:11px;color:#9fb0c0">{str(row.get("FormTime", "")).strip()}</td>'
+                     f'<td style="color:{dir_col};font-weight:bold">{dir_s}</td>'
+                     f'<td style="font-size:12px">{cb_s}</td>'
+                     f'<td>{rb_s}</td>'
+                     f'<td>{succ_cell}</td>'
+                     f'<td style="font-size:12px">{prev_cell}</td></tr>')
+
+        body += '</table></div>\n</div>\n<div class="sep"></div>\n'
+
+    return html_wrap(f"جدول التصنيف — {label}", body, ts)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Main
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -699,19 +843,23 @@ def generate(df, group_label, out_dir):
     r1 = report1(df, group_label)
     r2 = report2(df, group_label)
     r3 = report3(df, group_label)
+    r4 = report4(df, group_label)
 
     p1 = out_dir / f"1_عوامل_النجاح_{group_label}.html"
     p2 = out_dir / f"2_التقرير_الشامل_{group_label}.html"
     p3 = out_dir / f"3_التوليفات_{group_label}.html"
+    p4 = out_dir / f"4_جدول_التصنيف_{group_label}.html"
 
     p1.write_text(r1, encoding='utf-8')
     p2.write_text(r2, encoding='utf-8')
     p3.write_text(r3, encoding='utf-8')
+    p4.write_text(r4, encoding='utf-8')
 
     sz = lambda p: f"{p.stat().st_size//1024}KB"
     print(f"    1_عوامل_النجاح      → {sz(p1)}")
     print(f"    2_التقرير_الشامل     → {sz(p2)}")
     print(f"    3_التوليفات          → {sz(p3)}")
+    print(f"    4_جدول_التصنيف       → {sz(p4)}")
 
 def main():
     print("=" * 60)
