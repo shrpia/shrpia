@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تقرير التحليل — AIB_Report_BT_EURUSD_60_U86400_19991108_to_20001229.csv</title>
+<style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --border: #334155;
+    --text: #f1f5f9; --muted: #94a3b8;
+    --green: #22c55e; --red: #ef4444; --yellow: #f59e0b;
+    --blue: #38bdf8; --purple: #a78bfa;
+  }
+  * { box-sizing: border-box; margin:0; padding:0; }
+  body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background:var(--bg); color:var(--text); padding:24px; line-height:1.6; }
+  h1 { font-size:2rem; color:var(--blue); margin-bottom:4px; }
+  h2 { font-size:1.2rem; color:var(--purple); margin:28px 0 12px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+  .meta { color:var(--muted); font-size:.9rem; margin-bottom:24px; }
+  .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:28px; }
+  .kpi { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; text-align:center; }
+  .kpi .val { font-size:2rem; font-weight:700; }
+  .kpi .lbl { font-size:.85rem; color:var(--muted); margin-top:4px; }
+  .kpi.green .val { color:var(--green); }
+  .kpi.red .val   { color:var(--red); }
+  .kpi.blue .val  { color:var(--blue); }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:20px; overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  th { background:#0f172a; color:var(--muted); padding:10px 12px; text-align:right; font-weight:600; }
+  td { padding:10px 12px; border-bottom:1px solid var(--border); }
+  tr:last-child td { border-bottom:none; }
+  .success-row td:first-child { border-right:3px solid var(--green); }
+  .fail-row    td:first-child { border-right:3px solid var(--red); }
+  .bar-wrap { background:#334155; border-radius:99px; height:8px; width:120px; }
+  .bar { height:8px; border-radius:99px; }
+  .lift-badge { padding:2px 8px; border-radius:99px; font-size:.8rem; font-weight:700; }
+  .lift-good    { background:#14532d; color:#86efac; }
+  .lift-bad     { background:#450a0a; color:#fca5a5; }
+  .lift-neutral { background:#1e3a5f; color:#93c5fd; }
+  .rule-card { border-radius:10px; padding:16px 20px; margin-bottom:12px; border:1px solid; }
+  .rule-success { background:#052e16; border-color:#166534; }
+  .rule-fail    { background:#2d0000; border-color:#7f1d1d; }
+  .rule-header  { font-size:1rem; margin-bottom:8px; }
+  .rule-body    { display:flex; flex-wrap:wrap; gap:12px; align-items:center; font-size:.85rem; color:var(--muted); }
+  .rule-outcome { color:var(--text); font-weight:600; }
+  .rule-lift    { margin-right:auto; color:var(--yellow); font-weight:700; }
+  .section-note { font-size:.8rem; color:var(--muted); margin-top:8px; font-style:italic; }
+  .warning { background:#431407; border:1px solid #9a3412; border-radius:8px; padding:12px 16px; margin-top:24px; font-size:.9rem; }
+  @media print {
+    body { background:#fff; color:#000; }
+    .card,.kpi,.rule-card { border:1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<h1>📊 تقرير التحليل الإحصائي</h1>
+<div class="meta">
+  الملف: <strong>AIB_Report_BT_EURUSD_60_U86400_19991108_to_20001229.csv</strong> &nbsp;|&nbsp;
+  الرمز: <strong>EURUSD</strong> &nbsp;|&nbsp;
+  الإطار الزمني: <strong>60</strong> &nbsp;|&nbsp;
+  الفترة: <strong>1999.11.08</strong> إلى <strong>2000.12.29</strong> &nbsp;|&nbsp;
+  تاريخ التقرير: <strong>2026-06-22 07:10</strong>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi blue"><div class="val">171</div><div class="lbl">إجمالي الزوايا</div></div>
+  <div class="kpi green"><div class="val">129</div><div class="lbl">ناجحة (75.4%)</div></div>
+  <div class="kpi red"><div class="val">42</div><div class="lbl">فاشلة (24.6%)</div></div>
+  <div class="kpi"><div class="val" style="color:var(--yellow)">75.4%</div><div class="lbl">معدل النجاح الأساسي</div></div>
+</div>
+
+<h2>🏷️ تحليل نوع الزاوية (Class)</h2>
+<div class="card">
+<table>
+<tr><th>النوع</th><th>العدد</th><th>الناجحة</th><th>النسبة</th><th>Lift</th></tr>
+<tr class="success-row">
+                <td>ZB</td>
+                <td>36</td>
+                <td>36 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="success-row">
+                <td>ZC</td>
+                <td>18</td>
+                <td>18 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="success-row">
+                <td>ZD</td>
+                <td>19</td>
+                <td>19 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="success-row">
+                <td>ZE</td>
+                <td>25</td>
+                <td>25 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="">
+                <td>ZH</td>
+                <td>12</td>
+                <td>9 (75.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:75%;background:#f59e0b"></div></div></td>
+                <td><span class="lift-badge lift-neutral">0.99×</span></td>
+            </tr><tr class="">
+                <td>ZF</td>
+                <td>25</td>
+                <td>18 (72.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:72%;background:#f59e0b"></div></div></td>
+                <td><span class="lift-badge lift-neutral">0.95×</span></td>
+            </tr><tr class="fail-row">
+                <td>ZG</td>
+                <td>17</td>
+                <td>4 (23.5%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:24%;background:#ef4444"></div></div></td>
+                <td><span class="lift-badge lift-bad">0.31×</span></td>
+            </tr><tr class="fail-row">
+                <td>ZO</td>
+                <td>19</td>
+                <td>0 (0.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:0%;background:#ef4444"></div></div></td>
+                <td><span class="lift-badge lift-bad">0.00×</span></td>
+            </tr>
+</table>
+</div>
+
+<h2>📐 تحليل نسبة التصحيح (Corr%)</h2>
+<div class="card">
+<table>
+<tr><th>نسبة التصحيح</th><th>العدد</th><th>الناجحة</th><th>النسبة</th><th>Lift</th></tr>
+<tr class="success-row">
+                <td>تصحيح > 60%</td>
+                <td>38</td>
+                <td>38 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="">
+                <td>تصحيح 30–60%</td>
+                <td>73</td>
+                <td>66 (90.4%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:90%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-neutral">1.20×</span></td>
+            </tr><tr class="fail-row">
+                <td>تصحيح < 30%</td>
+                <td>60</td>
+                <td>25 (41.7%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:42%;background:#ef4444"></div></div></td>
+                <td><span class="lift-badge lift-bad">0.55×</span></td>
+            </tr>
+</table>
+<p class="section-note">تصحيح > 60% = إشارة قوية جداً على موجة قادمة</p>
+</div>
+
+<h2>⚖️ تحليل نسبة U1/U2 (Ratio)</h2>
+<div class="card">
+<table>
+<tr><th>النسبة</th><th>العدد</th><th>الناجحة</th><th>النسبة</th><th>Lift</th></tr>
+<tr class="success-row">
+                <td>نسبة > 150%</td>
+                <td>48</td>
+                <td>48 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="success-row">
+                <td>نسبة < 60%</td>
+                <td>15</td>
+                <td>15 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="">
+                <td>نسبة 60–100%</td>
+                <td>64</td>
+                <td>46 (71.9%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:72%;background:#f59e0b"></div></div></td>
+                <td><span class="lift-badge lift-neutral">0.95×</span></td>
+            </tr><tr class="fail-row">
+                <td>نسبة 100–150%</td>
+                <td>44</td>
+                <td>20 (45.5%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:45%;background:#ef4444"></div></div></td>
+                <td><span class="lift-badge lift-bad">0.60×</span></td>
+            </tr>
+</table>
+</div>
+
+<h2>🕐 تحليل الجلسة</h2>
+<div class="card">
+<table>
+<tr><th>الجلسة</th><th>العدد</th><th>الناجحة</th><th>النسبة</th><th>Lift</th></tr>
+<tr class="">
+                <td>London</td>
+                <td>29</td>
+                <td>26 (89.7%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:90%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-neutral">1.19×</span></td>
+            </tr><tr class="">
+                <td>Asia</td>
+                <td>18</td>
+                <td>16 (88.9%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:89%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-neutral">1.18×</span></td>
+            </tr><tr class="">
+                <td>NewYork</td>
+                <td>79</td>
+                <td>61 (77.2%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:77%;background:#f59e0b"></div></div></td>
+                <td><span class="lift-badge lift-neutral">1.02×</span></td>
+            </tr><tr class="">
+                <td>Other</td>
+                <td>45</td>
+                <td>26 (57.8%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:58%;background:#f59e0b"></div></div></td>
+                <td><span class="lift-badge lift-neutral">0.77×</span></td>
+            </tr>
+</table>
+</div>
+
+<h2>⚡ تحليل نوع التفاعل (React)</h2>
+<div class="card">
+<table>
+<tr><th>نوع التفاعل</th><th>العدد</th><th>الناجحة</th><th>النسبة</th><th>Lift</th></tr>
+<tr class="">
+                <td>BOUNCE</td>
+                <td>52</td>
+                <td>45 (86.5%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:87%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-neutral">1.15×</span></td>
+            </tr><tr class="">
+                <td>BREAK</td>
+                <td>78</td>
+                <td>60 (76.9%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:77%;background:#f59e0b"></div></div></td>
+                <td><span class="lift-badge lift-neutral">1.02×</span></td>
+            </tr><tr class="">
+                <td>UNTOUCHED</td>
+                <td>35</td>
+                <td>21 (60.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:60%;background:#f59e0b"></div></div></td>
+                <td><span class="lift-badge lift-neutral">0.80×</span></td>
+            </tr>
+</table>
+</div>
+
+<h2>🔀 تحليل الاتجاه</h2>
+<div class="card">
+<table>
+<tr><th>الاتجاه</th><th>العدد</th><th>الناجحة</th><th>النسبة</th><th>Lift</th></tr>
+<tr class="">
+                <td>SELL</td>
+                <td>92</td>
+                <td>73 (79.3%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:79%;background:#f59e0b"></div></div></td>
+                <td><span class="lift-badge lift-neutral">1.05×</span></td>
+            </tr><tr class="">
+                <td>BUY</td>
+                <td>79</td>
+                <td>56 (70.9%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:71%;background:#f59e0b"></div></div></td>
+                <td><span class="lift-badge lift-neutral">0.94×</span></td>
+            </tr>
+</table>
+</div>
+
+<h2>🔗 مجموعات العوامل (Class + التصحيح)</h2>
+<div class="card">
+<table>
+<tr><th>المجموعة</th><th>العدد</th><th>الناجحة</th><th>النسبة</th><th>Lift</th></tr>
+<tr class="success-row">
+                <td>ZB + تصحيح > 60%</td>
+                <td>16</td>
+                <td>16 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="success-row">
+                <td>ZE + تصحيح 30–60%</td>
+                <td>16</td>
+                <td>16 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="success-row">
+                <td>ZE + تصحيح > 60%</td>
+                <td>9</td>
+                <td>9 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="success-row">
+                <td>ZB + تصحيح 30–60%</td>
+                <td>20</td>
+                <td>20 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="success-row">
+                <td>ZC + تصحيح 30–60%</td>
+                <td>13</td>
+                <td>13 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="success-row">
+                <td>ZD + تصحيح 30–60%</td>
+                <td>11</td>
+                <td>11 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="success-row">
+                <td>ZD + تصحيح > 60%</td>
+                <td>8</td>
+                <td>8 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="success-row">
+                <td>ZC + تصحيح > 60%</td>
+                <td>5</td>
+                <td>5 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="success-row">
+                <td>ZH + تصحيح 30–60%</td>
+                <td>2</td>
+                <td>2 (100.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:100%;background:#22c55e"></div></div></td>
+                <td><span class="lift-badge lift-good">1.33×</span></td>
+            </tr><tr class="">
+                <td>ZF + تصحيح < 30%</td>
+                <td>18</td>
+                <td>14 (77.8%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:78%;background:#f59e0b"></div></div></td>
+                <td><span class="lift-badge lift-neutral">1.03×</span></td>
+            </tr><tr class="">
+                <td>ZH + تصحيح < 30%</td>
+                <td>10</td>
+                <td>7 (70.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:70%;background:#f59e0b"></div></div></td>
+                <td><span class="lift-badge lift-neutral">0.93×</span></td>
+            </tr><tr class="">
+                <td>ZF + تصحيح 30–60%</td>
+                <td>7</td>
+                <td>4 (57.1%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:57%;background:#f59e0b"></div></div></td>
+                <td><span class="lift-badge lift-neutral">0.76×</span></td>
+            </tr><tr class="fail-row">
+                <td>ZG + تصحيح < 30%</td>
+                <td>16</td>
+                <td>4 (25.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:25%;background:#ef4444"></div></div></td>
+                <td><span class="lift-badge lift-bad">0.33×</span></td>
+            </tr><tr class="fail-row">
+                <td>ZO + تصحيح < 30%</td>
+                <td>16</td>
+                <td>0 (0.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:0%;background:#ef4444"></div></div></td>
+                <td><span class="lift-badge lift-bad">0.00×</span></td>
+            </tr><tr class="fail-row">
+                <td>ZO + تصحيح 30–60%</td>
+                <td>3</td>
+                <td>0 (0.0%)</td>
+                <td><div class="bar-wrap"><div class="bar" style="width:0%;background:#ef4444"></div></div></td>
+                <td><span class="lift-badge lift-bad">0.00×</span></td>
+            </tr>
+</table>
+</div>
+
+<h2>📋 القواعد التنبؤية</h2>
+
+            <div class="rule-card rule-success">
+                <div class="rule-header">✅ إذا تحقق: <strong>Class ∈ {ZB, ZC, ZD, ZE}</strong></div>
+                <div class="rule-body">
+                    <span class="rule-outcome">نجاح مضمون 100%</span>
+                    <span class="rule-stats">حدث 98 مرة نجاحاً و0 مرة فشلاً من أصل 98 حالة</span>
+                    <span class="rule-lift">Lift: 1.33×</span>
+                </div>
+            </div>
+            <div class="rule-card rule-success">
+                <div class="rule-header">✅ إذا تحقق: <strong>تصحيح > 60%</strong></div>
+                <div class="rule-body">
+                    <span class="rule-outcome">نجاح مضمون 100%</span>
+                    <span class="rule-stats">حدث 38 مرة نجاحاً و0 مرة فشلاً من أصل 38 حالة</span>
+                    <span class="rule-lift">Lift: 1.33×</span>
+                </div>
+            </div>
+            <div class="rule-card rule-success">
+                <div class="rule-header">✅ إذا تحقق: <strong>نسبة > 150%</strong></div>
+                <div class="rule-body">
+                    <span class="rule-outcome">نجاح مضمون 100%</span>
+                    <span class="rule-stats">حدث 48 مرة نجاحاً و0 مرة فشلاً من أصل 48 حالة</span>
+                    <span class="rule-lift">Lift: 1.33×</span>
+                </div>
+            </div>
+            <div class="rule-card rule-success">
+                <div class="rule-header">✅ إذا تحقق: <strong>نسبة < 60%</strong></div>
+                <div class="rule-body">
+                    <span class="rule-outcome">نجاح مضمون 100%</span>
+                    <span class="rule-stats">حدث 15 مرة نجاحاً و0 مرة فشلاً من أصل 15 حالة</span>
+                    <span class="rule-lift">Lift: 1.33×</span>
+                </div>
+            </div>
+            <div class="rule-card rule-fail">
+                <div class="rule-header">❌ إذا تحقق: <strong>Class = ZO</strong></div>
+                <div class="rule-body">
+                    <span class="rule-outcome">فشل مضمون 100%</span>
+                    <span class="rule-stats">حدث 0 مرة نجاحاً و19 مرة فشلاً من أصل 19 حالة</span>
+                    <span class="rule-lift">Lift: 0.00×</span>
+                </div>
+            </div>
+
+<div class="warning">
+  ⚠️ <strong>تنبيه:</strong> هذه الأرقام مبنية على بيانات تاريخية. الأنماط الإحصائية لا تضمن النتائج المستقبلية. الارتباط لا يعني السببية. استخدم هذا التحليل كأداة مساعدة وليس كحكم نهائي.
+</div>
+
+</body>
+</html>
