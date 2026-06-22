@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>كتالوج مصطلحات — AIB Angles</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Tahoma,sans-serif}
+body{width:900px;margin:0 auto;background:#0b1520;color:#e9eef4;padding:32px}
+h1{font-size:26px;color:#4db1ff;text-align:center;margin-bottom:6px}
+h2{font-size:17px;color:#ffd34d;margin:32px 0 10px;border-right:4px solid #ffd34d;padding-right:10px}
+h3{font-size:14px;color:#9fb0c0;margin:20px 0 8px;padding-right:6px;border-right:2px solid #25384a}
+.sub{text-align:center;color:#9fb0c0;font-size:13px;margin:4px 0 24px}
+table{width:100%;border-collapse:collapse;margin-bottom:6px}
+td,th{padding:9px 12px;font-size:13px;border-bottom:1px solid #1e3244;text-align:right;vertical-align:top}
+th{background:#111e2b;color:#ffd34d}
+tr:hover{background:#1a2e3d}
+.code{font-family:monospace;background:#1a2e3d;border-radius:4px;padding:1px 7px;font-size:12px;color:#4db1ff;white-space:nowrap}
+.val{font-family:monospace;background:#172533;border-radius:4px;padding:1px 6px;font-size:12px;color:#ffd34d}
+.green{color:#37d67a;font-weight:bold}
+.red{color:#ff6b6b;font-weight:bold}
+.blue{color:#4db1ff}
+.yellow{color:#ffd34d}
+.gray{color:#9fb0c0}
+.note{background:#0e1f30;border:1px solid #1e3244;border-radius:8px;padding:12px 14px;font-size:13px;color:#9fb0c0;margin:10px 0;line-height:1.8}
+.sep{border-top:2px solid #1e3244;margin:28px 0}
+.tag{display:inline-block;background:#1a2e3d;border-radius:4px;padding:1px 7px;font-size:12px;margin:2px}
+.cls-good{color:#37d67a;font-weight:bold}
+.cls-weak{color:#ff6b6b}
+.foot{text-align:center;color:#6f8294;font-size:11px;margin-top:28px}
+.example-row{background:#0d2e1a}
+</style>
+</head>
+<body>
+
+<h1>كتالوج مصطلحات تقارير AIB Angles</h1>
+<div class="sub">دليل شامل لكل رمز وعمود في ملفات البيانات والتقارير</div>
+
+<!-- ══════════════════════════════════════════ -->
+<h2>① بيانات الزاوية الأساسية (معلومات الهوية)</h2>
+
+<table>
+<tr><th style="width:22%">العمود</th><th style="width:28%">الاسم العربي</th><th>الشرح والقيم المحتملة</th></tr>
+<tr>
+  <td><span class="code">AngleID</span></td>
+  <td>رقم الزاوية</td>
+  <td>رقم تسلسلي فريد لكل زاوية في الملف — مثال: <span class="val">1</span>, <span class="val">2</span>, <span class="val">45</span></td>
+</tr>
+<tr>
+  <td><span class="code">FormTime</span></td>
+  <td>وقت تشكّل الزاوية</td>
+  <td>التاريخ والوقت اللي تكوّنت فيه الزاوية — مثال: <span class="val">1999.11.08 02:00</span></td>
+</tr>
+<tr>
+  <td><span class="code">Symbol</span></td>
+  <td>الزوج</td>
+  <td>زوج العملات — مثال: <span class="val">EURUSD</span>, <span class="val">GBPUSD</span></td>
+</tr>
+<tr>
+  <td><span class="code">TF</span></td>
+  <td>الإطار الزمني</td>
+  <td>الإطار الزمني للزاوية بالدقائق — <span class="val">60</span> = H1 · <span class="val">240</span> = H4 · <span class="val">1440</span> = D1</td>
+</tr>
+<tr>
+  <td><span class="code">UnitSeconds</span></td>
+  <td>وحدة الحساب</td>
+  <td>حجم الوحدة الزمنية بالثواني — <span class="val">86400</span> = يوم واحد</td>
+</tr>
+<tr>
+  <td><span class="code">Dir</span></td>
+  <td>اتجاه الزاوية</td>
+  <td><span class="val">BUY</span> = زاوية صعود · <span class="val">SELL</span> = زاوية هبوط</td>
+</tr>
+<tr class="example-row">
+  <td colspan="3" style="font-size:12px;color:#6f8294">مثال من البيانات: AngleID=<b>1</b> · FormTime=<b>1999.11.08 02:00</b> · Symbol=<b>EURUSD</b> · TF=<b>60</b> · Dir=<b>BUY</b></td>
+</tr>
+</table>
+
+<!-- ══════════════════════════════════════════ -->
+<h2>② التصنيف والتأكيد</h2>
+
+<table>
+<tr><th style="width:22%">العمود</th><th style="width:28%">الاسم العربي</th><th>الشرح والقيم المحتملة</th></tr>
+<tr>
+  <td><span class="code">Class</span></td>
+  <td>تصنيف الزاوية</td>
+  <td>
+    نوع الزاوية حسب قوتها وشكلها:<br>
+    <span class="cls-good">ZB · ZC · ZD · ZE</span> = تصنيفات قوية (نسب نجاح أعلى)<br>
+    <span class="cls-weak">ZF · ZG · ZH · ZO</span> = تصنيفات ضعيفة (يُفضّل تجنّبها)
+  </td>
+</tr>
+<tr>
+  <td><span class="code">Confirmed</span></td>
+  <td>حالة التأكيد</td>
+  <td>
+    هل أكّد السعر الزاوية قبل الوصول لنقطة الاختبار؟<br>
+    <span class="val">1</span> = <span class="green">مؤكّدة</span> (احتمال نجاح أعلى)<br>
+    <span class="val">0</span> = <span class="red">غير مؤكّدة</span>
+  </td>
+</tr>
+<tr class="example-row">
+  <td colspan="3" style="font-size:12px;color:#6f8294">مثال: Class=<b>ZB</b> · Confirmed=<b>1</b> → زاوية قوية مؤكّدة</td>
+</tr>
+</table>
+
+<!-- ══════════════════════════════════════════ -->
+<h2>③ قياسات الموجات U1 و U2</h2>
+
+<div class="note">
+  الزاوية مكوّنة من موجتين: <b>U2</b> هي الموجة الكبيرة الأولى · <b>U1</b> هي الموجة الصغيرة التي تشكّل الزاوية داخل U2.
+  نسبة U1 إلى U2 تحدد شكل الزاوية وقوتها.
+</div>
+
+<table>
+<tr><th style="width:22%">العمود</th><th style="width:28%">الاسم العربي</th><th>الشرح</th></tr>
+<tr>
+  <td><span class="code">U2_High</span></td>
+  <td>قمة الموجة الكبيرة U2</td>
+  <td>أعلى سعر وصلته الموجة الكبيرة — مثال: <span class="val">1.04340</span></td>
+</tr>
+<tr>
+  <td><span class="code">U2_Low</span></td>
+  <td>قاع الموجة الكبيرة U2</td>
+  <td>أدنى سعر وصلته الموجة الكبيرة — مثال: <span class="val">1.03610</span></td>
+</tr>
+<tr>
+  <td><span class="code">U2_Range</span></td>
+  <td>مدى U2 (بالنقاط)</td>
+  <td>الفرق بين القمة والقاع بالنقاط — مثال: <span class="val">730</span> نقطة</td>
+</tr>
+<tr>
+  <td><span class="code">U1_High</span></td>
+  <td>قمة الموجة الصغيرة U1</td>
+  <td>أعلى سعر في الموجة الداخلية</td>
+</tr>
+<tr>
+  <td><span class="code">U1_Low</span></td>
+  <td>قاع الموجة الصغيرة U1</td>
+  <td>أدنى سعر في الموجة الداخلية</td>
+</tr>
+<tr>
+  <td><span class="code">U1_Range</span></td>
+  <td>مدى U1 (بالنقاط)</td>
+  <td>حجم الموجة الداخلية</td>
+</tr>
+<tr>
+  <td><span class="code">Ratio_U1_U2_pct</span></td>
+  <td>نسبة U1 إلى U2 (%)</td>
+  <td>
+    كم تمثّل U1 من U2:<br>
+    <span class="val">&lt; 80%</span> = <span class="green">صغيرة</span> (مؤشر قوة)<br>
+    <span class="val">80–120%</span> = <span class="yellow">متوسطة</span><br>
+    <span class="val">&gt; 120%</span> = <span class="red">كبيرة</span> (ضعف)<br>
+    مثال: <span class="val">60.27%</span> → U1 تساوي 60% من U2 = زاوية جيدة
+  </td>
+</tr>
+<tr class="example-row">
+  <td colspan="3" style="font-size:12px;color:#6f8294">مثال: U2_Range=<b>730</b> نقطة · U1_Range=<b>440</b> نقطة · Ratio=<b>60.3%</b> (صغيرة = جيدة)</td>
+</tr>
+</table>
+
+<!-- ══════════════════════════════════════════ -->
+<h2>④ عمق التصحيح والمسافات</h2>
+
+<table>
+<tr><th style="width:22%">العمود</th><th style="width:28%">الاسم العربي</th><th>الشرح والقيم المحتملة</th></tr>
+<tr>
+  <td><span class="code">Corr_pct</span></td>
+  <td>نسبة التصحيح (%)</td>
+  <td>
+    كم ارتدّ السعر داخل الموجة قبل الوصول لنقطة الاختبار:<br>
+    <span class="val">≥ 62%</span> = <span class="green">ALPHA عميق</span> — أقوى نسب النجاح (مضاعف ×1.75)<br>
+    <span class="val">38–62%</span> = <span class="yellow">ALPHA منخفض</span> — متوسط<br>
+    <span class="val">&lt; 38%</span> = <span class="red">BETA</span> — تصحيح ضعيف، أدنى نسب نجاح<br>
+    مثال: <span class="val">71.23%</span> → ALPHA عميق
+  </td>
+</tr>
+<tr>
+  <td><span class="code">L_points</span></td>
+  <td>المسافة L (بالنقاط)</td>
+  <td>المسافة من نقطة الدخول حتى وقف الخسارة — كلما كانت أصغر كان الخطر أقل</td>
+</tr>
+<tr>
+  <td><span class="code">B_points</span></td>
+  <td>المسافة B (بالنقاط)</td>
+  <td>المسافة من نقطة الدخول حتى الهدف TP1</td>
+</tr>
+<tr>
+  <td><span class="code">نسبة L/B</span></td>
+  <td>نسبة المخاطرة للعائد</td>
+  <td>
+    تُحسب: L ÷ B<br>
+    <span class="val">صغيرة &lt; 1.5</span> = <span class="green">هدف قريب ووقف بعيد</span> (مفضّل)<br>
+    <span class="val">متوسطة 1.5–3</span> = مقبولة<br>
+    <span class="val">كبيرة &gt; 3</span> = <span class="red">هدف بعيد ووقف قريب</span> (خطر)
+  </td>
+</tr>
+<tr>
+  <td><span class="code">DiagTop / DiagBot</span></td>
+  <td>حدود الزاوية القطرية</td>
+  <td>أعلى وأدنى حد للزاوية على المخطط — يُحدّد الإطار السعري للزاوية</td>
+</tr>
+<tr class="example-row">
+  <td colspan="3" style="font-size:12px;color:#6f8294">مثال: Corr=<b>71.23%</b> (ALPHA عميق) · L=<b>210</b> · B=<b>172</b> → L/B=1.22 (صغيرة = ممتاز)</td>
+</tr>
+</table>
+
+<!-- ══════════════════════════════════════════ -->
+<h2>⑤ نقاط الاختبار الأربع — [TEST]_*</h2>
+
+<div class="note">
+  لكل زاوية أربع نقاط اختبار يمكن للسعر أن يصلها. كل نقطة لها مجموعة أعمدة خاصة بها تبدأ باسمها:
+  <span class="tag">U1X1</span> <span class="tag">U2X1</span> <span class="tag">DLX1</span> <span class="tag">DRX1</span>
+  <br><br>
+  <b>U1X1</b> = نقطة X1 على الموجة الداخلية U1 (الأكثر شيوعاً للنجاح في الزوايا القوية)<br>
+  <b>U2X1</b> = نقطة X1 على الموجة الكبيرة U2<br>
+  <b>DLX1</b> = نقطة X1 على الخط القطري الأيسر (يُفضّل تجنّبها)<br>
+  <b>DRX1</b> = نقطة X1 على الخط القطري الأيمن
+</div>
+
+<table>
+<tr><th style="width:22%">العمود</th><th style="width:28%">الاسم العربي</th><th>الشرح والقيم المحتملة</th></tr>
+<tr>
+  <td><span class="code">[TEST]_Level</span></td>
+  <td>مستوى نقطة الاختبار</td>
+  <td>السعر الدقيق لنقطة الاختبار — مثال: <span class="val">1.04780</span></td>
+</tr>
+<tr>
+  <td><span class="code">[TEST]_React</span></td>
+  <td>ردّ فعل السعر</td>
+  <td>
+    ماذا فعل السعر عند وصوله لنقطة الاختبار:<br>
+    <span class="green">BOUNCE</span> = <b>ارتداد</b> — السعر ارتدّ من النقطة (شرط النجاح الأول)<br>
+    <span class="red">BREAK</span> = <b>اختراق</b> — السعر اخترق النقطة وتجاوزها<br>
+    <span class="gray">UNTOUCHED</span> = <b>لم يُلمس</b> — السعر لم يصل لهذه النقطة أصلاً<br>
+    <span class="gray">NA</span> = لا يوجد بيانات
+  </td>
+</tr>
+<tr>
+  <td><span class="code">[TEST]_TouchTime</span></td>
+  <td>وقت اللمسة</td>
+  <td>التاريخ والوقت اللي لمس فيه السعر نقطة الاختبار — مثال: <span class="val">1999.11.08 06:00</span></td>
+</tr>
+<tr>
+  <td><span class="code">[TEST]_TP1_Hit</span></td>
+  <td>تحقّق الهدف الأول</td>
+  <td>
+    <span class="val">1</span> = <span class="green">الهدف الأول تحقّق</span> (شرط النجاح الثاني)<br>
+    <span class="val">0</span> = لم يتحقق
+  </td>
+</tr>
+<tr>
+  <td><span class="code">[TEST]_TP1_Time</span></td>
+  <td>وقت تحقّق TP1</td>
+  <td>متى وصل السعر للهدف الأول</td>
+</tr>
+<tr>
+  <td><span class="code">[TEST]_TP2_Hit</span></td>
+  <td>تحقّق الهدف الثاني</td>
+  <td><span class="val">1</span> = تحقّق · <span class="val">0</span> = لم يتحقق</td>
+</tr>
+<tr>
+  <td><span class="code">[TEST]_TP3_Hit</span></td>
+  <td>تحقّق الهدف الثالث</td>
+  <td><span class="val">1</span> = تحقّق · <span class="val">0</span> = لم يتحقق</td>
+</tr>
+<tr>
+  <td><span class="code">[TEST]_MaxTP</span></td>
+  <td>أقصى هدف تحقّق</td>
+  <td>
+    رقم أعلى هدف وصله السعر:<br>
+    <span class="val">0</span> = لم يتحقق أي هدف<br>
+    <span class="val">1</span> = وصل TP1 فقط<br>
+    <span class="val">2</span> = وصل TP2<br>
+    <span class="val">3</span> = وصل TP3 (الأفضل)
+  </td>
+</tr>
+<tr>
+  <td><span class="code">[TEST]_Dur</span></td>
+  <td>مدة الصفقة</td>
+  <td>كم استغرق السعر للوصول للهدف — مثال: <span class="val">4d 9h</span> = 4 أيام و9 ساعات</td>
+</tr>
+<tr>
+  <td><span class="code">[TEST]_Session</span></td>
+  <td>جلسة اللمسة</td>
+  <td>
+    الجلسة التي لمس فيها السعر نقطة الاختبار:<br>
+    <span class="green">London</span> = جلسة لندن (الأفضل)<br>
+    <span class="green">NewYork</span> = جلسة نيويورك (جيد)<br>
+    <span class="red">Asia</span> = جلسة آسيا (الأضعف — يُفضّل تجنّبها)<br>
+    <span class="gray">Other</span> = جلسة أخرى
+  </td>
+</tr>
+<tr>
+  <td><span class="code">[TEST]_X2_React</span></td>
+  <td>ردّ فعل اللمسة الثانية</td>
+  <td>ماذا حدث في المرة الثانية التي لمس فيها السعر نفس النقطة (BOUNCE/BREAK/NA)</td>
+</tr>
+<tr>
+  <td><span class="code">[TEST]_X3_React</span></td>
+  <td>ردّ فعل اللمسة الثالثة</td>
+  <td>ماذا حدث في المرة الثالثة</td>
+</tr>
+<tr class="example-row">
+  <td colspan="3" style="font-size:12px;color:#6f8294">
+    مثال (DLX1): React=<b>BOUNCE</b> · TP1_Hit=<b>1</b> · TP2_Hit=<b>1</b> · MaxTP=<b>2</b> · Session=<b>Asia</b> · Dur=<b>4d 9h</b>
+    → <span class="green">نجاح</span> (BOUNCE + TP1=1)، وصل للهدف الثاني في 4 أيام
+  </td>
+</tr>
+</table>
+
+<!-- ══════════════════════════════════════════ -->
+<h2>⑥ السياق — الزوايا السابقة والتالية</h2>
+
+<div class="note">
+  <b>Left</b> = الزوايا التي ظهرت قبل هذه الزاوية (من الأقرب للأبعد)<br>
+  <b>Right</b> = الزوايا التي ظهرت بعد هذه الزاوية (من الأقرب للأبعد)<br>
+  صيغة القيمة: <span class="code">[اتجاه]-[تصنيف]-[حالة]</span>
+</div>
+
+<table>
+<tr><th style="width:22%">العمود</th><th style="width:28%">الاسم العربي</th><th>الشرح</th></tr>
+<tr>
+  <td><span class="code">Left_1 … Left_10</span></td>
+  <td>السياق السابق (1 إلى 10)</td>
+  <td>
+    Left_1 = الزاوية السابقة مباشرة · Left_2 = قبلها وهكذا<br>
+    مثال: <span class="val">B-ZF-UN</span> = زاوية BUY، تصنيف ZF، حالة UN (غير ملموسة)
+  </td>
+</tr>
+<tr>
+  <td><span class="code">Right_1 … Right_10</span></td>
+  <td>السياق التالي (1 إلى 10)</td>
+  <td>
+    Right_1 = الزاوية التالية مباشرة · Right_2 = بعدها وهكذا<br>
+    مثال: <span class="val">S-ZB-BO</span> = زاوية SELL، تصنيف ZB، حالة BO (ارتداد)
+  </td>
+</tr>
+<tr>
+  <td colspan="3">
+    <b>أكواد الحالة داخل السياق:</b><br>
+    <span class="tag">UN</span> = UNTOUCHED (لم يُلمس) &nbsp;
+    <span class="tag">BO</span> = BOUNCE (ارتداد) &nbsp;
+    <span class="tag">BR</span> = BREAK (اختراق) &nbsp;
+    <span class="tag">B</span> = BUY &nbsp;
+    <span class="tag">S</span> = SELL
+  </td>
+</tr>
+</table>
+
+<div class="sep"></div>
+
+<!-- ══════════════════════════════════════════ -->
+<h2>⑦ مصطلحات التحليل في التقارير</h2>
+
+<h3>مقاييس الأداء الأساسية</h3>
+<table>
+<tr><th style="width:22%">المصطلح</th><th style="width:28%">الاسم العربي</th><th>الشرح</th></tr>
+<tr>
+  <td><span class="code">إشارات</span></td>
+  <td>عدد الإشارات الكلي</td>
+  <td>عدد الزوايا × 4 نقاط اختبار — مثال: 171 زاوية × 4 = 684 إشارة</td>
+</tr>
+<tr>
+  <td><span class="code">ملموسات</span></td>
+  <td>الإشارات التي لمسها السعر</td>
+  <td>فقط الإشارات التي وصل إليها السعر (React ≠ UNTOUCHED) — هذه هي قاعدة الحساب</td>
+</tr>
+<tr>
+  <td><span class="code">نجاح</span></td>
+  <td>عدد النجاحات</td>
+  <td>الإشارات التي تحقّق فيها: <span class="code">React = BOUNCE</span> و <span class="code">TP1_Hit = 1</span> معاً</td>
+</tr>
+<tr>
+  <td><span class="code">Base Rate</span></td>
+  <td>معدّل النجاح القاعدي</td>
+  <td>نسبة النجاح الكلية = نجاح ÷ ملموسات — هو المرجع لحساب المضاعفات</td>
+</tr>
+<tr>
+  <td><span class="code">Lift / المضاعف</span></td>
+  <td>مضاعف القوة</td>
+  <td>
+    نسبة نجاح المجموعة ÷ Base Rate<br>
+    <span class="green">×2.0</span> = ضعف المتوسط (ممتاز) &nbsp;
+    <span class="blue">×1.3</span> = أعلى بـ30% (جيد) &nbsp;
+    <span class="red">×0.5</span> = نصف المتوسط (ضعيف)
+  </td>
+</tr>
+<tr>
+  <td><span class="code">متوسط MaxTP</span></td>
+  <td>متوسط أقصى هدف</td>
+  <td>متوسط رقم أعلى هدف تحقّق لهذه المجموعة — كلما زاد كان أفضل</td>
+</tr>
+</table>
+
+<h3>فئات التصحيح (Corr_pct)</h3>
+<table>
+<tr><th style="width:22%">الفئة</th><th style="width:28%">النطاق</th><th>الدلالة</th></tr>
+<tr style="background:#0d2e1a">
+  <td><span class="green">ALPHA عميق</span></td>
+  <td>62% فأعلى</td>
+  <td>السعر تصحّح بعمق كبير قبل الاختبار — أقوى الفئات، مضاعف ×1.75 على GBPUSD</td>
+</tr>
+<tr style="background:#0d1f2e">
+  <td><span class="blue">ALPHA منخفض</span></td>
+  <td>38% – 61%</td>
+  <td>تصحيح معتدل — أداء متوسط</td>
+</tr>
+<tr style="background:#2e0d0d">
+  <td><span class="red">BETA</span></td>
+  <td>أقل من 38%</td>
+  <td>تصحيح ضعيف جداً — أضعف الفئات، يُنصح بتجنّب الدخول</td>
+</tr>
+</table>
+
+<h3>نسبة L/B (وقف الخسارة / الهدف)</h3>
+<table>
+<tr><th style="width:22%">الفئة</th><th style="width:28%">النطاق</th><th>الدلالة</th></tr>
+<tr style="background:#0d2e1a">
+  <td><span class="green">صغيرة</span></td>
+  <td>L/B أقل من 1.5</td>
+  <td>الهدف أكبر من وقف الخسارة — مخاطرة منطقية ممتازة</td>
+</tr>
+<tr>
+  <td><span class="yellow">متوسطة</span></td>
+  <td>L/B من 1.5 إلى 3</td>
+  <td>مقبولة</td>
+</tr>
+<tr style="background:#2e0d0d">
+  <td><span class="red">كبيرة</span></td>
+  <td>L/B أكبر من 3</td>
+  <td>الهدف بعيد والوقف قريب — مخاطرة عالية، يُفضّل التجنّب</td>
+</tr>
+</table>
+
+<h3>نسبة U1/U2 (حجم الزاوية)</h3>
+<table>
+<tr><th style="width:22%">الفئة</th><th style="width:28%">النطاق</th><th>الدلالة</th></tr>
+<tr style="background:#0d2e1a">
+  <td><span class="green">صغيرة</span></td>
+  <td>أقل من 80%</td>
+  <td>U1 صغيرة نسبياً = زاوية حادة وقوية</td>
+</tr>
+<tr>
+  <td><span class="yellow">متوسطة</span></td>
+  <td>80% – 120%</td>
+  <td>زاوية عادية</td>
+</tr>
+<tr style="background:#2e0d0d">
+  <td><span class="red">كبيرة</span></td>
+  <td>أكبر من 120%</td>
+  <td>U1 كبيرة = زاوية مسطّحة وضعيفة</td>
+</tr>
+</table>
+
+<div class="sep"></div>
+
+<!-- ══════════════════════════════════════════ -->
+<h2>⑧ أقسام التقرير الشامل</h2>
+
+<table>
+<tr><th style="width:30%">القسم</th><th>ما يخبرك إياه</th></tr>
+<tr>
+  <td><b>مصادر البيانات</b></td>
+  <td>قائمة الملفات المدموجة — الزوج، الإطار الزمني، الفترة، عدد الزوايا</td>
+</tr>
+<tr>
+  <td><b>أفضل اختبار لكل تصنيف</b></td>
+  <td>لكل Class (ZB/ZC…) أي نقطة اختبار (U1X1/U2X1/DLX1/DRX1) أعطت أعلى نسبة نجاح تاريخياً</td>
+</tr>
+<tr>
+  <td><b>تصنيف قوة الدخول (Tiers)</b></td>
+  <td>كل تركيبة ممكنة من (Class + نقطة اختبار + فئة التصحيح) مرتّبة من الأقوى للأضعف</td>
+</tr>
+<tr>
+  <td><b>صفات الإشارات الناجحة</b></td>
+  <td>مقارنة نسب النجاح حسب كل عامل منفرد: التصحيح، الجلسة، التأكيد، L/B، نقطة الاختبار</td>
+</tr>
+<tr>
+  <td><b>الصفقات الذهبية</b></td>
+  <td>التركيبات التي حقّقت نسبة نجاح ≥ 50% تاريخياً</td>
+</tr>
+<tr>
+  <td><b>معايير التجنّب</b></td>
+  <td>التركيبات التي فشلت بنسبة ≥ 70% — يُنصح بتجنّبها تماماً</td>
+</tr>
+<tr>
+  <td><b>القوانين المركّبة</b></td>
+  <td>تركيب 4 عوامل معاً (Class + اختبار + تصحيح + تأكيد) لاستخراج أقوى القواعد</td>
+</tr>
+<tr>
+  <td><b>مصفوفة الانتقال</b></td>
+  <td>احتمال ظهور كل تصنيف بعد تصنيف آخر — مثال: بعد ZB كم احتمال تجيء ZE؟</td>
+</tr>
+<tr>
+  <td><b>قوانين التسلسل (زاويتان)</b></td>
+  <td>إذا ظهر تصنيف A قبل B، كم نجحت B؟ مقارنةً بنجاح B بشكل عام</td>
+</tr>
+<tr>
+  <td><b>قوانين التسلسل (3 زوايا)</b></td>
+  <td>نفس الفكرة لكن بثلاث زوايا متتالية — قواعد أدق وأقوى</td>
+</tr>
+<tr>
+  <td><b>بطاقات الزوايا التفصيلية</b></td>
+  <td>بطاقة لكل زاوية منفردة: معلوماتها الكاملة ونتيجة كل نقطة اختبار</td>
+</tr>
+</table>
+
+<!-- ══════════════════════════════════════════ -->
+<h2>⑨ قراءة النتيجة — كيف تعرف إذا الإشارة ناجحة؟</h2>
+
+<div class="note" style="font-size:14px;line-height:2.2">
+  <b>شرط النجاح = شرطان معاً:</b><br>
+  ✅ <b>React = BOUNCE</b> — السعر ارتدّ من نقطة الاختبار (لم يخترقها)<br>
+  ✅ <b>TP1_Hit = 1</b> — السعر وصل للهدف الأول بعد الارتداد<br><br>
+  إذا تحقّق الشرطان معاً → <span class="green">نجاح (Success)</span><br>
+  إذا كان React = BOUNCE لكن TP1_Hit = 0 → ارتداد لكن لم يصل للهدف<br>
+  إذا كان React = BREAK → فشل (اختراق النقطة)<br>
+  إذا كان React = UNTOUCHED → لا تحسب (السعر لم يصل أصلاً)
+</div>
+
+<div class="sep"></div>
+
+<h2>⑩ التصنيفات القوية والضعيفة — ملخص سريع</h2>
+
+<table>
+<tr><th style="width:15%">التصنيف</th><th style="width:20%">القوة</th><th>الخلاصة</th></tr>
+<tr style="background:#0d2e1a">
+  <td><span class="cls-good">ZB</span></td>
+  <td><span class="green">قوي ★★★★</span></td>
+  <td>أفضل أداء على U1X1 و U2X1 — يُدخل بثقة مع ALPHA عميق</td>
+</tr>
+<tr style="background:#0d2e1a">
+  <td><span class="cls-good">ZC</span></td>
+  <td><span class="green">قوي ★★★★</span></td>
+  <td>أداء جيد على U1X1 — من أفضل التصنيفات</td>
+</tr>
+<tr style="background:#0d2e1a">
+  <td><span class="cls-good">ZD</span></td>
+  <td><span class="green">قوي ★★★★</span></td>
+  <td>الأقوى على DRX1 — تصنيف ممتاز مع التصحيح العميق</td>
+</tr>
+<tr style="background:#0d2e1a">
+  <td><span class="cls-good">ZE</span></td>
+  <td><span class="green">قوي ★★★★</span></td>
+  <td>أداء ممتاز على U2X1 و DLX1 — ضمن أفضل التصنيفات</td>
+</tr>
+<tr style="background:#1a0d0d">
+  <td><span class="cls-weak">ZF</span></td>
+  <td><span class="red">ضعيف ★★</span></td>
+  <td>أداء منخفض عموماً — تجنّب مع BETA و DLX1</td>
+</tr>
+<tr style="background:#1a0d0d">
+  <td><span class="cls-weak">ZG</span></td>
+  <td><span class="red">ضعيف ★</span></td>
+  <td>من أضعف التصنيفات — تجنّب</td>
+</tr>
+<tr style="background:#1a0d0d">
+  <td><span class="cls-weak">ZH</span></td>
+  <td><span class="red">ضعيف ★</span></td>
+  <td>أداء ضعيف جداً — تجنّب تماماً</td>
+</tr>
+<tr style="background:#1a0d0d">
+  <td><span class="cls-weak">ZO</span></td>
+  <td><span class="red">ضعيف ★</span></td>
+  <td>أداء ضعيف — تجنّب</td>
+</tr>
+</table>
+
+<div class="sep"></div>
+
+<h2>⑪ قراءة سريعة للألوان في التقرير</h2>
+
+<table>
+<tr><th style="width:22%">اللون</th><th>معناه</th></tr>
+<tr style="background:#0d2e1a">
+  <td><span class="green">■ أخضر</span></td>
+  <td>نسبة نجاح ≥ 50% — ممتاز، صفقة ذهبية</td>
+</tr>
+<tr style="background:#0d1f2e">
+  <td><span class="blue">■ أزرق</span></td>
+  <td>نسبة نجاح 35–49% — جيد، أعلى من المتوسط</td>
+</tr>
+<tr>
+  <td><span class="yellow">■ أصفر</span></td>
+  <td>نسبة نجاح 25–34% — قريب من المتوسط</td>
+</tr>
+<tr style="background:#2e0d0d">
+  <td><span class="red">■ أحمر</span></td>
+  <td>نسبة نجاح أقل من 25% — أقل من المتوسط، ابتعد</td>
+</tr>
+</table>
+
+<div class="foot">كتالوج AIB Angles — مرجع بيانات التقارير · إعداد آلي بناءً على ملفات الباك تست</div>
+</body>
+</html>
