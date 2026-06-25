@@ -4811,6 +4811,7 @@ void OnChartEvent(const int id,
                   const double &dparam,
                   const string &sparam)
 {
+  Sig_OnChartEvent(id, lparam, dparam, sparam);   // AIB Signal hook
 
   if(id == CHARTEVENT_MOUSE_MOVE)
   {
