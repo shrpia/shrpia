@@ -438,7 +438,7 @@ string Sig_BuildAdvice(SigEntry &entries[], int eCount)
    if(pendBuy>0 && pendSell>0)
       return "BUY + SELL conflict. Stay flat — wait for one side to dominate.";
 
-   SigEntry &top = entries[topIdx];
+   SigEntry top = entries[topIdx];
    int   cnt = pendBuy + pendSell;
    string d  = top.dir;
 
@@ -498,7 +498,7 @@ void Sig_DrawPanel(SigEntry &entries[], int eCount)
    //── Signal rows ────────────────────────────────────────────────
    int rowY = PY + headerH + sepH;
    for(int i=0;i<dispRows;i++) {
-      SigEntry &e = entries[i];
+      SigEntry e = entries[i];
       // Strength marker
       string mk = (e.lvl>=5 ? ">" : (e.lvl>=3 ? "-" : "."));
       // Row: "> BB4SF  ZB  FULL MARGIN  U1X1  BUY"
