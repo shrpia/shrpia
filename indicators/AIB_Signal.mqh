@@ -1,254 +1,237 @@
 //==================================================================
-//  AIB_Signal.mqh  v2.0 — Trade zone drawing for AIB Angles
+//  AIB_Signal.mqh  v3.0 — Clean visual output for AIB Angles
 //
-//  Include order (end of main .mq4):
-//    #include "AIB_ComboTable.mqh"
-//    #include "AIB_Monitor.mqh"
-//    #include "AIB_Signal.mqh"
-//
-//  Reads:  g_mon[], g_monCount, g_unitSeconds
-//
-//  Call from main indicator:
-//    OnCalculate():   Sig_OnCalculate();
-//    OnDeinit():      Sig_OnDeinit();
-//    OnChartEvent():  Sig_OnChartEvent(id,lparam,dparam,sparam);
-//
-//  Features:
-//    • InpSigMinHitPct — filter threshold (input, default 50%)
-//    • Weak combos: panel warning only, no zone drawn
-//    • Anticipatory drawing: preview at formTime (dashed), real zone at touchTime
-//    • Anti-overlap: same-angle tests staggered horizontally by ti×unit/5
-//    • Duration scaled by g_unitSeconds/86400 (studies on U86400)
-//    • Rating stars: ⭐⭐⭐ ≥65%  ⭐⭐ ≥50%  ⚠ ≥35%  ✗ <35%
-//    • Professional signal panel (top-right, screen-anchored)
-//    • 4 buttons: Hide All | Show All | Hide Zone | Pick Angle
+//  v3.0: Score-based strength system, simplified zone labels,
+//        advisory panel, calm colors, 3-criteria quality filter.
 //==================================================================
 
 //─── Inputs ────────────────────────────────────────────────────────
-input string InpSigSep          = "──── AIB Signal ────";
-input bool   InpSigEnabled      = true;
-input double InpSigMinHitPct    = 50.0;   // min TP1 hit% to draw zone
-input bool   InpSigFilterBest   = false;  // also require n_ang≥30 & p_total≥40%
-input bool   InpSigShowHistory  = true;   // draw completed (past) signals
-input bool   InpSigShowPending  = true;   // draw live / pending signals
-input bool   InpSigShowPreview  = true;   // draw anticipatory preview (formTime)
-input bool   InpSigFill         = true;   // fill rectangles
-input double InpSigRiskMoney    = 50.0;   // risk $ per trade
-input int    InpSigSpreadPts    = 20;     // spread in points
-input int    InpSigTP1Pct       = 50;
-input int    InpSigTP2Pct       = 30;
-input int    InpSigTP3Pct       = 20;
-input bool   InpSigAlerts       = true;
-input int    InpSigFontSize     = 8;
-input bool   InpSigShowPanel    = true;   // show signal panel
+input string InpSigSep1            = "─── AIB Signal v3.0 ────";
+input bool   InpSigEnabled         = true;
 
-//─── Prefix & panel constants ──────────────────────────────────────
-#define SIG_PFX     "AIBSIG_"
-#define PANEL_W     390
-#define PANEL_X     8
-#define PANEL_Y     30
-#define PANEL_CORN  CORNER_RIGHT_UPPER
-#define ROW_H       17
-#define BTN_H       22
-#define BTN_W       88
+input string InpSigSep2            = "─── Quality Filter ──────";
+input double InpSigMinHitPct       = 50.0;  // Min TP1 hit% (historical)
+input int    InpSigMinTouchCount   = 30;    // Min historical touches nt[ti]
+input int    InpSigMinSuccessCount = 15;    // Min historical wins   nok[ti]
+input bool   InpSigShowPreview     = true;  // Draw anticipatory preview
+
+input string InpSigSep3            = "─── Panel ───────────────";
+input bool   InpSigShowPanel       = true;
+input int    InpSigMaxRows         = 6;     // Max signal rows in panel
+input bool   InpSigShowAdvice      = true;  // Advisory recommendation box
+input int    InpSigPanelX          = 12;    // Panel X from left (px)
+input int    InpSigPanelY          = 300;   // Panel Y from top  (px)
+input bool   InpSigShowPending     = true;
+input bool   InpSigShowHistory     = true;
+input bool   InpSigFill            = true;
+
+input string InpSigSep4            = "─── Trade Sizing ────────";
+input double InpSigRiskMoney       = 50.0;
+input int    InpSigSpreadPts       = 20;
+input int    InpSigTP1Pct          = 50;
+input int    InpSigTP2Pct          = 30;
+input int    InpSigTP3Pct          = 20;
+input bool   InpSigAlerts          = true;
+input int    InpSigFontSize        = 8;
+
+//─── Layout constants ──────────────────────────────────────────────
+#define SIG_PFX    "AIBSIG_"
+#define PANEL_W    295
+#define ROW_H      16
+#define BTN_H      20
+#define BTN_W      65
+#define ADVICE_H   40
 
 //─── Global state ──────────────────────────────────────────────────
 bool     g_sigHideAll   = false;
-bool     g_sigPickHide  = false;   // pick-to-hide mode
-bool     g_sigPickShow  = false;   // pick-to-show-angle mode
-
+bool     g_sigPickHide  = false;
+bool     g_sigPickShow  = false;
 bool     g_sigHide[1024][4];
 bool     g_sigHideInit  = false;
-
 datetime g_sigAlertTs[1024][4];
 datetime g_sigMultiTs[1024];
 bool     g_sigAlertInit = false;
 
 //══════════════════════════════════════════════════════════════════
-//  Color helpers
+//  Color helpers — calm palette
 //══════════════════════════════════════════════════════════════════
 color Sig_Blend(color base, color mix, int pct)
 {
    pct = MathMax(0, MathMin(100, pct));
-   int b = (((int)base)&255)*(100-pct)/100 + (((int)mix)&255)*pct/100;
-   int g = ((((int)base)>>8)&255)*(100-pct)/100 + ((((int)mix)>>8)&255)*pct/100;
+   int b = (((int)base)&255)*(100-pct)/100       + (((int)mix)&255)*pct/100;
+   int g = ((((int)base)>>8)&255)*(100-pct)/100  + ((((int)mix)>>8)&255)*pct/100;
    int r = ((((int)base)>>16)&255)*(100-pct)/100 + ((((int)mix)>>16)&255)*pct/100;
    return (color)(b|(g<<8)|(r<<16));
 }
-color Sig_ColEntry()  { return clrDeepSkyBlue; }
-color Sig_ColSL()     { return Sig_Blend(clrTomato,    clrBlack, 45); }
-color Sig_ColTP1()    { return Sig_Blend(clrLimeGreen, clrBlack, 25); }
-color Sig_ColTP2()    { return Sig_Blend(clrLimeGreen, clrBlack, 45); }
-color Sig_ColTP3()    { return Sig_Blend(clrLimeGreen, clrBlack, 60); }
-color Sig_ColHit()    { return Sig_Blend(clrAqua,      clrBlack, 20); }
-color Sig_ColFail()   { return Sig_Blend(clrRed,       clrBlack, 15); }
-color Sig_ColPend()   { return clrGold; }
-color Sig_ColGood()   { return clrLimeGreen; }
-color Sig_ColBad()    { return clrTomato; }
-color Sig_ColPrev()   { return (color)C'60,55,20'; }  // dark gold for preview bg
+color Sig_BuySlBg()   { return (color)C'18,50,92';  }  // dark steel blue (SL/BUY)
+color Sig_SellSlBg()  { return (color)C'84,20,38';  }  // dark crimson   (SL/SELL)
+color Sig_TpBg()      { return (color)C'14,72,38';  }  // dark green     (TP zones)
+color Sig_TpHitBg()   { return (color)C'14,82,68';  }  // dark teal      (TP hit)
+color Sig_FailBg()    { return (color)C'52,12,12';  }  // very dark red  (SL hit)
+color Sig_PrevBg()    { return (color)C'44,40,10';  }  // dark gold      (preview outline)
+color Sig_EntryLine() { return (color)C'120,160,210'; } // soft blue line (entry)
 
 //══════════════════════════════════════════════════════════════════
-//  Rating helpers
+//  Strength score and categories
+//  Score = nok[ti] * (p1[ti]/100)  — rewards count AND rate
 //══════════════════════════════════════════════════════════════════
-string Sig_Rating(double p1)
+double Sig_Score(int cidx, int ti)
 {
-   if(p1 >= 65.0) return "***";
-   if(p1 >= 50.0) return "** ";
-   if(p1 >= 35.0) return "~  ";
-   return "x  ";
-}
-color Sig_RatingColor(double p1)
-{
-   if(p1 >= 65.0) return clrLimeGreen;
-   if(p1 >= 50.0) return clrYellow;
-   if(p1 >= 35.0) return clrOrange;
-   return clrTomato;
-}
-bool Sig_IsStrong(double p1) { return (p1 >= InpSigMinHitPct); }
-
-//══════════════════════════════════════════════════════════════════
-//  Duration scaling  (studies on U86400; scale to current unit)
-//══════════════════════════════════════════════════════════════════
-double Sig_ScaleDur(double hours)
-{
-   if(g_unitSeconds <= 0) return hours;
-   return hours * (g_unitSeconds / 86400.0);
+   if(cidx < 0 || cidx >= COMBO_COUNT) return 0.0;
+   return g_combos[cidx].nok[ti] * (g_combos[cidx].p1[ti] / 100.0);
 }
 
-//══════════════════════════════════════════════════════════════════
-//  Object naming
-//══════════════════════════════════════════════════════════════════
-string Sig_N(int ai, int ti, const string tag)
+int Sig_StrengthLevel(double score)
 {
-   return SIG_PFX + IntegerToString(ai) + "_" + IntegerToString(ti) + "_" + tag;
+   if(score >= 25.0) return 6;  // FULL MARGIN
+   if(score >= 17.0) return 5;  // VERY STRONG
+   if(score >= 12.0) return 4;  // STRONG
+   if(score >=  8.0) return 3;  // GOOD
+   if(score >=  5.0) return 2;  // WEAK
+   if(score >=  2.0) return 1;  // VERY WEAK
+   return 0;                     // NO TRADE
 }
-string Sig_PN(const string tag) { return SIG_PFX + "PANEL_" + tag; }
-string Sig_BN(const string tag) { return SIG_PFX + "BTN_"   + tag; }
+
+string Sig_StrengthStr(int lvl)
+{
+   switch(lvl) {
+      case 6: return "FULL MARGIN";
+      case 5: return "VERY STRONG";
+      case 4: return "STRONG";
+      case 3: return "GOOD";
+      case 2: return "WEAK";
+      case 1: return "VERY WEAK";
+   }
+   return "NO TRADE";
+}
+
+color Sig_StrengthColor(int lvl)
+{
+   switch(lvl) {
+      case 6: return (color)C'0,215,110';    // emerald
+      case 5: return (color)C'78,195,78';    // green
+      case 4: return (color)C'195,185,52';   // gold
+      case 3: return (color)C'195,132,38';   // amber
+      case 2: return (color)C'132,132,132';  // gray
+      case 1: return (color)C'88,88,88';     // dark gray
+   }
+   return (color)C'58,58,58';
+}
+
+bool Sig_IsQualified(int cidx, int ti)
+{
+   if(cidx < 0) return false;
+   return (g_combos[cidx].p1[ti]  >= InpSigMinHitPct     &&
+           (double)g_combos[cidx].nt[ti]  >= InpSigMinTouchCount  &&
+           (double)g_combos[cidx].nok[ti] >= InpSigMinSuccessCount);
+}
 
 //══════════════════════════════════════════════════════════════════
-//  Primitive drawing
+//  Drawing primitives
 //══════════════════════════════════════════════════════════════════
 void Sig_DelObj(const string nm)
-{
-   if(ObjectFind(0, nm) >= 0) ObjectDelete(0, nm);
-}
+{ if(ObjectFind(0,nm)>=0) ObjectDelete(0,nm); }
 
 void Sig_Rect(const string nm, datetime t1, double p1, datetime t2, double p2,
               color c, bool fill, int style=STYLE_SOLID)
 {
-   if(ObjectFind(0, nm) < 0) ObjectCreate(0, nm, OBJ_RECTANGLE, 0, t1, p1, t2, p2);
-   ObjectSetInteger(0, nm, OBJPROP_TIME1,  t1);
-   ObjectSetDouble (0, nm, OBJPROP_PRICE1, p1);
-   ObjectSetInteger(0, nm, OBJPROP_TIME2,  t2);
-   ObjectSetDouble (0, nm, OBJPROP_PRICE2, p2);
-   ObjectSetInteger(0, nm, OBJPROP_COLOR,  c);
-   ObjectSetInteger(0, nm, OBJPROP_STYLE,  style);
-   ObjectSetInteger(0, nm, OBJPROP_FILL,   fill);
-   ObjectSetInteger(0, nm, OBJPROP_WIDTH,  1);
-   ObjectSetInteger(0, nm, OBJPROP_BACK,   false);
-   ObjectSetInteger(0, nm, OBJPROP_SELECTABLE, true);
-   ObjectSetInteger(0, nm, OBJPROP_HIDDEN,      false);
-   ObjectSetInteger(0, nm, OBJPROP_TIMEFRAMES,  OBJ_ALL_PERIODS);
+   if(ObjectFind(0,nm)<0) ObjectCreate(0,nm,OBJ_RECTANGLE,0,t1,p1,t2,p2);
+   ObjectSetInteger(0,nm,OBJPROP_TIME1,  t1); ObjectSetDouble(0,nm,OBJPROP_PRICE1,p1);
+   ObjectSetInteger(0,nm,OBJPROP_TIME2,  t2); ObjectSetDouble(0,nm,OBJPROP_PRICE2,p2);
+   ObjectSetInteger(0,nm,OBJPROP_COLOR,  c);  ObjectSetInteger(0,nm,OBJPROP_STYLE, style);
+   ObjectSetInteger(0,nm,OBJPROP_FILL,   fill);ObjectSetInteger(0,nm,OBJPROP_WIDTH,1);
+   ObjectSetInteger(0,nm,OBJPROP_BACK,   false);
+   ObjectSetInteger(0,nm,OBJPROP_SELECTABLE,true);
+   ObjectSetInteger(0,nm,OBJPROP_TIMEFRAMES,OBJ_ALL_PERIODS);
 }
 
 void Sig_HLine(const string nm, datetime t1, datetime t2, double price, color c, int w=1)
 {
-   if(ObjectFind(0, nm) < 0) ObjectCreate(0, nm, OBJ_TREND, 0, t1, price, t2, price);
-   ObjectSetInteger(0, nm, OBJPROP_TIME1,  t1);
-   ObjectSetDouble (0, nm, OBJPROP_PRICE1, price);
-   ObjectSetInteger(0, nm, OBJPROP_TIME2,  t2);
-   ObjectSetDouble (0, nm, OBJPROP_PRICE2, price);
-   ObjectSetInteger(0, nm, OBJPROP_COLOR,  c);
-   ObjectSetInteger(0, nm, OBJPROP_STYLE,  STYLE_SOLID);
-   ObjectSetInteger(0, nm, OBJPROP_WIDTH,  w);
-   ObjectSetInteger(0, nm, OBJPROP_RAY_RIGHT,   false);
-   ObjectSetInteger(0, nm, OBJPROP_SELECTABLE,  false);
-   ObjectSetInteger(0, nm, OBJPROP_TIMEFRAMES,  OBJ_ALL_PERIODS);
+   if(ObjectFind(0,nm)<0) ObjectCreate(0,nm,OBJ_TREND,0,t1,price,t2,price);
+   ObjectSetInteger(0,nm,OBJPROP_TIME1,  t1); ObjectSetDouble(0,nm,OBJPROP_PRICE1,price);
+   ObjectSetInteger(0,nm,OBJPROP_TIME2,  t2); ObjectSetDouble(0,nm,OBJPROP_PRICE2,price);
+   ObjectSetInteger(0,nm,OBJPROP_COLOR,  c);  ObjectSetInteger(0,nm,OBJPROP_WIDTH, w);
+   ObjectSetInteger(0,nm,OBJPROP_STYLE,  STYLE_SOLID);
+   ObjectSetInteger(0,nm,OBJPROP_RAY_RIGHT,false);
+   ObjectSetInteger(0,nm,OBJPROP_SELECTABLE,false);
+   ObjectSetInteger(0,nm,OBJPROP_TIMEFRAMES,OBJ_ALL_PERIODS);
 }
 
-void Sig_Text(const string nm, datetime t, double p, const string txt, color c, int sz, int anchor)
+void Sig_Text(const string nm, datetime t, double p, const string txt,
+              color c, int sz, int anchor=ANCHOR_CENTER)
 {
-   if(ObjectFind(0, nm) < 0) ObjectCreate(0, nm, OBJ_TEXT, 0, t, p);
-   ObjectSetInteger(0, nm, OBJPROP_TIME1,   t);
-   ObjectSetDouble (0, nm, OBJPROP_PRICE1,  p);
-   ObjectSetString (0, nm, OBJPROP_TEXT,    txt);
-   ObjectSetInteger(0, nm, OBJPROP_COLOR,   c);
-   ObjectSetInteger(0, nm, OBJPROP_FONTSIZE,sz);
-   ObjectSetString (0, nm, OBJPROP_FONT,   "Consolas");
-   ObjectSetInteger(0, nm, OBJPROP_ANCHOR,  anchor);
-   ObjectSetInteger(0, nm, OBJPROP_SELECTABLE,  false);
-   ObjectSetInteger(0, nm, OBJPROP_TIMEFRAMES,  OBJ_ALL_PERIODS);
+   if(ObjectFind(0,nm)<0) ObjectCreate(0,nm,OBJ_TEXT,0,t,p);
+   ObjectSetInteger(0,nm,OBJPROP_TIME1,   t);   ObjectSetDouble(0,nm,OBJPROP_PRICE1,p);
+   ObjectSetString (0,nm,OBJPROP_TEXT,    txt);  ObjectSetInteger(0,nm,OBJPROP_COLOR, c);
+   ObjectSetInteger(0,nm,OBJPROP_FONTSIZE,sz);   ObjectSetString (0,nm,OBJPROP_FONT,"Consolas");
+   ObjectSetInteger(0,nm,OBJPROP_ANCHOR,  anchor);
+   ObjectSetInteger(0,nm,OBJPROP_SELECTABLE,false);
+   ObjectSetInteger(0,nm,OBJPROP_TIMEFRAMES,OBJ_ALL_PERIODS);
 }
 
-void Sig_RLabel(const string nm, datetime t, double p, const string txt, color c)
-{
-   Sig_Text(nm, t, p, txt, c, InpSigFontSize, ANCHOR_LEFT);
-}
-
-void Sig_CLabel(const string nm, datetime t, double p, const string txt, color c)
-{
-   Sig_Text(nm, t, p, txt, c, InpSigFontSize+1, ANCHOR_CENTER);
-}
-
-//─── Screen-anchored label (panel) ─────────────────────────────────
 void Sig_SLabel(const string nm, int x, int y, const string txt, color c,
-                int sz, int corner, int anchor=ANCHOR_LEFT_UPPER)
+                int sz, int corner=CORNER_LEFT_UPPER, int anchor=ANCHOR_LEFT_UPPER)
 {
-   if(ObjectFind(0, nm) < 0) ObjectCreate(0, nm, OBJ_LABEL, 0, 0, 0);
-   ObjectSetInteger(0, nm, OBJPROP_CORNER,    corner);
-   ObjectSetInteger(0, nm, OBJPROP_XDISTANCE, x);
-   ObjectSetInteger(0, nm, OBJPROP_YDISTANCE, y);
-   ObjectSetString (0, nm, OBJPROP_TEXT,      txt);
-   ObjectSetInteger(0, nm, OBJPROP_COLOR,     c);
-   ObjectSetInteger(0, nm, OBJPROP_FONTSIZE,  sz);
-   ObjectSetString (0, nm, OBJPROP_FONT,     "Consolas");
-   ObjectSetInteger(0, nm, OBJPROP_ANCHOR,    anchor);
-   ObjectSetInteger(0, nm, OBJPROP_SELECTABLE,false);
-   ObjectSetInteger(0, nm, OBJPROP_BACK,      false);
+   if(ObjectFind(0,nm)<0) ObjectCreate(0,nm,OBJ_LABEL,0,0,0);
+   ObjectSetInteger(0,nm,OBJPROP_CORNER,    corner);
+   ObjectSetInteger(0,nm,OBJPROP_XDISTANCE, x);
+   ObjectSetInteger(0,nm,OBJPROP_YDISTANCE, y);
+   ObjectSetString (0,nm,OBJPROP_TEXT,      txt);
+   ObjectSetInteger(0,nm,OBJPROP_COLOR,     c);
+   ObjectSetInteger(0,nm,OBJPROP_FONTSIZE,  sz);
+   ObjectSetString (0,nm,OBJPROP_FONT,     "Consolas");
+   ObjectSetInteger(0,nm,OBJPROP_ANCHOR,    anchor);
+   ObjectSetInteger(0,nm,OBJPROP_SELECTABLE,false);
+   ObjectSetInteger(0,nm,OBJPROP_BACK,      false);
 }
 
-void Sig_SRect(const string nm, int x, int y, int w, int h, color c, int corner)
+void Sig_SRect(const string nm, int x, int y, int w, int h,
+               color c, int corner=CORNER_LEFT_UPPER)
 {
-   if(ObjectFind(0, nm) < 0) ObjectCreate(0, nm, OBJ_RECTANGLE_LABEL, 0, 0, 0);
-   ObjectSetInteger(0, nm, OBJPROP_CORNER,    corner);
-   ObjectSetInteger(0, nm, OBJPROP_XDISTANCE, x);
-   ObjectSetInteger(0, nm, OBJPROP_YDISTANCE, y);
-   ObjectSetInteger(0, nm, OBJPROP_XSIZE,     w);
-   ObjectSetInteger(0, nm, OBJPROP_YSIZE,     h);
-   ObjectSetInteger(0, nm, OBJPROP_BGCOLOR,   c);
-   ObjectSetInteger(0, nm, OBJPROP_BORDER_TYPE, BORDER_FLAT);
-   ObjectSetInteger(0, nm, OBJPROP_COLOR,     Sig_Blend(c, clrSilver, 30));
-   ObjectSetInteger(0, nm, OBJPROP_SELECTABLE,false);
-   ObjectSetInteger(0, nm, OBJPROP_BACK,      false);
+   if(ObjectFind(0,nm)<0) ObjectCreate(0,nm,OBJ_RECTANGLE_LABEL,0,0,0);
+   ObjectSetInteger(0,nm,OBJPROP_CORNER,      corner);
+   ObjectSetInteger(0,nm,OBJPROP_XDISTANCE,   x);
+   ObjectSetInteger(0,nm,OBJPROP_YDISTANCE,   y);
+   ObjectSetInteger(0,nm,OBJPROP_XSIZE,       w);
+   ObjectSetInteger(0,nm,OBJPROP_YSIZE,       h);
+   ObjectSetInteger(0,nm,OBJPROP_BGCOLOR,     c);
+   ObjectSetInteger(0,nm,OBJPROP_BORDER_TYPE, BORDER_FLAT);
+   ObjectSetInteger(0,nm,OBJPROP_COLOR,       Sig_Blend(c,clrSilver,25));
+   ObjectSetInteger(0,nm,OBJPROP_SELECTABLE,  false);
+   ObjectSetInteger(0,nm,OBJPROP_BACK,        false);
 }
 
 void Sig_SBtn(const string nm, int x, int y, int w, int h,
-              const string txt, color bg, color tc, int corner, bool pressed=false)
+              const string txt, color bg, color tc, int corner=CORNER_LEFT_UPPER)
 {
-   if(ObjectFind(0, nm) < 0) ObjectCreate(0, nm, OBJ_BUTTON, 0, 0, 0);
-   ObjectSetInteger(0, nm, OBJPROP_CORNER,    corner);
-   ObjectSetInteger(0, nm, OBJPROP_XDISTANCE, x);
-   ObjectSetInteger(0, nm, OBJPROP_YDISTANCE, y);
-   ObjectSetInteger(0, nm, OBJPROP_XSIZE,     w);
-   ObjectSetInteger(0, nm, OBJPROP_YSIZE,     h);
-   ObjectSetString (0, nm, OBJPROP_TEXT,      txt);
-   ObjectSetInteger(0, nm, OBJPROP_BGCOLOR,   bg);
-   ObjectSetInteger(0, nm, OBJPROP_COLOR,     tc);
-   ObjectSetInteger(0, nm, OBJPROP_FONTSIZE,  8);
-   ObjectSetString (0, nm, OBJPROP_FONT,     "Consolas");
-   ObjectSetInteger(0, nm, OBJPROP_STATE,     pressed);
-   ObjectSetInteger(0, nm, OBJPROP_SELECTABLE,false);
-   ObjectSetInteger(0, nm, OBJPROP_BACK,      false);
+   if(ObjectFind(0,nm)<0) ObjectCreate(0,nm,OBJ_BUTTON,0,0,0);
+   ObjectSetInteger(0,nm,OBJPROP_CORNER,    corner);
+   ObjectSetInteger(0,nm,OBJPROP_XDISTANCE, x);
+   ObjectSetInteger(0,nm,OBJPROP_YDISTANCE, y);
+   ObjectSetInteger(0,nm,OBJPROP_XSIZE,     w);
+   ObjectSetInteger(0,nm,OBJPROP_YSIZE,     h);
+   ObjectSetString (0,nm,OBJPROP_TEXT,      txt);
+   ObjectSetInteger(0,nm,OBJPROP_BGCOLOR,   bg);
+   ObjectSetInteger(0,nm,OBJPROP_COLOR,     tc);
+   ObjectSetInteger(0,nm,OBJPROP_FONTSIZE,  8);
+   ObjectSetString (0,nm,OBJPROP_FONT,     "Consolas");
+   ObjectSetInteger(0,nm,OBJPROP_STATE,     false);
+   ObjectSetInteger(0,nm,OBJPROP_SELECTABLE,false);
+   ObjectSetInteger(0,nm,OBJPROP_BACK,      false);
 }
 
 //══════════════════════════════════════════════════════════════════
-//  Zone cleanup
+//  Object naming + zone cleanup
 //══════════════════════════════════════════════════════════════════
+string Sig_N(int ai, int ti, const string tag)
+{ return SIG_PFX+IntegerToString(ai)+"_"+IntegerToString(ti)+"_"+tag; }
+string Sig_PN(const string tag) { return SIG_PFX+"PANEL_"+tag; }
+string Sig_BN(const string tag) { return SIG_PFX+"BTN_"+tag;   }
+
 void Sig_DeleteZone(int ai, int ti)
 {
-   string tags[] = {"SL","TP1","TP2","TP3","ELINE","LBL_E","LBL_SL","LBL_T1","LBL_T2","LBL_T3","INFO",
-                    "PREV_SL","PREV_TP","PREV_INFO"};
-   for(int i=0; i<ArraySize(tags); i++) Sig_DelObj(Sig_N(ai,ti,tags[i]));
+   string tags[] = {"SL","TP1","TP2","TP3","ELINE","SL_LBL","PREV_SL","PREV_TP","PREV_INFO"};
+   for(int i=0;i<ArraySize(tags);i++) Sig_DelObj(Sig_N(ai,ti,tags[i]));
 }
 
 //══════════════════════════════════════════════════════════════════
@@ -256,638 +239,494 @@ void Sig_DeleteZone(int ai, int ti)
 //══════════════════════════════════════════════════════════════════
 string Sig_TestName(int ti)
 {
-   switch(ti) {
-      case 0: return "U1X1";
-      case 1: return "U2X1";
-      case 2: return "DLX1";
-      case 3: return "DRX1";
-   }
+   switch(ti){case 0:return "U1X1";case 1:return "U2X1";case 2:return "DLX1";case 3:return "DRX1";}
    return "???";
 }
-
 double Sig_PipSz()
 {
-   int d = (int)MarketInfo(Symbol(), MODE_DIGITS);
+   int d=(int)MarketInfo(Symbol(),MODE_DIGITS);
    return (d==3||d==5) ? Point*10.0 : Point;
 }
-
+double Sig_ScaleDur(double hours)
+{
+   if(g_unitSeconds<=0) return hours;
+   return hours*(g_unitSeconds/86400.0);
+}
 string Sig_PrevClsLtr(int ai)
 {
-   datetime best = 0;
-   int bestAi = -1;
-   for(int i=0; i<g_monCount; i++) {
-      if(i==ai || !g_mon[i].valid) continue;
-      if(g_mon[i].formTime < g_mon[ai].formTime && g_mon[i].formTime > best) {
-         best = g_mon[i].formTime;
-         bestAi = i;
-      }
+   datetime best=0; int bestAi=-1;
+   for(int i=0;i<g_monCount;i++) {
+      if(i==ai||!g_mon[i].valid) continue;
+      if(g_mon[i].formTime<g_mon[ai].formTime && g_mon[i].formTime>best)
+         { best=g_mon[i].formTime; bestAi=i; }
    }
-   if(bestAi < 0) return "X";
-   string c = g_mon[bestAi].cls;
-   return (StringLen(c) >= 2 ? StringSubstr(c,1,1) : "X");
+   if(bestAi<0) return "X";
+   string c=g_mon[bestAi].cls;
+   return (StringLen(c)>=2 ? StringSubstr(c,1,1) : "X");
 }
-
-double Sig_Lots(double entry, double slPrice, int pct)
-{
-   if(pct <= 0) return 0.0;
-   double spd  = InpSigSpreadPts * Point;
-   double dist = MathAbs(entry - slPrice) + spd;
-   if(dist <= 0.0) return 0.0;
-   double tkSz  = MarketInfo(Symbol(), MODE_TICKSIZE);  if(tkSz<=0) tkSz=Point;
-   double tkVal = MarketInfo(Symbol(), MODE_TICKVALUE); if(tkVal<=0) return 0.0;
-   double lossPerLot = (dist/tkSz)*tkVal;
-   if(lossPerLot<=0) return 0.0;
-   double lots = (InpSigRiskMoney * pct / 100.0) / lossPerLot;
-   double step = MarketInfo(Symbol(), MODE_LOTSTEP); if(step<=0) step=0.01;
-   lots = MathFloor(lots/step)*step;
-   double mn = MarketInfo(Symbol(), MODE_MINLOT);
-   double mx = MarketInfo(Symbol(), MODE_MAXLOT);
-   return NormalizeDouble(MathMax(mn, MathMin(mx, lots)), 2);
-}
-
-double Sig_LossUSD(double entry, double slPrice, double lots)
-{
-   double spd  = InpSigSpreadPts * Point;
-   double dist = MathAbs(entry - slPrice) + spd;
-   double tkSz  = MarketInfo(Symbol(), MODE_TICKSIZE);  if(tkSz<=0) tkSz=Point;
-   double tkVal = MarketInfo(Symbol(), MODE_TICKVALUE); if(tkVal<=0) return 0.0;
-   return lots * (dist/tkSz) * tkVal;
-}
-
-//══════════════════════════════════════════════════════════════════
-//  Zone visibility check (respects hide flags + global toggle)
-//══════════════════════════════════════════════════════════════════
 bool Sig_IsVisible(int ai, int ti)
 {
    if(g_sigHideAll) return false;
-   if(ai < 1024 && ti < 4 && g_sigHide[ai][ti]) return false;
+   if(ai<1024 && ti<4 && g_sigHide[ai][ti]) return false;
    return true;
 }
-
-//══════════════════════════════════════════════════════════════════
-//  Anti-overlap: time offset for same-angle tests
-//══════════════════════════════════════════════════════════════════
 datetime Sig_ZoneStart(datetime base, int ti)
-{
-   // Stagger each test by ti × 1/5 unit so they don't stack on the same pixel column
-   int step = g_unitSeconds / 5;
-   return base + (datetime)(ti * step);
-}
+{ return base+(datetime)(ti*(g_unitSeconds/5)); }
 
 //══════════════════════════════════════════════════════════════════
-//  Draw one complete trade zone (actual touch)
+//  Draw trade zone — only SL label with code+class+strength
 //══════════════════════════════════════════════════════════════════
-bool Sig_DrawZone(int ai, int ti, int cidx, string code, double p1val, bool isStrong)
+bool Sig_DrawZone(int ai, int ti, string code, string clsL,
+                  double score, int lvl, bool isBuy)
 {
-   int react = g_mon[ai].test[ti].react[0];
-   bool isPending = (react == MON_REACT_PENDING);
-   bool bounced   = (react == MON_REACT_BOUNCE);
-   bool broke     = (react == MON_REACT_BREAK);
+   int  react    = g_mon[ai].test[ti].react[0];
+   bool isPending= (react==MON_REACT_PENDING);
+   bool bounced  = (react==MON_REACT_BOUNCE);
+   bool broke    = (react==MON_REACT_BREAK);
 
    if(isPending && !InpSigShowPending)  return false;
    if(!isPending && !InpSigShowHistory) return false;
 
-   double away   = g_mon[ai].test[ti].away;
-   double anchor = g_mon[ai].test[ti].anchor;
-   double L      = g_mon[ai].L;
-   double B      = g_mon[ai].B;
-   double entry  = anchor + L * away;
-   double sl     = entry  + B * away;
-   double tp1    = g_mon[ai].test[ti].tp[0];
-   double tp2    = g_mon[ai].test[ti].tp[1];
-   int    nTP    = g_mon[ai].test[ti].nTP;
-   double tp3    = (nTP >= 3 ? g_mon[ai].test[ti].tp[2] : 0.0);
+   double away  = g_mon[ai].test[ti].away;
+   double anchor= g_mon[ai].test[ti].anchor;
+   double L     = g_mon[ai].L;
+   double B     = g_mon[ai].B;
+   double entry = anchor + L * away;
+   double sl    = entry  + B * away;
+   double tp1   = g_mon[ai].test[ti].tp[0];
+   double tp2   = g_mon[ai].test[ti].tp[1];
+   int    nTP   = g_mon[ai].test[ti].nTP;
+   double tp3   = (nTP>=3 ? g_mon[ai].test[ti].tp[2] : 0.0);
 
    datetime touchT = g_mon[ai].test[ti].touchTime;
    datetime tL = Sig_ZoneStart(touchT, ti);
    datetime tR = tL + (datetime)g_unitSeconds;
 
-   //── Colors ──────────────────────────────────────────────────────
-   color cSL = broke ? Sig_ColFail() : Sig_ColSL();
-   if(bounced) cSL = Sig_Blend(cSL, clrBlack, 35);
+   bool h1=g_mon[ai].test[ti].tpHit[0];
+   bool h2=g_mon[ai].test[ti].tpHit[1];
+   bool h3=g_mon[ai].test[ti].tpHit[2];
 
-   bool h1 = g_mon[ai].test[ti].tpHit[0];
-   bool h2 = g_mon[ai].test[ti].tpHit[1];
-   bool h3 = g_mon[ai].test[ti].tpHit[2];
-   color cTP1 = h1 ? Sig_ColHit() : (broke ? Sig_Blend(Sig_ColTP1(),clrBlack,55) : Sig_ColTP1());
-   color cTP2 = h2 ? Sig_ColHit() : (broke ? Sig_Blend(Sig_ColTP2(),clrBlack,55) : Sig_ColTP2());
-   color cTP3 = h3 ? Sig_ColHit() : (broke ? Sig_Blend(Sig_ColTP3(),clrBlack,55) : Sig_ColTP3());
+   //── Zone bg colors ─────────────────────────────────────────────
+   color cSL;
+   if(broke)        cSL = Sig_FailBg();
+   else if(isBuy)   cSL = Sig_BuySlBg();
+   else             cSL = Sig_SellSlBg();
+   if(bounced)      cSL = Sig_Blend(cSL, clrBlack, 30);
 
-   //── Rectangles ──────────────────────────────────────────────────
+   color cTP1 = h1 ? Sig_TpHitBg() : (broke ? Sig_Blend(Sig_TpBg(),clrBlack,55) : Sig_TpBg());
+   color cTP2 = h2 ? Sig_TpHitBg() : (broke ? Sig_Blend(Sig_TpBg(),clrBlack,60) : Sig_Blend(Sig_TpBg(),clrBlack,10));
+   color cTP3 = h3 ? Sig_TpHitBg() : (broke ? Sig_Blend(Sig_TpBg(),clrBlack,65) : Sig_Blend(Sig_TpBg(),clrBlack,18));
+
+   //── Draw rectangles ────────────────────────────────────────────
    Sig_Rect(Sig_N(ai,ti,"SL"),  tL, entry, tR, sl,  cSL,  InpSigFill);
    Sig_Rect(Sig_N(ai,ti,"TP1"), tL, entry, tR, tp1, cTP1, InpSigFill);
-   if(tp2 != 0.0) Sig_Rect(Sig_N(ai,ti,"TP2"), tL, entry, tR, tp2, cTP2, InpSigFill);
-   else           Sig_DelObj(Sig_N(ai,ti,"TP2"));
-   if(tp3 != 0.0) Sig_Rect(Sig_N(ai,ti,"TP3"), tL, entry, tR, tp3, cTP3, InpSigFill);
-   else           Sig_DelObj(Sig_N(ai,ti,"TP3"));
+   if(tp2!=0.0) Sig_Rect(Sig_N(ai,ti,"TP2"),tL,entry,tR,tp2,cTP2,InpSigFill);
+   else         Sig_DelObj(Sig_N(ai,ti,"TP2"));
+   if(tp3!=0.0) Sig_Rect(Sig_N(ai,ti,"TP3"),tL,entry,tR,tp3,cTP3,InpSigFill);
+   else         Sig_DelObj(Sig_N(ai,ti,"TP3"));
 
-   Sig_HLine(Sig_N(ai,ti,"ELINE"), tL, tR, entry, Sig_ColEntry(), 2);
+   //── Entry line ─────────────────────────────────────────────────
+   Sig_HLine(Sig_N(ai,ti,"ELINE"), tL, tR, entry, Sig_EntryLine(), 1);
 
-   //── Labels (right edge → text runs rightward) ───────────────────
-   double lots1   = Sig_Lots(entry, sl, InpSigTP1Pct);
-   double lots2   = Sig_Lots(entry, sl, InpSigTP2Pct);
-   double lots3   = Sig_Lots(entry, sl, InpSigTP3Pct);
-   double lossUSD = Sig_LossUSD(entry, sl, lots1+lots2+lots3);
-   double pip     = Sig_PipSz();
-   double slPips  = (pip>0 ? MathAbs(entry-sl)/pip : 0);
-
-   Sig_RLabel(Sig_N(ai,ti,"LBL_E"), tR, entry,
-      StringFormat("Entry %s  [%.2f+%.2f+%.2f]L", DoubleToString(entry,Digits), lots1, lots2, lots3),
-      Sig_ColEntry());
-
-   Sig_RLabel(Sig_N(ai,ti,"LBL_SL"), tR, sl,
-      StringFormat("SL %s  -$%.0f  %.0fp", DoubleToString(sl,Digits), lossUSD, slPips), cSL);
-
-   double d1s = Sig_ScaleDur(cidx>=0 ? g_combos[cidx].d1[ti] : 0.0);
-   Sig_RLabel(Sig_N(ai,ti,"LBL_T1"), tR, tp1,
-      StringFormat("TP1 %s  %.0f%%  %s%s", DoubleToString(tp1,Digits),
-                   p1val, ComboDurStr(d1s), h1?" v":""), cTP1);
-
-   if(tp2 != 0.0) {
-      double p2v = (cidx>=0 ? g_combos[cidx].p2[ti] : 0.0);
-      double d2s = Sig_ScaleDur(cidx>=0 ? g_combos[cidx].d2[ti] : 0.0);
-      Sig_RLabel(Sig_N(ai,ti,"LBL_T2"), tR, tp2,
-         StringFormat("TP2 %s  %.0f%%*  %s%s", DoubleToString(tp2,Digits),
-                      p2v, ComboDurStr(d2s), h2?" v":""), cTP2);
-   } else Sig_DelObj(Sig_N(ai,ti,"LBL_T2"));
-
-   if(tp3 != 0.0) {
-      double p3v = (cidx>=0 ? g_combos[cidx].p3[ti] : 0.0);
-      double d3s = Sig_ScaleDur(cidx>=0 ? g_combos[cidx].d3[ti] : 0.0);
-      Sig_RLabel(Sig_N(ai,ti,"LBL_T3"), tR, tp3,
-         StringFormat("TP3 %s  %.0f%%*  %s%s", DoubleToString(tp3,Digits),
-                      p3v, ComboDurStr(d3s), h3?" v":""), cTP3);
-   } else Sig_DelObj(Sig_N(ai,ti,"LBL_T3"));
-
-   //── Center info label ───────────────────────────────────────────
-   string rat   = Sig_Rating(p1val);
-   color  ratC  = Sig_RatingColor(p1val);
-   string statS = isPending ? "PENDING" : (bounced ? "BOUNCE v" : "BREAK x");
-   color  statC = isPending ? Sig_ColPend() : (bounced ? Sig_ColGood() : Sig_ColBad());
-   double midP  = (entry + (broke ? sl : tp1)) / 2.0;
-   datetime midT = tL + (datetime)((tR-tL)/2);
-   string line2 = (cidx>=0)
-      ? StringFormat("%s | %s: %.0f%%  n=%d", Sig_TestName(ti), rat, p1val, g_combos[cidx].n_ang)
-      : StringFormat("%s | %s: n/a", Sig_TestName(ti), rat);
-
-   Sig_CLabel(Sig_N(ai,ti,"INFO"), midT, midP,
-              code + "  " + statS + "\n" + line2, statC);
-
+   //── Single WHITE label inside SL zone only ─────────────────────
+   //   SL hit → delete text (keep rectangles dimmed)
+   if(broke) {
+      Sig_DelObj(Sig_N(ai,ti,"SL_LBL"));
+   } else {
+      double   slMid = (entry + sl) / 2.0;
+      datetime lblT  = tL + (datetime)((tR-tL)/2);
+      string   lblTxt= code + "  Z" + clsL + "  " + Sig_StrengthStr(lvl);
+      Sig_Text(Sig_N(ai,ti,"SL_LBL"), lblT, slMid, lblTxt,
+               clrWhite, InpSigFontSize, ANCHOR_CENTER);
+   }
    return true;
 }
 
 //══════════════════════════════════════════════════════════════════
-//  Draw anticipatory preview zone (before touch — at formTime)
+//  Draw anticipatory preview (dashed, before price arrives)
 //══════════════════════════════════════════════════════════════════
-void Sig_DrawPreview(int ai, int ti, int cidx, string code, double p1val)
+void Sig_DrawPreview(int ai, int ti, string code, string clsL, int lvl)
 {
-   if(!InpSigShowPreview) { Sig_DelObj(Sig_N(ai,ti,"PREV_SL")); Sig_DelObj(Sig_N(ai,ti,"PREV_TP")); Sig_DelObj(Sig_N(ai,ti,"PREV_INFO")); return; }
+   if(!InpSigShowPreview) {
+      Sig_DelObj(Sig_N(ai,ti,"PREV_SL"));
+      Sig_DelObj(Sig_N(ai,ti,"PREV_TP"));
+      Sig_DelObj(Sig_N(ai,ti,"PREV_INFO"));
+      return;
+   }
+   double away  = g_mon[ai].test[ti].away;
+   double entry = g_mon[ai].test[ti].anchor + g_mon[ai].L * away;
+   double sl    = entry + g_mon[ai].B * away;
+   double tp1   = g_mon[ai].test[ti].tp[0];
 
-   double away   = g_mon[ai].test[ti].away;
-   double anchor = g_mon[ai].test[ti].anchor;
-   double L      = g_mon[ai].L;
-   double B      = g_mon[ai].B;
-   double entry  = anchor + L * away;
-   double sl     = entry  + B * away;
-   double tp1    = g_mon[ai].test[ti].tp[0];
-
-   // Position at formTime, staggered
-   datetime tL = Sig_ZoneStart(g_mon[ai].formTime, ti);
-   datetime tR = tL + (datetime)g_unitSeconds;
-
-   // Use dashed style + dimmer colors to distinguish from real zones
-   color cPrev = Sig_ColPrev();
-   color cGr   = Sig_Blend(Sig_ColTP1(), clrBlack, 60);
-
-   Sig_Rect(Sig_N(ai,ti,"PREV_SL"), tL, entry, tR, sl,  cPrev, false, STYLE_DASH);
-   Sig_Rect(Sig_N(ai,ti,"PREV_TP"), tL, entry, tR, tp1, cGr,   false, STYLE_DASH);
-
-   double midP  = (entry + tp1) / 2.0;
+   datetime tL   = Sig_ZoneStart(g_mon[ai].formTime, ti);
+   datetime tR   = tL + (datetime)g_unitSeconds;
    datetime midT = tL + (datetime)((tR-tL)/2);
-   string line2 = (cidx>=0)
-      ? StringFormat("%s | %.0f%%  n=%d", Sig_TestName(ti), p1val, g_combos[cidx].n_ang)
-      : StringFormat("%s", Sig_TestName(ti));
+   double   midP = (entry + tp1) / 2.0;
 
-   Sig_CLabel(Sig_N(ai,ti,"PREV_INFO"), midT, midP,
-              code + "  [PREVIEW]\n" + line2, Sig_ColPend());
+   Sig_Rect(Sig_N(ai,ti,"PREV_SL"), tL, entry, tR, sl,  Sig_PrevBg(),
+            false, STYLE_DASH);
+   Sig_Rect(Sig_N(ai,ti,"PREV_TP"), tL, entry, tR, tp1,
+            Sig_Blend(Sig_TpBg(),clrBlack,58), false, STYLE_DASH);
+
+   string lblTxt = "[" + Sig_StrengthStr(lvl) + "]  " + code + " Z" + clsL + "  PREVIEW";
+   Sig_Text(Sig_N(ai,ti,"PREV_INFO"), midT, midP, lblTxt,
+            (color)C'175,162,58', InpSigFontSize-1, ANCHOR_CENTER);
 }
 
 //══════════════════════════════════════════════════════════════════
-//  Alert logic
+//  Alerts
 //══════════════════════════════════════════════════════════════════
 void Sig_InitAlerts()
 {
    if(g_sigAlertInit) return;
-   ArrayInitialize(g_sigAlertTs, 0);
-   ArrayInitialize(g_sigMultiTs, 0);
-   g_sigAlertInit = true;
+   ArrayInitialize(g_sigAlertTs,0);
+   ArrayInitialize(g_sigMultiTs,0);
+   g_sigAlertInit=true;
 }
-
-void Sig_CheckTouchAlert(int ai, int ti, string code)
+void Sig_CheckTouchAlert(int ai, int ti, string code, string dir)
 {
    if(!InpSigAlerts || ai>=1024) return;
-   datetime touchT = g_mon[ai].test[ti].touchTime;
+   datetime touchT=g_mon[ai].test[ti].touchTime;
    if(touchT<=0 || g_sigAlertTs[ai][ti]==touchT) return;
-   int react = g_mon[ai].test[ti].react[0];
-   if(react == MON_REACT_PENDING) {
-      g_sigAlertTs[ai][ti] = touchT;
-      double entry = g_mon[ai].test[ti].anchor + g_mon[ai].L * g_mon[ai].test[ti].away;
-      string dir   = (g_mon[ai].dir>0 ? "BUY" : "SELL");
-      Alert(StringFormat("AIB Signal: %s %s @ %s  [%s | %s]",
-                         dir, g_mon[ai].cls, DoubleToString(entry,Digits),
-                         Sig_TestName(ti), code));
-   } else {
-      g_sigAlertTs[ai][ti] = touchT;
-   }
-}
-
-void Sig_CheckMultiAlert(int ai)
-{
-   if(!InpSigAlerts || ai>=1024) return;
-   if(g_sigMultiTs[ai]==g_mon[ai].formTime) return;
-   int active = 0;
-   for(int ti=0; ti<MON_NPTS; ti++)
-      if(g_mon[ai].test[ti].react[0]==MON_REACT_PENDING) active++;
-   if(active >= 2) {
-      g_sigMultiTs[ai] = g_mon[ai].formTime;
-      Alert(StringFormat("AIB Signal: %d tests ACTIVE for %s %s",
-                         active, g_mon[ai].cls, (g_mon[ai].dir>0?"BUY":"SELL")));
+   g_sigAlertTs[ai][ti]=touchT;
+   if(g_mon[ai].test[ti].react[0]==MON_REACT_PENDING) {
+      double entry=g_mon[ai].test[ti].anchor+g_mon[ai].L*g_mon[ai].test[ti].away;
+      Alert("AIB: ",dir," ",g_mon[ai].cls," @ ",DoubleToString(entry,Digits),
+            "  [",Sig_TestName(ti),"|",code,"]");
    }
 }
 
 //══════════════════════════════════════════════════════════════════
-//  Signal Panel — professional screen-anchored overlay
+//  Signal entry struct
 //══════════════════════════════════════════════════════════════════
-
 struct SigEntry {
-   int    ai, ti;
-   string code, testName, dir, rating, status;
-   double p1val;
-   color  rcolor, scolor;
-   bool   isWeak, isPending, isPreview;
-   int    nAng;
+   int    ai, ti, lvl;
+   string code, clsL, testName, dir;
+   double score;
+   bool   isPending;
 };
 
+//══════════════════════════════════════════════════════════════════
+//  Advisory recommendation
+//══════════════════════════════════════════════════════════════════
+string Sig_BuildAdvice(SigEntry &entries[], int eCount)
+{
+   if(eCount==0) return "No qualified signals. Wait for next angle.";
+
+   // Find top pending by score + count directions
+   double topScore=-1; int topIdx=-1;
+   int    pendBuy=0, pendSell=0;
+   for(int i=0;i<eCount;i++) {
+      if(!entries[i].isPending) continue;
+      if(entries[i].score>topScore) { topScore=entries[i].score; topIdx=i; }
+      if(entries[i].dir=="BUY") pendBuy++; else pendSell++;
+   }
+
+   // All resolved — no pending
+   if(topIdx<0) {
+      int bounceN=0, breakN=0;
+      for(int i=0;i<eCount;i++) {
+         int r=g_mon[entries[i].ai].test[entries[i].ti].react[0];
+         if(r==MON_REACT_BOUNCE) bounceN++;
+         if(r==MON_REACT_BREAK)  breakN++;
+      }
+      if(bounceN>0) return StringFormat("%d signal(s) hit target. Watch for new angles.",bounceN);
+      if(breakN>0)  return StringFormat("%d signal(s) stopped out. Wait for next setup.",breakN);
+      return "Signals resolved. Monitor chart for new angles.";
+   }
+
+   if(pendBuy>0 && pendSell>0)
+      return "BUY + SELL conflict. Stay flat — wait for one side to dominate.";
+
+   SigEntry &top = entries[topIdx];
+   int   cnt = pendBuy + pendSell;
+   string d  = top.dir;
+
+   if(top.lvl>=6)
+      return "FULL MARGIN: "+top.code+" "+top.testName+" ["+d+"] — Trade max confidence.";
+   if(top.lvl==5) {
+      if(cnt>=2) return StringFormat("VERY STRONG x%d [%s] — Multiple signals. Enter now.",cnt,d);
+      return "VERY STRONG: "+top.code+" ["+d+"] — Enter, standard risk.";
+   }
+   if(top.lvl==4) return "STRONG: "+top.code+" ["+d+"] — Enter, manage risk carefully.";
+   if(top.lvl==3) return "GOOD signal: "+top.code+" ["+d+"] — Acceptable. Enter at market.";
+   return "Low-quality signals only. Reduce size or wait for better setup.";
+}
+
+//══════════════════════════════════════════════════════════════════
+//  Panel drawing — bottom-left, compact
+//══════════════════════════════════════════════════════════════════
 void Sig_DeletePanel()
 {
-   int tot = ObjectsTotal();
-   for(int i=tot-1; i>=0; i--) {
-      string nm = ObjectName(i);
-      if(StringFind(nm, SIG_PFX+"PANEL_", 0)==0 || StringFind(nm, SIG_PFX+"BTN_", 0)==0)
-         ObjectDelete(0, nm);
+   int tot=ObjectsTotal();
+   for(int i=tot-1;i>=0;i--) {
+      string nm=ObjectName(i);
+      if(StringFind(nm,SIG_PFX+"PANEL_",0)==0 || StringFind(nm,SIG_PFX+"BTN_",0)==0)
+         ObjectDelete(0,nm);
    }
 }
 
-void Sig_DrawPanel(SigEntry &entries[], int eCount, int weakCount)
+void Sig_DrawPanel(SigEntry &entries[], int eCount)
 {
    if(!InpSigShowPanel) { Sig_DeletePanel(); return; }
 
-   int strongCount = eCount - weakCount;
+   int dispRows = MathMin(eCount, InpSigMaxRows);
+   int headerH  = 24;
+   int bodyH    = MathMax(dispRows,1)*ROW_H + 6;
+   int adviceH  = InpSigShowAdvice ? ADVICE_H+6 : 0;
+   int btnRowH  = BTN_H + 10;
+   int sepH     = 4;
+   int totalH   = headerH + sepH + bodyH + (adviceH>0?sepH+adviceH:0) + sepH + btnRowH;
+   int PX=InpSigPanelX, PY=InpSigPanelY, PW=PANEL_W;
+   int corn=CORNER_LEFT_UPPER;
 
-   // Compute panel height
-   int headerH   = 28;
-   int sepH      = 8;
-   int btnRowH   = BTN_H + 6;
-   int totalRows = eCount + (weakCount>0 ? 1 : 0);
-   int bodyH     = totalRows * ROW_H + 4;
-   int totalH    = headerH + sepH + bodyH + sepH + btnRowH + 4;
-   if(totalH < 80) totalH = 80;
+   //── Background + header ────────────────────────────────────────
+   Sig_SRect(Sig_PN("BG"),  PX, PY, PW, totalH, (color)C'13,16,23', corn);
+   Sig_SRect(Sig_PN("HDR"), PX, PY, PW, headerH,(color)C'20,30,52', corn);
 
-   // Background
-   Sig_SRect(Sig_PN("BG"), PANEL_X, PANEL_Y, PANEL_W, totalH,
-             (color)C'18,22,36', PANEL_CORN);
+   string modeStr="";
+   if(g_sigPickHide) modeStr=" [PICK-HIDE]";
+   if(g_sigPickShow) modeStr=" [PICK-SHOW]";
+   if(g_sigHideAll)  modeStr=" [HIDDEN]";
+   color modeCol = g_sigPickHide ? clrOrange : (g_sigPickShow ? clrYellow :
+                   (g_sigHideAll ? (color)C'200,78,78' : (color)C'155,195,255'));
 
-   // Header bar
-   Sig_SRect(Sig_PN("HDR"), PANEL_X, PANEL_Y, PANEL_W, headerH,
-             (color)C'30,45,80', PANEL_CORN);
+   Sig_SLabel(Sig_PN("TITLE"), PX+8, PY+7,
+              StringFormat("AIB SIGNAL  %d active%s", eCount, modeStr),
+              modeCol, 9, corn);
 
-   string hdrTxt = StringFormat("AIB Signal  |  %d strong  %d weak",
-                                 strongCount, weakCount);
-   int hX = PANEL_X + PANEL_W - 6;
-   int hY = PANEL_Y + 8;
-   Sig_SLabel(Sig_PN("TITLE"), hX, hY, hdrTxt,
-              (color)C'180,210,255', 10, PANEL_CORN, ANCHOR_RIGHT_UPPER);
-
-   // Mode indicator
-   string modeStr = "";
-   color  modeCol = clrSilver;
-   if(g_sigPickHide) { modeStr = " [PICK: click zone to HIDE]";   modeCol = clrOrange; }
-   if(g_sigPickShow) { modeStr = " [PICK: click chart to SHOW]";  modeCol = clrYellow; }
-   if(g_sigHideAll)  { modeStr = " [ALL HIDDEN]";                 modeCol = clrTomato; }
-   if(StringLen(modeStr) > 0)
-      Sig_SLabel(Sig_PN("MODE"), hX, hY+13, modeStr, modeCol, 8, PANEL_CORN, ANCHOR_RIGHT_UPPER);
-   else
-      Sig_DelObj(Sig_PN("MODE"));
-
-   // Signal rows
-   int rowY = PANEL_Y + headerH + sepH;
-   int rX   = PANEL_X + PANEL_W - 6;
-   for(int i=0; i<eCount; i++) {
-      string rowNm = Sig_PN("ROW" + IntegerToString(i));
-      string rowTxt;
-      color  rowCol;
-      if(entries[i].isPreview) {
-         rowTxt = StringFormat("%-5s  %-4s  %-4s  PREVIEW  %.0f%%  n=%d",
-                               entries[i].code, entries[i].dir, entries[i].testName,
-                               entries[i].p1val, entries[i].nAng);
-         rowCol = (color)C'100,90,30';
-      } else if(entries[i].isWeak) {
-         rowTxt = StringFormat("%-5s  %-4s  %-4s  WEAK  %.0f%%  n=%d",
-                               entries[i].code, entries[i].dir, entries[i].testName,
-                               entries[i].p1val, entries[i].nAng);
-         rowCol = (color)C'80,40,40';
-      } else {
-         string hideMark = (entries[i].ai<1024 && entries[i].ti<4 && g_sigHide[entries[i].ai][entries[i].ti]) ? " [H]" : "";
-         rowTxt = StringFormat("%s  %-5s  %-4s  %-4s  %-8s  %.0f%%  n=%d%s",
-                               entries[i].rating, entries[i].code, entries[i].dir,
-                               entries[i].testName, entries[i].status,
-                               entries[i].p1val, entries[i].nAng, hideMark);
-         rowCol = entries[i].rcolor;
-      }
-      Sig_SLabel(rowNm, rX, rowY + i*ROW_H, rowTxt, rowCol, 8, PANEL_CORN, ANCHOR_RIGHT_UPPER);
+   //── Signal rows ────────────────────────────────────────────────
+   int rowY = PY + headerH + sepH;
+   for(int i=0;i<dispRows;i++) {
+      SigEntry &e = entries[i];
+      // Strength marker
+      string mk = (e.lvl>=5 ? ">" : (e.lvl>=3 ? "-" : "."));
+      // Row: "> BB4SF  ZB  FULL MARGIN  U1X1  BUY"
+      string rowTxt = StringFormat("%s %-5s  Z%s  %-12s  %s  %s",
+                                   mk, e.code, e.clsL,
+                                   Sig_StrengthStr(e.lvl),
+                                   e.testName, e.dir);
+      color rowCol = Sig_StrengthColor(e.lvl);
+      if(!e.isPending) rowCol = Sig_Blend(rowCol, clrBlack, 38);
+      Sig_SLabel(Sig_PN("ROW"+IntegerToString(i)),
+                 PX+6, rowY+i*ROW_H, rowTxt, rowCol, 8, corn);
    }
 
-   // Separator before weak-count summary
-   if(weakCount > 0) {
-      string sumTxt = StringFormat("--- %d weak signal(s) suppressed (< %.0f%%) ---",
-                                   weakCount, InpSigMinHitPct);
-      Sig_SLabel(Sig_PN("WEAK"), rX, rowY + eCount*ROW_H,
-                 sumTxt, (color)C'90,60,60', 8, PANEL_CORN, ANCHOR_RIGHT_UPPER);
+   // Clip indicator
+   if(eCount>dispRows) {
+      Sig_SLabel(Sig_PN("MORE"), PX+6, rowY+dispRows*ROW_H,
+                 StringFormat("... +%d more", eCount-dispRows),
+                 (color)C'88,88,88', 7, corn);
    } else {
-      Sig_DelObj(Sig_PN("WEAK"));
+      Sig_DelObj(Sig_PN("MORE"));
+   }
+   // Clear unused rows
+   for(int i=dispRows;i<InpSigMaxRows+2;i++) Sig_DelObj(Sig_PN("ROW"+IntegerToString(i)));
+
+   //── Advisory box ───────────────────────────────────────────────
+   int nextY = rowY + MathMax(dispRows,1)*ROW_H + 6;
+   if(InpSigShowAdvice) {
+      nextY += sepH;
+      string advice = Sig_BuildAdvice(entries, eCount);
+      Sig_SRect(Sig_PN("ADVBG"), PX+4, nextY, PW-8, ADVICE_H, (color)C'18,24,38', corn);
+      Sig_SLabel(Sig_PN("ADVHDR"), PX+8, nextY+3, "ADVICE",
+                 (color)C'95,125,175', 7, corn);
+      // Split into 2 lines at space boundary
+      int maxCh = (PW-20)/6;
+      if(StringLen(advice)>maxCh) {
+         int sp = maxCh;
+         for(int c=maxCh;c>maxCh-18&&c>0;c--)
+            if(StringGetCharacter(advice,c)==' '){sp=c;break;}
+         Sig_SLabel(Sig_PN("ADVL1"), PX+8, nextY+14,
+                    StringSubstr(advice,0,sp), clrWhite, 8, corn);
+         Sig_SLabel(Sig_PN("ADVL2"), PX+8, nextY+26,
+                    StringSubstr(advice,sp+1), (color)C'198,198,198', 8, corn);
+      } else {
+         Sig_SLabel(Sig_PN("ADVL1"), PX+8, nextY+14, advice, clrWhite, 8, corn);
+         Sig_DelObj(Sig_PN("ADVL2"));
+      }
+      nextY += ADVICE_H + sepH;
+   } else {
+      Sig_DelObj(Sig_PN("ADVBG")); Sig_DelObj(Sig_PN("ADVHDR"));
+      Sig_DelObj(Sig_PN("ADVL1")); Sig_DelObj(Sig_PN("ADVL2"));
    }
 
-   // Button row
-   int btnY = PANEL_Y + totalH - btnRowH;
-   int bW   = BTN_W;
-   int gap  = 4;
-   // Buttons are right-aligned; positions from right edge going left
-   // [Hide All] [Show All] [Hide Zone] [Pick Angle]
-   int b4X = PANEL_X;
-   int b3X = b4X + bW + gap;
-   int b2X = b3X + bW + gap;
-   int b1X = b2X + bW + gap;
+   //── Buttons ────────────────────────────────────────────────────
+   int btnY = nextY + sepH;
+   int bX   = PX+4;
+   color cN = (color)C'32,48,78';
+   color cA = (color)C'78,48,16';
+   color cD = (color)C'72,18,18';
 
-   color cBtnNorm  = (color)C'40,55,90';
-   color cBtnAct   = (color)C'90,55,20';
-   color cBtnDanger= (color)C'80,25,25';
-
-   Sig_SBtn(Sig_BN("HIDEALL"),  b1X, btnY, bW, BTN_H, "Hide All",
-            g_sigHideAll ? cBtnDanger : cBtnNorm, clrWhite, PANEL_CORN);
-   Sig_SBtn(Sig_BN("SHOWALL"),  b2X, btnY, bW, BTN_H, "Show All",
-            cBtnNorm, clrWhite, PANEL_CORN);
-   Sig_SBtn(Sig_BN("PICKHIDE"), b3X, btnY, bW, BTN_H, "Hide Zone",
-            g_sigPickHide ? cBtnAct : cBtnNorm, g_sigPickHide ? clrYellow : clrWhite, PANEL_CORN);
-   Sig_SBtn(Sig_BN("PICKSHOW"), b4X, btnY, bW, BTN_H, "Pick Angle",
-            g_sigPickShow ? cBtnAct : cBtnNorm, g_sigPickShow ? clrYellow : clrWhite, PANEL_CORN);
+   Sig_SBtn(Sig_BN("HIDEALL"),  bX,              btnY, BTN_W, BTN_H, "Hide All",
+            g_sigHideAll ? cD : cN, clrWhite, corn);
+   Sig_SBtn(Sig_BN("SHOWALL"),  bX+BTN_W+3,      btnY, BTN_W, BTN_H, "Show All",  cN, clrWhite, corn);
+   Sig_SBtn(Sig_BN("PICKHIDE"), bX+(BTN_W+3)*2,  btnY, BTN_W, BTN_H, "Hide Zone",
+            g_sigPickHide ? cA : cN, g_sigPickHide ? clrYellow : clrWhite, corn);
+   Sig_SBtn(Sig_BN("PICKSHOW"), bX+(BTN_W+3)*3,  btnY, BTN_W, BTN_H, "Pick Ang",
+            g_sigPickShow ? cA : cN, g_sigPickShow ? clrYellow : clrWhite, corn);
 }
 
 //══════════════════════════════════════════════════════════════════
-//  Button state check (call each tick — no OnChartEvent needed
-//  for Hide All / Show All; pick modes finalized in OnChartEvent)
+//  Button state + chart event
 //══════════════════════════════════════════════════════════════════
 void Sig_CheckButtons()
 {
-   // Hide All
-   if(ObjectFind(0, Sig_BN("HIDEALL")) >= 0 &&
-      ObjectGetInteger(0, Sig_BN("HIDEALL"), OBJPROP_STATE)) {
-      g_sigHideAll = !g_sigHideAll;
-      if(g_sigHideAll) { g_sigPickHide = false; g_sigPickShow = false; }
-      ObjectSetInteger(0, Sig_BN("HIDEALL"), OBJPROP_STATE, false);
-      ChartRedraw(0);
+   if(ObjectFind(0,Sig_BN("HIDEALL"))>=0 && ObjectGetInteger(0,Sig_BN("HIDEALL"),OBJPROP_STATE)) {
+      g_sigHideAll=!g_sigHideAll;
+      if(g_sigHideAll){g_sigPickHide=false;g_sigPickShow=false;}
+      ObjectSetInteger(0,Sig_BN("HIDEALL"),OBJPROP_STATE,false); ChartRedraw(0);
    }
-   // Show All
-   if(ObjectFind(0, Sig_BN("SHOWALL")) >= 0 &&
-      ObjectGetInteger(0, Sig_BN("SHOWALL"), OBJPROP_STATE)) {
-      g_sigHideAll = false;
-      if(g_sigHideInit)
-         ArrayInitialize(g_sigHide, false);
-      g_sigPickHide = false;
-      g_sigPickShow = false;
-      ObjectSetInteger(0, Sig_BN("SHOWALL"), OBJPROP_STATE, false);
-      ChartRedraw(0);
+   if(ObjectFind(0,Sig_BN("SHOWALL"))>=0 && ObjectGetInteger(0,Sig_BN("SHOWALL"),OBJPROP_STATE)) {
+      g_sigHideAll=false;
+      if(g_sigHideInit) ArrayInitialize(g_sigHide,false);
+      g_sigPickHide=false; g_sigPickShow=false;
+      ObjectSetInteger(0,Sig_BN("SHOWALL"),OBJPROP_STATE,false); ChartRedraw(0);
    }
-   // Hide Zone pick mode toggle
-   if(ObjectFind(0, Sig_BN("PICKHIDE")) >= 0 &&
-      ObjectGetInteger(0, Sig_BN("PICKHIDE"), OBJPROP_STATE)) {
-      g_sigPickHide = !g_sigPickHide;
-      if(g_sigPickHide) g_sigPickShow = false;
-      ObjectSetInteger(0, Sig_BN("PICKHIDE"), OBJPROP_STATE, false);
-      ChartRedraw(0);
+   if(ObjectFind(0,Sig_BN("PICKHIDE"))>=0 && ObjectGetInteger(0,Sig_BN("PICKHIDE"),OBJPROP_STATE)) {
+      g_sigPickHide=!g_sigPickHide;
+      if(g_sigPickHide) g_sigPickShow=false;
+      ObjectSetInteger(0,Sig_BN("PICKHIDE"),OBJPROP_STATE,false); ChartRedraw(0);
    }
-   // Pick Angle mode toggle
-   if(ObjectFind(0, Sig_BN("PICKSHOW")) >= 0 &&
-      ObjectGetInteger(0, Sig_BN("PICKSHOW"), OBJPROP_STATE)) {
-      g_sigPickShow = !g_sigPickShow;
-      if(g_sigPickShow) g_sigPickHide = false;
-      ObjectSetInteger(0, Sig_BN("PICKSHOW"), OBJPROP_STATE, false);
-      ChartRedraw(0);
+   if(ObjectFind(0,Sig_BN("PICKSHOW"))>=0 && ObjectGetInteger(0,Sig_BN("PICKSHOW"),OBJPROP_STATE)) {
+      g_sigPickShow=!g_sigPickShow;
+      if(g_sigPickShow) g_sigPickHide=false;
+      ObjectSetInteger(0,Sig_BN("PICKSHOW"),OBJPROP_STATE,false); ChartRedraw(0);
    }
 }
 
-//══════════════════════════════════════════════════════════════════
-//  Parse ai/ti from object name (format: AIBSIG_<ai>_<ti>_<tag>)
-//══════════════════════════════════════════════════════════════════
 bool Sig_ParseName(const string nm, int &ai, int &ti)
 {
-   if(StringFind(nm, SIG_PFX, 0) != 0) return false;
-   string rest = StringSubstr(nm, StringLen(SIG_PFX));
-   int p1 = StringFind(rest, "_", 0);
-   if(p1 < 0) return false;
-   int p2 = StringFind(rest, "_", p1+1);
-   if(p2 < 0) return false;
-   ai = (int)StringToInteger(StringSubstr(rest, 0, p1));
-   ti = (int)StringToInteger(StringSubstr(rest, p1+1, p2-p1-1));
-   return (ai >= 0 && ai < 1024 && ti >= 0 && ti < 4);
+   if(StringFind(nm,SIG_PFX,0)!=0) return false;
+   string rest=StringSubstr(nm,StringLen(SIG_PFX));
+   int p1=StringFind(rest,"_",0); if(p1<0) return false;
+   int p2=StringFind(rest,"_",p1+1); if(p2<0) return false;
+   ai=(int)StringToInteger(StringSubstr(rest,0,p1));
+   ti=(int)StringToInteger(StringSubstr(rest,p1+1,p2-p1-1));
+   return (ai>=0&&ai<1024&&ti>=0&&ti<4);
 }
 
-//══════════════════════════════════════════════════════════════════
-//  OnChartEvent hook — handles pick-mode interactions
-//══════════════════════════════════════════════════════════════════
 void Sig_OnChartEvent(const int id, const long lparam,
                       const double dparam, const string sparam)
 {
    if(!InpSigEnabled) return;
-
-   if(id == CHARTEVENT_OBJECT_CLICK) {
-      // Ignore our own buttons (handled in Sig_CheckButtons via OBJPROP_STATE)
-      if(StringFind(sparam, SIG_PFX+"BTN_", 0) == 0) return;
-
-      // "Hide Zone" pick mode: clicking on any AIBSIG_ zone object hides it
-      if(g_sigPickHide && StringFind(sparam, SIG_PFX, 0) == 0) {
-         int ai=-1, ti=-1;
-         if(Sig_ParseName(sparam, ai, ti)) {
-            if(!g_sigHideInit) { ArrayInitialize(g_sigHide, false); g_sigHideInit=true; }
-            g_sigHide[ai][ti] = true;
-            Sig_DeleteZone(ai, ti);
-            g_sigPickHide = false;
-            ChartRedraw(0);
+   if(id==CHARTEVENT_OBJECT_CLICK) {
+      if(StringFind(sparam,SIG_PFX+"BTN_",0)==0) return;
+      if(g_sigPickHide && StringFind(sparam,SIG_PFX,0)==0) {
+         int ai=-1,ti=-1;
+         if(Sig_ParseName(sparam,ai,ti)) {
+            if(!g_sigHideInit){ArrayInitialize(g_sigHide,false);g_sigHideInit=true;}
+            g_sigHide[ai][ti]=true; Sig_DeleteZone(ai,ti);
+            g_sigPickHide=false; ChartRedraw(0);
          }
          return;
       }
    }
-
-   // "Pick Angle" mode: CHARTEVENT_CLICK — find nearest angle by time
-   if(id == CHARTEVENT_CLICK && g_sigPickShow) {
-      int x = (int)lparam;
-      int y = (int)dparam;
-      datetime clickT = 0; double clickP = 0.0; int subwin = 0;
-      if(!ChartXYToTimePrice(0, x, y, subwin, clickT, clickP)) return;
-
-      // Find angle whose formTime is closest to click time
-      int bestAi  = -1;
-      long bestDt = LONG_MAX;
-      for(int i=0; i<g_monCount; i++) {
+   if(id==CHARTEVENT_CLICK && g_sigPickShow) {
+      datetime clickT=0; double clickP=0.0; int subwin=0;
+      if(!ChartXYToTimePrice(0,(int)lparam,(int)dparam,subwin,clickT,clickP)) return;
+      int bestAi=-1; long bestDt=LONG_MAX;
+      for(int i=0;i<g_monCount;i++) {
          if(!g_mon[i].valid) continue;
-         long dt = MathAbs((long)g_mon[i].formTime - (long)clickT);
-         if(dt < bestDt) { bestDt = dt; bestAi = i; }
+         long dt=MathAbs((long)g_mon[i].formTime-(long)clickT);
+         if(dt<bestDt){bestDt=dt;bestAi=i;}
       }
-
-      if(bestAi >= 0) {
-         // Show only this angle's zones; hide all others
-         if(!g_sigHideInit) { ArrayInitialize(g_sigHide, false); g_sigHideInit=true; }
-         for(int i=0; i<g_monCount && i<1024; i++)
-            for(int ti=0; ti<4; ti++)
-               g_sigHide[i][ti] = (i != bestAi);
-         g_sigHideAll  = false;
-         g_sigPickShow = false;
-         ChartRedraw(0);
+      if(bestAi>=0) {
+         if(!g_sigHideInit){ArrayInitialize(g_sigHide,false);g_sigHideInit=true;}
+         for(int i=0;i<g_monCount&&i<1024;i++)
+            for(int t=0;t<4;t++) g_sigHide[i][t]=(i!=bestAi);
+         g_sigHideAll=false; g_sigPickShow=false; ChartRedraw(0);
       }
-      return;
    }
 }
 
 //══════════════════════════════════════════════════════════════════
-//  Main entry:  Sig_OnCalculate()
+//  Main: Sig_OnCalculate()
 //══════════════════════════════════════════════════════════════════
 void Sig_OnCalculate()
 {
    if(!InpSigEnabled) return;
-   if(!g_sigHideInit) { ArrayInitialize(g_sigHide, false); g_sigHideInit=true; }
+   if(!g_sigHideInit){ArrayInitialize(g_sigHide,false);g_sigHideInit=true;}
    ComboTable_Init();
    Sig_InitAlerts();
    Sig_CheckButtons();
 
-   // Build signal entry list for panel
-   SigEntry entries[]; int eCount = 0; int weakCount = 0;
-   ArrayResize(entries, g_monCount * MON_NPTS);
+   SigEntry entries[];
+   int eCount=0;
+   ArrayResize(entries, g_monCount*MON_NPTS);
 
-   for(int ai=0; ai<g_monCount; ai++) {
+   for(int ai=0;ai<g_monCount;ai++) {
       if(!g_mon[ai].valid) continue;
 
       string cls  = g_mon[ai].cls;
-      string dir  = (g_mon[ai].dir > 0 ? "BUY" : "SELL");
+      string clsL = (StringLen(cls)>=2 ? StringSubstr(cls,1,1) : cls);
+      string dir  = (g_mon[ai].dir>0 ? "BUY" : "SELL");
+      bool   isBuy= (g_mon[ai].dir>0);
       double rat  = g_mon[ai].ratio;
-      double lu1  = (g_mon[ai].u1R > 1e-10 ? g_mon[ai].L/g_mon[ai].u1R*100.0 : 0.0);
+      double lu1  = (g_mon[ai].u1R>1e-10 ? g_mon[ai].L/g_mon[ai].u1R*100.0 : 0.0);
       string prev = Sig_PrevClsLtr(ai);
       string code = ComboCode(cls, dir, rat, lu1, prev);
       int    cidx = ComboFind(code);
 
-      if(InpSigFilterBest && !ComboIsBest(cidx)) {
-         for(int ti=0; ti<MON_NPTS; ti++) Sig_DeleteZone(ai, ti);
-         continue;
-      }
+      for(int ti=0;ti<MON_NPTS;ti++) {
+         int react=g_mon[ai].test[ti].react[0];
+         if(react==MON_REACT_NA) { Sig_DeleteZone(ai,ti); continue; }
 
-      Sig_CheckMultiAlert(ai);
-
-      for(int ti=0; ti<MON_NPTS; ti++) {
-         int react = g_mon[ai].test[ti].react[0];
-         if(react == MON_REACT_NA) { Sig_DeleteZone(ai, ti); continue; }
-
-         double p1val = (cidx>=0 ? g_combos[cidx].p1[ti] : 0.0);
-         bool   strong = Sig_IsStrong(p1val);
-
-         // Anticipatory preview (UNTOUCHED = never reached price yet)
-         if(react == MON_REACT_UNTOUCHED) {
-            if(strong)
-               Sig_DrawPreview(ai, ti, cidx, code, p1val);
-            else {
-               Sig_DelObj(Sig_N(ai,ti,"PREV_SL"));
-               Sig_DelObj(Sig_N(ai,ti,"PREV_TP"));
-               Sig_DelObj(Sig_N(ai,ti,"PREV_INFO"));
-            }
-            Sig_DeleteZone(ai, ti);   // make sure no stale real zone exists
-
-            if(cidx >= 0) {
-               SigEntry e;
-               e.ai=ai; e.ti=ti; e.code=code; e.testName=Sig_TestName(ti);
-               e.dir=dir; e.rating=Sig_Rating(p1val); e.status="PREVIEW";
-               e.p1val=p1val; e.rcolor=Sig_RatingColor(p1val);
-               e.scolor=Sig_ColPend(); e.isWeak=!strong; e.isPending=false;
-               e.isPreview=true; e.nAng=(cidx>=0?g_combos[cidx].n_ang:0);
-               entries[eCount++] = e;
-               if(!strong) weakCount++;
-            }
+         //── 3-criteria quality filter ───────────────────────────
+         if(!Sig_IsQualified(cidx,ti)) {
+            Sig_DeleteZone(ai,ti);
+            Sig_DelObj(Sig_N(ai,ti,"PREV_SL"));
+            Sig_DelObj(Sig_N(ai,ti,"PREV_TP"));
+            Sig_DelObj(Sig_N(ai,ti,"PREV_INFO"));
             continue;
          }
 
-         // Real zone (touched)
-         datetime touchT = g_mon[ai].test[ti].touchTime;
-         if(touchT <= 0) { Sig_DeleteZone(ai, ti); continue; }
+         double score = Sig_Score(cidx,ti);
+         int    lvl   = Sig_StrengthLevel(score);
 
-         // Remove preview objects now that price has touched
+         //── UNTOUCHED → preview ─────────────────────────────────
+         if(react==MON_REACT_UNTOUCHED) {
+            Sig_DrawPreview(ai,ti,code,clsL,lvl);
+            Sig_DeleteZone(ai,ti);
+            SigEntry e; e.ai=ai;e.ti=ti;e.lvl=lvl;e.code=code;e.clsL=clsL;
+            e.testName=Sig_TestName(ti);e.dir=dir;e.score=score;e.isPending=false;
+            entries[eCount++]=e;
+            continue;
+         }
+
+         //── Touched → real zone ─────────────────────────────────
+         datetime touchT=g_mon[ai].test[ti].touchTime;
+         if(touchT<=0){Sig_DeleteZone(ai,ti);continue;}
+
          Sig_DelObj(Sig_N(ai,ti,"PREV_SL"));
          Sig_DelObj(Sig_N(ai,ti,"PREV_TP"));
          Sig_DelObj(Sig_N(ai,ti,"PREV_INFO"));
+         Sig_CheckTouchAlert(ai,ti,code,dir);
 
-         Sig_CheckTouchAlert(ai, ti, code);
-
-         if(!strong) {
-            Sig_DeleteZone(ai, ti);
-            weakCount++;
-            if(cidx >= 0) {
-               SigEntry e;
-               e.ai=ai; e.ti=ti; e.code=code; e.testName=Sig_TestName(ti);
-               e.dir=dir; e.rating=Sig_Rating(p1val); e.status="WEAK";
-               e.p1val=p1val; e.rcolor=(color)C'90,50,50';
-               e.scolor=clrTomato; e.isWeak=true; e.isPending=false;
-               e.isPreview=false; e.nAng=(cidx>=0?g_combos[cidx].n_ang:0);
-               entries[eCount++] = e;
-            }
-            continue;
+         if(Sig_IsVisible(ai,ti)) {
+            bool hist  =(react==MON_REACT_BOUNCE||react==MON_REACT_BREAK);
+            bool isPend=(react==MON_REACT_PENDING);
+            if(isPend && !InpSigShowPending)       Sig_DeleteZone(ai,ti);
+            else if(hist && !InpSigShowHistory)    Sig_DeleteZone(ai,ti);
+            else Sig_DrawZone(ai,ti,code,clsL,score,lvl,isBuy);
+         } else {
+            Sig_DeleteZone(ai,ti);
          }
 
-         // Visibility check
-         bool visible = Sig_IsVisible(ai, ti);
-         if(!visible) { Sig_DeleteZone(ai, ti); }
-         else {
-            bool hist   = (react==MON_REACT_BOUNCE || react==MON_REACT_BREAK);
-            bool isPend = (react==MON_REACT_PENDING);
-            if(isPend && !InpSigShowPending)  { Sig_DeleteZone(ai,ti); }
-            else if(hist && !InpSigShowHistory) { Sig_DeleteZone(ai,ti); }
-            else Sig_DrawZone(ai, ti, cidx, code, p1val, strong);
-         }
-
-         // Panel entry
-         if(cidx >= 0) {
-            string statStr;
-            color  statCol;
-            if(react==MON_REACT_PENDING) { statStr="PENDING"; statCol=Sig_ColPend(); }
-            else if(react==MON_REACT_BOUNCE) { statStr="BOUNCE v"; statCol=Sig_ColGood(); }
-            else { statStr="BREAK x"; statCol=Sig_ColBad(); }
-
-            SigEntry e;
-            e.ai=ai; e.ti=ti; e.code=code; e.testName=Sig_TestName(ti);
-            e.dir=dir; e.rating=Sig_Rating(p1val); e.status=statStr;
-            e.p1val=p1val; e.rcolor=Sig_RatingColor(p1val);
-            e.scolor=statCol; e.isWeak=false; e.isPending=(react==MON_REACT_PENDING);
-            e.isPreview=false; e.nAng=g_combos[cidx].n_ang;
-            entries[eCount++] = e;
-         }
+         SigEntry e; e.ai=ai;e.ti=ti;e.lvl=lvl;e.code=code;e.clsL=clsL;
+         e.testName=Sig_TestName(ti);e.dir=dir;e.score=score;
+         e.isPending=(react==MON_REACT_PENDING);
+         entries[eCount++]=e;
       }
    }
 
-   // Sort panel entries: strong first (by p1 desc), then weak
-   for(int i=0; i<eCount-1; i++)
-      for(int j=i+1; j<eCount; j++)
-         if((!entries[i].isWeak && entries[j].isWeak) ? false :
-            (entries[i].isWeak && !entries[j].isWeak) ? true :
-            (entries[i].p1val < entries[j].p1val)) {
-            SigEntry tmp = entries[i]; entries[i] = entries[j]; entries[j] = tmp;
-         }
+   // Sort by score descending (strongest first)
+   for(int i=0;i<eCount-1;i++)
+      for(int j=i+1;j<eCount;j++)
+         if(entries[i].score<entries[j].score)
+            { SigEntry tmp=entries[i]; entries[i]=entries[j]; entries[j]=tmp; }
 
-   // Draw panel
-   Sig_DrawPanel(entries, eCount, weakCount);
+   Sig_DrawPanel(entries,eCount);
    ChartRedraw(0);
 }
 
@@ -896,10 +735,9 @@ void Sig_OnCalculate()
 //══════════════════════════════════════════════════════════════════
 void Sig_OnDeinit()
 {
-   int tot = ObjectsTotal();
-   for(int i=tot-1; i>=0; i--) {
-      string nm = ObjectName(i);
-      if(StringFind(nm, SIG_PFX, 0) == 0)
-         ObjectDelete(0, nm);
+   int tot=ObjectsTotal();
+   for(int i=tot-1;i>=0;i--) {
+      string nm=ObjectName(i);
+      if(StringFind(nm,SIG_PFX,0)==0) ObjectDelete(0,nm);
    }
 }

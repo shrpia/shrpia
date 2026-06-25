@@ -20,6 +20,9 @@ input int      InpTouchTolerancePoints = 2;  // Touch tolerance (points)
 
 input string   InpEASep2          = "═══ Signal Filter ════";
 input double   InpEAMinHitPct     = 50.0;    // Min TP1 hit% to enter trade
+input int      InpEAMinTouchCount = 30;      // Min historical touches nt[ti]
+input int      InpEAMinSuccessCount = 15;    // Min historical wins   nok[ti]
+input int      InpEAMaxTestsPerAngle = 2;    // Max top-ranked tests to trade per angle
 input bool     InpEAOnlyBestCombo = false;   // Also require n_ang>=30 & p_total>=40%
 
 input string   InpEASep3          = "═══ Risk Management ═══";
@@ -624,7 +627,23 @@ bool EA_PlaceTrade(int ai, int ti, string code)
 
 //══════════════════════════════════════════════════════════════════════
 //  CHECK FOR NEW SIGNALS — place pending orders for new angles
+//  3-criteria filter: p1 >= MinHitPct AND nt >= MinTouchCount AND nok >= MinSuccessCount
+//  Score = nok * (p1/100) — top InpEAMaxTestsPerAngle tests per angle
 //══════════════════════════════════════════════════════════════════════
+double EA_TestScore(int cidx, int ti)
+{
+   if(cidx < 0 || cidx >= COMBO_COUNT) return 0.0;
+   return g_combos[cidx].nok[ti] * (g_combos[cidx].p1[ti] / 100.0);
+}
+
+bool EA_IsQualified(int cidx, int ti)
+{
+   if(cidx < 0 || cidx >= COMBO_COUNT) return false;
+   return (g_combos[cidx].p1[ti]  >= InpEAMinHitPct      &&
+           g_combos[cidx].nt[ti]  >= InpEAMinTouchCount   &&
+           g_combos[cidx].nok[ti] >= InpEAMinSuccessCount);
+}
+
 void EA_CheckNewSignals()
 {
    ComboTable_Init();
@@ -640,22 +659,39 @@ void EA_CheckNewSignals()
       string code = ComboCode(cls, dir, rat, lu1, prev);
       int    cidx = ComboFind(code);
 
+      if(cidx < 0) continue;  // unknown combo → skip
       if(InpEAOnlyBestCombo && !ComboIsBest(cidx)) continue;
 
+      // Collect qualifying tests and their scores
+      int    qualTi[4];
+      double qualSc[4];
+      int    qualN = 0;
+
       for(int ti = 0; ti < MON_NPTS; ti++) {
-         if(g_mon[ai].test[ti].react[0] == MON_REACT_NA)  continue;
-         if(g_mon[ai].test[ti].done)                       continue;
-         if(EA_IsEntered(ai, ti))                          continue;
+         if(g_mon[ai].test[ti].react[0] == MON_REACT_NA) continue;
+         if(g_mon[ai].test[ti].done)                      continue;
+         if(EA_IsEntered(ai, ti))                         continue;
+         if(!EA_IsQualified(cidx, ti))                    continue;
 
-         // Filter by minimum TP1 hit rate
-         if(cidx >= 0) {
-            if(g_combos[cidx].p1[ti] < InpEAMinHitPct) continue;
-         } else {
-            continue; // no combo data → skip
+         double sc = EA_TestScore(cidx, ti);
+         // Insert sorted descending by score
+         int ins = qualN;
+         for(int j = 0; j < qualN; j++) {
+            if(sc > qualSc[j]) { ins = j; break; }
          }
-
-         EA_PlaceTrade(ai, ti, code);
+         for(int j = qualN; j > ins; j--) {
+            qualTi[j] = qualTi[j-1];
+            qualSc[j] = qualSc[j-1];
+         }
+         qualTi[ins] = ti;
+         qualSc[ins] = sc;
+         qualN++;
       }
+
+      // Place trades for top InpEAMaxTestsPerAngle only
+      int limit = MathMin(qualN, InpEAMaxTestsPerAngle);
+      for(int k = 0; k < limit; k++)
+         EA_PlaceTrade(ai, qualTi[k], code);
    }
 }
 
@@ -813,7 +849,9 @@ int OnInit()
    g_lastScanBar     = 0;
    g_eaInited        = true;
 
-   Print("AIB Trading EA initialized  Unit=", g_unitSeconds, "s  MinHit=", InpEAMinHitPct, "%  Risk=$", InpEARiskMoney);
+   Print("AIB Trading EA initialized  Unit=", g_unitSeconds, "s  MinHit=", InpEAMinHitPct,
+         "%  MinNt=", InpEAMinTouchCount, "  MinNok=", InpEAMinSuccessCount,
+         "  MaxTests=", InpEAMaxTestsPerAngle, "  Risk=$", InpEARiskMoney);
    return(INIT_SUCCEEDED);
 }
 
