@@ -1,0 +1,2961 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>التوليفات بالأعداد المطلقة</title>
+<style>
+body{background:#07111f;color:#cbd5e1;font-family:Segoe UI,Arial,sans-serif;direction:rtl;padding:24px;line-height:1.6}
+h1{color:#38bdf8;border-bottom:3px solid #1e3a5f;padding-bottom:14px;font-size:1.9em}
+h2{color:#f59e0b;margin-top:40px;font-size:1.35em;border-right:4px solid #f59e0b;padding-right:12px}
+h3{color:#7dd3fc;margin-top:20px}
+.sec{background:#0a1525;border:1px solid #1e3a5f;border-radius:10px;padding:20px;margin:20px 0;overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:0.91em}
+th{background:#1e3a5f;color:#93c5fd;padding:9px 14px;text-align:right;white-space:nowrap;position:sticky;top:0}
+td{padding:7px 12px;border-bottom:1px solid #1a2744}
+tr:hover td{background:#0f2032}
+.n-total{color:#93c5fd;font-weight:bold;font-size:1.05em}
+.n-ok{color:#4ade80;font-weight:bold;font-size:1.1em}
+.n-fail{color:#f87171;font-weight:bold;font-size:1.1em}
+.pct-ok{color:#86efac;font-size:0.88em}
+.pct-fail{color:#fca5a5;font-size:0.88em}
+.label-cell{font-size:0.85em;white-space:normal;max-width:480px;line-height:1.5}
+.factor{display:inline-block;background:#1e3a5f;color:#93c5fd;border-radius:4px;
+        padding:2px 8px;margin:2px;font-size:0.8em;white-space:nowrap}
+.factor-val{color:#e2e8f0;font-weight:bold}
+.grp-tag{color:#64748b;font-size:0.78em;white-space:nowrap}
+.bar-wrap{background:#0d1b2a;border-radius:3px;height:10px;overflow:hidden;margin-top:3px;min-width:120px}
+.bar-ok{height:100%;background:#22c55e;border-radius:3px;transition:width .3s}
+.bar-fail{height:100%;background:#ef4444;border-radius:3px;transition:width .3s}
+.tp-cell{text-align:center;font-size:0.88em}
+.tp2{color:#fbbf24}.tp3{color:#f472b6}
+.rank{color:#475569;text-align:center;font-size:0.85em}
+.kpi{display:inline-block;background:#0d1b2a;border:1px solid #1e3a5f;border-radius:8px;
+     padding:12px 20px;margin:8px;text-align:center;min-width:120px}
+.kpi .n{font-size:1.8em;font-weight:bold;color:#38bdf8}
+.kpi .l{font-size:0.82em;color:#94a3b8;margin-top:3px}
+</style>
+</head><body>
+<h1>📊 التوليفات بالأعداد المطلقة — الأكثر ظهوراً ونجاحاً / فشلاً</h1>
+<p style="color:#94a3b8">مرتب حسب <b style="color:#4ade80">عدد النجاح المطلق</b> (القسم الأول) و <b style="color:#f87171">عدد الفشل المطلق</b> (القسم الثاني) — تنازلياً</p>
+
+<div>
+<div class="kpi"><div class="n">71,790</div><div class="l">إجمالي الأحداث المُلمَسة</div></div>
+<div class="kpi"><div class="n" style="color:#4ade80">17,928</div><div class="l">إجمالي النجاحات</div></div>
+<div class="kpi"><div class="n" style="color:#f87171">53,862</div><div class="l">إجمالي الإخفاقات</div></div>
+<div class="kpi"><div class="n">2,511</div><div class="l">توليفة مُولَّدة (≥30 ظهور)</div></div>
+<div class="kpi"><div class="n" style="color:#4ade80">3,214</div><div class="l">أعلى نجاح مطلق في توليفة</div></div>
+<div class="kpi"><div class="n" style="color:#f87171">14,229</div><div class="l">أعلى فشل مطلق في توليفة</div></div>
+</div>
+
+<h2>✅ القسم الأول — الأكثر ظهوراً والأكثر نجاحاً</h2>
+<p style="color:#94a3b8">مرتب تنازلياً حسب <b style="color:#4ade80">عدد النجاحات المطلق</b> — الرقم الأخضر هو الأهم</p>
+<div class="sec">
+<table>
+<tr>
+<th>#</th><th>التوليفة / القانون</th>
+<th>إجمالي الظهور</th>
+<th>✅ نجاح (مطلق + نسبة)</th>
+<th>❌ فشل</th>
+<th>TP2%</th><th>TP3%</th>
+</tr>
+<tr>
+<td class="rank">1</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">ضعيفة</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">17,443</span></td>
+<td style="text-align:center">
+  <span class="n-ok">3,214</span><br>
+  <span class="pct-ok">(18.4%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:100%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">14,229</span></td>
+<td class="tp-cell tp2">83.2%<br><small style="color:#64748b">2,674</small></td>
+<td class="tp-cell tp3">65.1%<br><small style="color:#64748b">1177</small></td>
+</tr><tr>
+<td class="rank">2</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">ضعيفة</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">17,222</span></td>
+<td style="text-align:center">
+  <span class="n-ok">3,028</span><br>
+  <span class="pct-ok">(17.6%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:94%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">14,194</span></td>
+<td class="tp-cell tp2">82.2%<br><small style="color:#64748b">2,490</small></td>
+<td class="tp-cell tp3">63.4%<br><small style="color:#64748b">1094</small></td>
+</tr><tr>
+<td class="rank">3</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">قوية</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">10,796</span></td>
+<td style="text-align:center">
+  <span class="n-ok">2,983</span><br>
+  <span class="pct-ok">(27.6%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:92%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">7,813</span></td>
+<td class="tp-cell tp2">80.0%<br><small style="color:#64748b">2,385</small></td>
+<td class="tp-cell tp3">56.8%<br><small style="color:#64748b">919</small></td>
+</tr><tr>
+<td class="rank">4</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">قوية</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">9,553</span></td>
+<td style="text-align:center">
+  <span class="n-ok">2,566</span><br>
+  <span class="pct-ok">(26.9%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:79%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">6,987</span></td>
+<td class="tp-cell tp2">78.3%<br><small style="color:#64748b">2,010</small></td>
+<td class="tp-cell tp3">56.4%<br><small style="color:#64748b">824</small></td>
+</tr><tr>
+<td class="rank">5</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">7,922</span></td>
+<td style="text-align:center">
+  <span class="n-ok">2,487</span><br>
+  <span class="pct-ok">(31.4%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:77%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">5,435</span></td>
+<td class="tp-cell tp2">79.4%<br><small style="color:#64748b">1,974</small></td>
+<td class="tp-cell tp3">52.1%<br><small style="color:#64748b">743</small></td>
+</tr><tr>
+<td class="rank">6</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">قوية</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح عميق ≥62%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">5,857</span></td>
+<td style="text-align:center">
+  <span class="n-ok">2,338</span><br>
+  <span class="pct-ok">(39.9%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:72%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,519</span></td>
+<td class="tp-cell tp2">80.0%<br><small style="color:#64748b">1,871</small></td>
+<td class="tp-cell tp3">52.5%<br><small style="color:#64748b">674</small></td>
+</tr><tr>
+<td class="rank">7</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">6,664</span></td>
+<td style="text-align:center">
+  <span class="n-ok">2,040</span><br>
+  <span class="pct-ok">(30.6%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:63%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">4,624</span></td>
+<td class="tp-cell tp2">77.7%<br><small style="color:#64748b">1,586</small></td>
+<td class="tp-cell tp3">52.2%<br><small style="color:#64748b">620</small></td>
+</tr><tr>
+<td class="rank">8</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">قوية</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح عميق ≥62%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">5,077</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,989</span><br>
+  <span class="pct-ok">(39.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:61%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,088</span></td>
+<td class="tp-cell tp2">80.3%<br><small style="color:#64748b">1,598</small></td>
+<td class="tp-cell tp3">54.7%<br><small style="color:#64748b">592</small></td>
+</tr><tr>
+<td class="rank">9</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">5,307</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,723</span><br>
+  <span class="pct-ok">(32.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:53%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,584</span></td>
+<td class="tp-cell tp2">80.6%<br><small style="color:#64748b">1,388</small></td>
+<td class="tp-cell tp3">51.1%<br><small style="color:#64748b">516</small></td>
+</tr><tr>
+<td class="rank">10</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">4,823</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,531</span><br>
+  <span class="pct-ok">(31.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:47%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,292</span></td>
+<td class="tp-cell tp2">78.3%<br><small style="color:#64748b">1,199</small></td>
+<td class="tp-cell tp3">54.9%<br><small style="color:#64748b">422</small></td>
+</tr><tr>
+<td class="rank">11</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">4,470</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,505</span><br>
+  <span class="pct-ok">(33.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:46%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,965</span></td>
+<td class="tp-cell tp2">80.9%<br><small style="color:#64748b">1,217</small></td>
+<td class="tp-cell tp3">57.9%<br><small style="color:#64748b">496</small></td>
+</tr><tr>
+<td class="rank">12</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">4,617</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,393</span><br>
+  <span class="pct-ok">(30.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:43%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,224</span></td>
+<td class="tp-cell tp2">78.2%<br><small style="color:#64748b">1,090</small></td>
+<td class="tp-cell tp3">51.5%<br><small style="color:#64748b">433</small></td>
+</tr><tr>
+<td class="rank">13</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">4,521</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,376</span><br>
+  <span class="pct-ok">(30.4%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:42%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,145</span></td>
+<td class="tp-cell tp2">81.8%<br><small style="color:#64748b">1,126</small></td>
+<td class="tp-cell tp3">55.2%<br><small style="color:#64748b">429</small></td>
+</tr><tr>
+<td class="rank">14</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">4,030</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,295</span><br>
+  <span class="pct-ok">(32.1%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:40%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,735</span></td>
+<td class="tp-cell tp2">80.5%<br><small style="color:#64748b">1,042</small></td>
+<td class="tp-cell tp3">56.9%<br><small style="color:#64748b">432</small></td>
+</tr><tr>
+<td class="rank">15</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">4,282</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,272</span><br>
+  <span class="pct-ok">(29.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:39%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,010</span></td>
+<td class="tp-cell tp2">79.6%<br><small style="color:#64748b">1,013</small></td>
+<td class="tp-cell tp3">58.0%<br><small style="color:#64748b">371</small></td>
+</tr><tr>
+<td class="rank">16</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,947</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,113</span><br>
+  <span class="pct-ok">(37.8%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:34%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,834</span></td>
+<td class="tp-cell tp2">77.6%<br><small style="color:#64748b">864</small></td>
+<td class="tp-cell tp3">51.1%<br><small style="color:#64748b">360</small></td>
+</tr><tr>
+<td class="rank">17</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">6,484</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,112</span><br>
+  <span class="pct-ok">(17.1%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:34%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">5,372</span></td>
+<td class="tp-cell tp2">79.0%<br><small style="color:#64748b">878</small></td>
+<td class="tp-cell tp3">56.9%<br><small style="color:#64748b">369</small></td>
+</tr><tr>
+<td class="rank">18</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">6,481</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,110</span><br>
+  <span class="pct-ok">(17.1%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:34%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">5,371</span></td>
+<td class="tp-cell tp2">79.1%<br><small style="color:#64748b">878</small></td>
+<td class="tp-cell tp3">57.0%<br><small style="color:#64748b">369</small></td>
+</tr><tr>
+<td class="rank">19</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">4,180</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,110</span><br>
+  <span class="pct-ok">(26.6%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:34%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,070</span></td>
+<td class="tp-cell tp2">78.8%<br><small style="color:#64748b">875</small></td>
+<td class="tp-cell tp3">52.8%<br><small style="color:#64748b">335</small></td>
+</tr><tr>
+<td class="rank">20</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">3,635</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,106</span><br>
+  <span class="pct-ok">(30.4%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:34%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,529</span></td>
+<td class="tp-cell tp2">81.3%<br><small style="color:#64748b">899</small></td>
+<td class="tp-cell tp3">57.3%<br><small style="color:#64748b">366</small></td>
+</tr><tr>
+<td class="rank">21</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">5,596</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,002</span><br>
+  <span class="pct-ok">(17.9%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:31%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">4,594</span></td>
+<td class="tp-cell tp2">83.4%<br><small style="color:#64748b">836</small></td>
+<td class="tp-cell tp3">67.0%<br><small style="color:#64748b">381</small></td>
+</tr><tr>
+<td class="rank">22</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">5,591</span></td>
+<td style="text-align:center">
+  <span class="n-ok">1,001</span><br>
+  <span class="pct-ok">(17.9%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:31%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">4,590</span></td>
+<td class="tp-cell tp2">83.4%<br><small style="color:#64748b">835</small></td>
+<td class="tp-cell tp3">67.0%<br><small style="color:#64748b">381</small></td>
+</tr><tr>
+<td class="rank">23</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">5,333</span></td>
+<td style="text-align:center">
+  <span class="n-ok">991</span><br>
+  <span class="pct-ok">(18.6%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:30%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">4,342</span></td>
+<td class="tp-cell tp2">84.5%<br><small style="color:#64748b">837</small></td>
+<td class="tp-cell tp3">68.3%<br><small style="color:#64748b">367</small></td>
+</tr><tr>
+<td class="rank">24</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">5,333</span></td>
+<td style="text-align:center">
+  <span class="n-ok">991</span><br>
+  <span class="pct-ok">(18.6%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:30%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">4,342</span></td>
+<td class="tp-cell tp2">84.5%<br><small style="color:#64748b">837</small></td>
+<td class="tp-cell tp3">68.3%<br><small style="color:#64748b">367</small></td>
+</tr><tr>
+<td class="rank">25</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">5,925</span></td>
+<td style="text-align:center">
+  <span class="n-ok">990</span><br>
+  <span class="pct-ok">(16.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:30%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">4,935</span></td>
+<td class="tp-cell tp2">79.5%<br><small style="color:#64748b">787</small></td>
+<td class="tp-cell tp3">55.1%<br><small style="color:#64748b">310</small></td>
+</tr><tr>
+<td class="rank">26</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">5,921</span></td>
+<td style="text-align:center">
+  <span class="n-ok">990</span><br>
+  <span class="pct-ok">(16.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:30%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">4,931</span></td>
+<td class="tp-cell tp2">79.5%<br><small style="color:#64748b">787</small></td>
+<td class="tp-cell tp3">55.1%<br><small style="color:#64748b">310</small></td>
+</tr><tr>
+<td class="rank">27</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">قوية</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">3,091</span></td>
+<td style="text-align:center">
+  <span class="n-ok">989</span><br>
+  <span class="pct-ok">(32.0%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:30%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,102</span></td>
+<td class="tp-cell tp2">77.5%<br><small style="color:#64748b">766</small></td>
+<td class="tp-cell tp3">53.9%<br><small style="color:#64748b">290</small></td>
+</tr><tr>
+<td class="rank">28</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,882</span></td>
+<td style="text-align:center">
+  <span class="n-ok">976</span><br>
+  <span class="pct-ok">(33.9%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:30%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,906</span></td>
+<td class="tp-cell tp2">82.2%<br><small style="color:#64748b">802</small></td>
+<td class="tp-cell tp3">59.7%<br><small style="color:#64748b">351</small></td>
+</tr><tr>
+<td class="rank">29</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح عميق ≥62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">2,465</span></td>
+<td style="text-align:center">
+  <span class="n-ok">969</span><br>
+  <span class="pct-ok">(39.3%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:30%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,496</span></td>
+<td class="tp-cell tp2">81.3%<br><small style="color:#64748b">788</small></td>
+<td class="tp-cell tp3">51.8%<br><small style="color:#64748b">287</small></td>
+</tr><tr>
+<td class="rank">30</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,808</span></td>
+<td style="text-align:center">
+  <span class="n-ok">964</span><br>
+  <span class="pct-ok">(34.3%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:29%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,844</span></td>
+<td class="tp-cell tp2">79.3%<br><small style="color:#64748b">764</small></td>
+<td class="tp-cell tp3">54.9%<br><small style="color:#64748b">282</small></td>
+</tr><tr>
+<td class="rank">31</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,511</span></td>
+<td style="text-align:center">
+  <span class="n-ok">949</span><br>
+  <span class="pct-ok">(37.8%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:29%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,562</span></td>
+<td class="tp-cell tp2">74.5%<br><small style="color:#64748b">707</small></td>
+<td class="tp-cell tp3">49.1%<br><small style="color:#64748b">303</small></td>
+</tr><tr>
+<td class="rank">32</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">3,473</span></td>
+<td style="text-align:center">
+  <span class="n-ok">932</span><br>
+  <span class="pct-ok">(26.8%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:28%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,541</span></td>
+<td class="tp-cell tp2">76.2%<br><small style="color:#64748b">710</small></td>
+<td class="tp-cell tp3">52.3%<br><small style="color:#64748b">292</small></td>
+</tr><tr>
+<td class="rank">33</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">test: <span class="factor-val">U1X1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + نقطة الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">2,168</span></td>
+<td style="text-align:center">
+  <span class="n-ok">864</span><br>
+  <span class="pct-ok">(39.9%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:26%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,304</span></td>
+<td class="tp-cell tp2">69.7%<br><small style="color:#64748b">602</small></td>
+<td class="tp-cell tp3">52.5%<br><small style="color:#64748b">454</small></td>
+</tr><tr>
+<td class="rank">34</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,734</span></td>
+<td style="text-align:center">
+  <span class="n-ok">863</span><br>
+  <span class="pct-ok">(31.6%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:26%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,871</span></td>
+<td class="tp-cell tp2">79.7%<br><small style="color:#64748b">688</small></td>
+<td class="tp-cell tp3">54.5%<br><small style="color:#64748b">286</small></td>
+</tr><tr>
+<td class="rank">35</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">2,950</span></td>
+<td style="text-align:center">
+  <span class="n-ok">833</span><br>
+  <span class="pct-ok">(28.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:25%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,117</span></td>
+<td class="tp-cell tp2">80.4%<br><small style="color:#64748b">670</small></td>
+<td class="tp-cell tp3">60.1%<br><small style="color:#64748b">249</small></td>
+</tr><tr>
+<td class="rank">36</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">قوية</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">2,716</span></td>
+<td style="text-align:center">
+  <span class="n-ok">813</span><br>
+  <span class="pct-ok">(29.9%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:25%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,903</span></td>
+<td class="tp-cell tp2">78.2%<br><small style="color:#64748b">636</small></td>
+<td class="tp-cell tp3">54.9%<br><small style="color:#64748b">241</small></td>
+</tr><tr>
+<td class="rank">37</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,434</span></td>
+<td style="text-align:center">
+  <span class="n-ok">806</span><br>
+  <span class="pct-ok">(33.1%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:25%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,628</span></td>
+<td class="tp-cell tp2">83.7%<br><small style="color:#64748b">675</small></td>
+<td class="tp-cell tp3">62.8%<br><small style="color:#64748b">294</small></td>
+</tr><tr>
+<td class="rank">38</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح عميق ≥62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">2,098</span></td>
+<td style="text-align:center">
+  <span class="n-ok">803</span><br>
+  <span class="pct-ok">(38.3%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:24%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,295</span></td>
+<td class="tp-cell tp2">79.5%<br><small style="color:#64748b">638</small></td>
+<td class="tp-cell tp3">51.8%<br><small style="color:#64748b">233</small></td>
+</tr><tr>
+<td class="rank">39</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZC</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">2,529</span></td>
+<td style="text-align:center">
+  <span class="n-ok">787</span><br>
+  <span class="pct-ok">(31.1%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:24%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,742</span></td>
+<td class="tp-cell tp2">80.3%<br><small style="color:#64748b">632</small></td>
+<td class="tp-cell tp3">57.1%<br><small style="color:#64748b">222</small></td>
+</tr><tr>
+<td class="rank">40</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,639</span></td>
+<td style="text-align:center">
+  <span class="n-ok">784</span><br>
+  <span class="pct-ok">(29.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:24%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,855</span></td>
+<td class="tp-cell tp2">78.3%<br><small style="color:#64748b">614</small></td>
+<td class="tp-cell tp3">56.1%<br><small style="color:#64748b">216</small></td>
+</tr><tr>
+<td class="rank">41</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZC</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">2,370</span></td>
+<td style="text-align:center">
+  <span class="n-ok">761</span><br>
+  <span class="pct-ok">(32.1%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:23%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,609</span></td>
+<td class="tp-cell tp2">79.2%<br><small style="color:#64748b">603</small></td>
+<td class="tp-cell tp3">58.9%<br><small style="color:#64748b">234</small></td>
+</tr><tr>
+<td class="rank">42</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,276</span></td>
+<td style="text-align:center">
+  <span class="n-ok">756</span><br>
+  <span class="pct-ok">(33.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:23%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,520</span></td>
+<td class="tp-cell tp2">78.7%<br><small style="color:#64748b">595</small></td>
+<td class="tp-cell tp3">55.8%<br><small style="color:#64748b">217</small></td>
+</tr><tr>
+<td class="rank">43</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">test: <span class="factor-val">U1X1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + نقطة الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">1,800</span></td>
+<td style="text-align:center">
+  <span class="n-ok">742</span><br>
+  <span class="pct-ok">(41.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:23%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,058</span></td>
+<td class="tp-cell tp2">65.6%<br><small style="color:#64748b">487</small></td>
+<td class="tp-cell tp3">52.3%<br><small style="color:#64748b">388</small></td>
+</tr><tr>
+<td class="rank">44</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,523</span></td>
+<td style="text-align:center">
+  <span class="n-ok">733</span><br>
+  <span class="pct-ok">(29.1%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:22%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,790</span></td>
+<td class="tp-cell tp2">80.5%<br><small style="color:#64748b">590</small></td>
+<td class="tp-cell tp3">59.9%<br><small style="color:#64748b">221</small></td>
+</tr><tr>
+<td class="rank">45</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,366</span></td>
+<td style="text-align:center">
+  <span class="n-ok">728</span><br>
+  <span class="pct-ok">(30.8%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:22%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,638</span></td>
+<td class="tp-cell tp2">81.5%<br><small style="color:#64748b">593</small></td>
+<td class="tp-cell tp3">51.7%<br><small style="color:#64748b">211</small></td>
+</tr><tr>
+<td class="rank">46</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">ارتداد</span></span> <span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,015</span></td>
+<td style="text-align:center">
+  <span class="n-ok">713</span><br>
+  <span class="pct-ok">(35.4%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:22%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,302</span></td>
+<td class="tp-cell tp2">81.6%<br><small style="color:#64748b">582</small></td>
+<td class="tp-cell tp3">59.1%<br><small style="color:#64748b">247</small></td>
+</tr><tr>
+<td class="rank">47</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,205</span></td>
+<td style="text-align:center">
+  <span class="n-ok">707</span><br>
+  <span class="pct-ok">(32.1%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:21%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,498</span></td>
+<td class="tp-cell tp2">82.7%<br><small style="color:#64748b">585</small></td>
+<td class="tp-cell tp3">59.1%<br><small style="color:#64748b">251</small></td>
+</tr><tr>
+<td class="rank">48</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">3,746</span></td>
+<td style="text-align:center">
+  <span class="n-ok">701</span><br>
+  <span class="pct-ok">(18.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:21%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,045</span></td>
+<td class="tp-cell tp2">88.0%<br><small style="color:#64748b">617</small></td>
+<td class="tp-cell tp3">75.7%<br><small style="color:#64748b">287</small></td>
+</tr><tr>
+<td class="rank">49</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">3,740</span></td>
+<td style="text-align:center">
+  <span class="n-ok">700</span><br>
+  <span class="pct-ok">(18.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:21%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,040</span></td>
+<td class="tp-cell tp2">88.0%<br><small style="color:#64748b">616</small></td>
+<td class="tp-cell tp3">75.7%<br><small style="color:#64748b">286</small></td>
+</tr><tr>
+<td class="rank">50</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,394</span></td>
+<td style="text-align:center">
+  <span class="n-ok">686</span><br>
+  <span class="pct-ok">(28.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:21%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,708</span></td>
+<td class="tp-cell tp2">81.2%<br><small style="color:#64748b">557</small></td>
+<td class="tp-cell tp3">58.6%<br><small style="color:#64748b">195</small></td>
+</tr><tr>
+<td class="rank">51</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">2,679</span></td>
+<td style="text-align:center">
+  <span class="n-ok">684</span><br>
+  <span class="pct-ok">(25.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:21%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,995</span></td>
+<td class="tp-cell tp2">79.8%<br><small style="color:#64748b">546</small></td>
+<td class="tp-cell tp3">59.4%<br><small style="color:#64748b">212</small></td>
+</tr><tr>
+<td class="rank">52</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 متوسط</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,264</span></td>
+<td style="text-align:center">
+  <span class="n-ok">684</span><br>
+  <span class="pct-ok">(30.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:21%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,580</span></td>
+<td class="tp-cell tp2">77.5%<br><small style="color:#64748b">530</small></td>
+<td class="tp-cell tp3">54.4%<br><small style="color:#64748b">202</small></td>
+</tr><tr>
+<td class="rank">53</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">Asia</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,957</span></td>
+<td style="text-align:center">
+  <span class="n-ok">678</span><br>
+  <span class="pct-ok">(22.9%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:21%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,279</span></td>
+<td class="tp-cell tp2">80.4%<br><small style="color:#64748b">545</small></td>
+<td class="tp-cell tp3">52.5%<br><small style="color:#64748b">158</small></td>
+</tr><tr>
+<td class="rank">54</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">3,894</span></td>
+<td style="text-align:center">
+  <span class="n-ok">670</span><br>
+  <span class="pct-ok">(17.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:20%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,224</span></td>
+<td class="tp-cell tp2">82.1%<br><small style="color:#64748b">550</small></td>
+<td class="tp-cell tp3">65.6%<br><small style="color:#64748b">246</small></td>
+</tr><tr>
+<td class="rank">55</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">3,892</span></td>
+<td style="text-align:center">
+  <span class="n-ok">670</span><br>
+  <span class="pct-ok">(17.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:20%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,222</span></td>
+<td class="tp-cell tp2">82.1%<br><small style="color:#64748b">550</small></td>
+<td class="tp-cell tp3">65.6%<br><small style="color:#64748b">246</small></td>
+</tr><tr>
+<td class="rank">56</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح عميق ≥62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">1,695</span></td>
+<td style="text-align:center">
+  <span class="n-ok">669</span><br>
+  <span class="pct-ok">(39.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:20%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,026</span></td>
+<td class="tp-cell tp2">79.8%<br><small style="color:#64748b">534</small></td>
+<td class="tp-cell tp3">56.5%<br><small style="color:#64748b">218</small></td>
+</tr><tr>
+<td class="rank">57</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 كبير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">3,819</span></td>
+<td style="text-align:center">
+  <span class="n-ok">666</span><br>
+  <span class="pct-ok">(17.4%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:20%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,153</span></td>
+<td class="tp-cell tp2">83.2%<br><small style="color:#64748b">554</small></td>
+<td class="tp-cell tp3">68.1%<br><small style="color:#64748b">252</small></td>
+</tr><tr>
+<td class="rank">58</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 متوسط</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">1,922</span></td>
+<td style="text-align:center">
+  <span class="n-ok">663</span><br>
+  <span class="pct-ok">(34.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:20%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,259</span></td>
+<td class="tp-cell tp2">76.6%<br><small style="color:#64748b">508</small></td>
+<td class="tp-cell tp3">51.5%<br><small style="color:#64748b">168</small></td>
+</tr><tr>
+<td class="rank">59</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">L: <span class="factor-val">L/U1 كبير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">3,812</span></td>
+<td style="text-align:center">
+  <span class="n-ok">658</span><br>
+  <span class="pct-ok">(17.3%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:20%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,154</span></td>
+<td class="tp-cell tp2">83.7%<br><small style="color:#64748b">551</small></td>
+<td class="tp-cell tp3">70.1%<br><small style="color:#64748b">265</small></td>
+</tr><tr>
+<td class="rank">60</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 >140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">3,743</span></td>
+<td style="text-align:center">
+  <span class="n-ok">655</span><br>
+  <span class="pct-ok">(17.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:20%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,088</span></td>
+<td class="tp-cell tp2">77.9%<br><small style="color:#64748b">510</small></td>
+<td class="tp-cell tp3">53.4%<br><small style="color:#64748b">202</small></td>
+</tr><tr>
+<td class="rank">61</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 >140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">3,743</span></td>
+<td style="text-align:center">
+  <span class="n-ok">655</span><br>
+  <span class="pct-ok">(17.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:20%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">3,088</span></td>
+<td class="tp-cell tp2">77.9%<br><small style="color:#64748b">510</small></td>
+<td class="tp-cell tp3">53.4%<br><small style="color:#64748b">202</small></td>
+</tr><tr>
+<td class="rank">62</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">test: <span class="factor-val">DRX1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + نقطة الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">1,815</span></td>
+<td style="text-align:center">
+  <span class="n-ok">648</span><br>
+  <span class="pct-ok">(35.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:20%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,167</span></td>
+<td class="tp-cell tp2">100.0%<br><small style="color:#64748b">648</small></td>
+<td class="tp-cell tp3">—<br><small style="color:#64748b">—</small></td>
+</tr><tr>
+<td class="rank">63</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">1,767</span></td>
+<td style="text-align:center">
+  <span class="n-ok">640</span><br>
+  <span class="pct-ok">(36.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:19%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,127</span></td>
+<td class="tp-cell tp2">81.2%<br><small style="color:#64748b">520</small></td>
+<td class="tp-cell tp3">60.8%<br><small style="color:#64748b">217</small></td>
+</tr><tr>
+<td class="rank">64</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">1,959</span></td>
+<td style="text-align:center">
+  <span class="n-ok">639</span><br>
+  <span class="pct-ok">(32.6%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:19%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,320</span></td>
+<td class="tp-cell tp2">75.7%<br><small style="color:#64748b">484</small></td>
+<td class="tp-cell tp3">49.5%<br><small style="color:#64748b">165</small></td>
+</tr><tr>
+<td class="rank">65</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">L: <span class="factor-val">L/U1 متوسط</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">1,963</span></td>
+<td style="text-align:center">
+  <span class="n-ok">638</span><br>
+  <span class="pct-ok">(32.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:19%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,325</span></td>
+<td class="tp-cell tp2">81.7%<br><small style="color:#64748b">521</small></td>
+<td class="tp-cell tp3">61.6%<br><small style="color:#64748b">197</small></td>
+</tr><tr>
+<td class="rank">66</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,132</span></td>
+<td style="text-align:center">
+  <span class="n-ok">633</span><br>
+  <span class="pct-ok">(29.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:19%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,499</span></td>
+<td class="tp-cell tp2">80.3%<br><small style="color:#64748b">508</small></td>
+<td class="tp-cell tp3">57.7%<br><small style="color:#64748b">184</small></td>
+</tr><tr>
+<td class="rank">67</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 >140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,293</span></td>
+<td style="text-align:center">
+  <span class="n-ok">624</span><br>
+  <span class="pct-ok">(27.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:19%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,669</span></td>
+<td class="tp-cell tp2">77.9%<br><small style="color:#64748b">486</small></td>
+<td class="tp-cell tp3">48.9%<br><small style="color:#64748b">203</small></td>
+</tr><tr>
+<td class="rank">68</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 كبير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,278</span></td>
+<td style="text-align:center">
+  <span class="n-ok">622</span><br>
+  <span class="pct-ok">(27.3%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:19%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,656</span></td>
+<td class="tp-cell tp2">78.6%<br><small style="color:#64748b">489</small></td>
+<td class="tp-cell tp3">59.4%<br><small style="color:#64748b">187</small></td>
+</tr><tr>
+<td class="rank">69</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,049</span></td>
+<td style="text-align:center">
+  <span class="n-ok">619</span><br>
+  <span class="pct-ok">(30.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:19%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,430</span></td>
+<td class="tp-cell tp2">78.4%<br><small style="color:#64748b">485</small></td>
+<td class="tp-cell tp3">54.7%<br><small style="color:#64748b">197</small></td>
+</tr><tr>
+<td class="rank">70</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span> <span class="factor">test: <span class="factor-val">U1X1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L + الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">1,442</span></td>
+<td style="text-align:center">
+  <span class="n-ok">618</span><br>
+  <span class="pct-ok">(42.9%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:19%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">824</span></td>
+<td class="tp-cell tp2">68.8%<br><small style="color:#64748b">425</small></td>
+<td class="tp-cell tp3">51.8%<br><small style="color:#64748b">320</small></td>
+</tr><tr>
+<td class="rank">71</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">ارتداد</span></span> <span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">1,873</span></td>
+<td style="text-align:center">
+  <span class="n-ok">610</span><br>
+  <span class="pct-ok">(32.6%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:18%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,263</span></td>
+<td class="tp-cell tp2">81.3%<br><small style="color:#64748b">496</small></td>
+<td class="tp-cell tp3">59.0%<br><small style="color:#64748b">204</small></td>
+</tr><tr>
+<td class="rank">72</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">ارتداد</span></span> <span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">1,533</span></td>
+<td style="text-align:center">
+  <span class="n-ok">600</span><br>
+  <span class="pct-ok">(39.1%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:18%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">933</span></td>
+<td class="tp-cell tp2">77.7%<br><small style="color:#64748b">466</small></td>
+<td class="tp-cell tp3">58.8%<br><small style="color:#64748b">191</small></td>
+</tr><tr>
+<td class="rank">73</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,131</span></td>
+<td style="text-align:center">
+  <span class="n-ok">594</span><br>
+  <span class="pct-ok">(27.9%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:18%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,537</span></td>
+<td class="tp-cell tp2">82.5%<br><small style="color:#64748b">490</small></td>
+<td class="tp-cell tp3">62.6%<br><small style="color:#64748b">186</small></td>
+</tr><tr>
+<td class="rank">74</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">1,585</span></td>
+<td style="text-align:center">
+  <span class="n-ok">594</span><br>
+  <span class="pct-ok">(37.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:18%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">991</span></td>
+<td class="tp-cell tp2">83.3%<br><small style="color:#64748b">495</small></td>
+<td class="tp-cell tp3">61.5%<br><small style="color:#64748b">233</small></td>
+</tr><tr>
+<td class="rank">75</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 >140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">3,590</span></td>
+<td style="text-align:center">
+  <span class="n-ok">593</span><br>
+  <span class="pct-ok">(16.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:18%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,997</span></td>
+<td class="tp-cell tp2">79.1%<br><small style="color:#64748b">469</small></td>
+<td class="tp-cell tp3">51.8%<br><small style="color:#64748b">183</small></td>
+</tr><tr>
+<td class="rank">76</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 >140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">3,590</span></td>
+<td style="text-align:center">
+  <span class="n-ok">593</span><br>
+  <span class="pct-ok">(16.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:18%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,997</span></td>
+<td class="tp-cell tp2">79.1%<br><small style="color:#64748b">469</small></td>
+<td class="tp-cell tp3">51.8%<br><small style="color:#64748b">183</small></td>
+</tr><tr>
+<td class="rank">77</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 <60%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">1,688</span></td>
+<td style="text-align:center">
+  <span class="n-ok">590</span><br>
+  <span class="pct-ok">(35.0%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:18%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,098</span></td>
+<td class="tp-cell tp2">75.3%<br><small style="color:#64748b">444</small></td>
+<td class="tp-cell tp3">49.8%<br><small style="color:#64748b">150</small></td>
+</tr><tr>
+<td class="rank">78</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 >140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,200</span></td>
+<td style="text-align:center">
+  <span class="n-ok">588</span><br>
+  <span class="pct-ok">(26.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:18%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,612</span></td>
+<td class="tp-cell tp2">77.6%<br><small style="color:#64748b">456</small></td>
+<td class="tp-cell tp3">49.5%<br><small style="color:#64748b">195</small></td>
+</tr><tr>
+<td class="rank">79</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">2,031</span></td>
+<td style="text-align:center">
+  <span class="n-ok">586</span><br>
+  <span class="pct-ok">(28.9%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:18%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,445</span></td>
+<td class="tp-cell tp2">82.4%<br><small style="color:#64748b">483</small></td>
+<td class="tp-cell tp3">59.8%<br><small style="color:#64748b">201</small></td>
+</tr><tr>
+<td class="rank">80</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">3,494</span></td>
+<td style="text-align:center">
+  <span class="n-ok">584</span><br>
+  <span class="pct-ok">(16.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:18%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,910</span></td>
+<td class="tp-cell tp2">82.5%<br><small style="color:#64748b">482</small></td>
+<td class="tp-cell tp3">62.9%<br><small style="color:#64748b">212</small></td>
+</tr><tr>
+<td class="rank">81</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,776</span></td>
+<td style="text-align:center">
+  <span class="n-ok">562</span><br>
+  <span class="pct-ok">(20.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:17%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,214</span></td>
+<td class="tp-cell tp2">78.6%<br><small style="color:#64748b">442</small></td>
+<td class="tp-cell tp3">58.8%<br><small style="color:#64748b">218</small></td>
+</tr><tr>
+<td class="rank">82</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,776</span></td>
+<td style="text-align:center">
+  <span class="n-ok">562</span><br>
+  <span class="pct-ok">(20.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:17%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,214</span></td>
+<td class="tp-cell tp2">78.6%<br><small style="color:#64748b">442</small></td>
+<td class="tp-cell tp3">58.8%<br><small style="color:#64748b">218</small></td>
+</tr><tr>
+<td class="rank">83</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">test: <span class="factor-val">U2X1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + نقطة الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">1,469</span></td>
+<td style="text-align:center">
+  <span class="n-ok">562</span><br>
+  <span class="pct-ok">(38.3%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:17%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">907</span></td>
+<td class="tp-cell tp2">71.0%<br><small style="color:#64748b">399</small></td>
+<td class="tp-cell tp3">51.4%<br><small style="color:#64748b">289</small></td>
+</tr><tr>
+<td class="rank">84</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح عميق ≥62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">1,470</span></td>
+<td style="text-align:center">
+  <span class="n-ok">558</span><br>
+  <span class="pct-ok">(38.0%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:17%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">912</span></td>
+<td class="tp-cell tp2">80.6%<br><small style="color:#64748b">450</small></td>
+<td class="tp-cell tp3">57.1%<br><small style="color:#64748b">189</small></td>
+</tr><tr>
+<td class="rank">85</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">L: <span class="factor-val">L/U1 متوسط</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">1,777</span></td>
+<td style="text-align:center">
+  <span class="n-ok">554</span><br>
+  <span class="pct-ok">(31.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:17%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,223</span></td>
+<td class="tp-cell tp2">75.8%<br><small style="color:#64748b">420</small></td>
+<td class="tp-cell tp3">51.0%<br><small style="color:#64748b">150</small></td>
+</tr><tr>
+<td class="rank">86</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">1,412</span></td>
+<td style="text-align:center">
+  <span class="n-ok">543</span><br>
+  <span class="pct-ok">(38.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:16%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">869</span></td>
+<td class="tp-cell tp2">79.7%<br><small style="color:#64748b">433</small></td>
+<td class="tp-cell tp3">58.3%<br><small style="color:#64748b">211</small></td>
+</tr><tr>
+<td class="rank">87</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">1,456</span></td>
+<td style="text-align:center">
+  <span class="n-ok">542</span><br>
+  <span class="pct-ok">(37.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:16%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">914</span></td>
+<td class="tp-cell tp2">80.3%<br><small style="color:#64748b">435</small></td>
+<td class="tp-cell tp3">56.8%<br><small style="color:#64748b">167</small></td>
+</tr><tr>
+<td class="rank">88</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">session: <span class="factor-val">Asia</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,475</span></td>
+<td style="text-align:center">
+  <span class="n-ok">534</span><br>
+  <span class="pct-ok">(21.6%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:16%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,941</span></td>
+<td class="tp-cell tp2">82.0%<br><small style="color:#64748b">438</small></td>
+<td class="tp-cell tp3">59.6%<br><small style="color:#64748b">136</small></td>
+</tr><tr>
+<td class="rank">89</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">London</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">1,543</span></td>
+<td style="text-align:center">
+  <span class="n-ok">533</span><br>
+  <span class="pct-ok">(34.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:16%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,010</span></td>
+<td class="tp-cell tp2">80.7%<br><small style="color:#64748b">430</small></td>
+<td class="tp-cell tp3">53.5%<br><small style="color:#64748b">176</small></td>
+</tr><tr>
+<td class="rank">90</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">1,927</span></td>
+<td style="text-align:center">
+  <span class="n-ok">530</span><br>
+  <span class="pct-ok">(27.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:16%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,397</span></td>
+<td class="tp-cell tp2">80.6%<br><small style="color:#64748b">427</small></td>
+<td class="tp-cell tp3">58.4%<br><small style="color:#64748b">188</small></td>
+</tr><tr>
+<td class="rank">91</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">3,248</span></td>
+<td style="text-align:center">
+  <span class="n-ok">528</span><br>
+  <span class="pct-ok">(16.3%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:16%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,720</span></td>
+<td class="tp-cell tp2">82.6%<br><small style="color:#64748b">436</small></td>
+<td class="tp-cell tp3">59.5%<br><small style="color:#64748b">172</small></td>
+</tr><tr>
+<td class="rank">92</td>
+<td class="label-cell"><span class="factor">prev_cls: <span class="factor-val">ZB</span></span> <span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الزاوية السابقة + الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">1,672</span></td>
+<td style="text-align:center">
+  <span class="n-ok">521</span><br>
+  <span class="pct-ok">(31.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:16%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,151</span></td>
+<td class="tp-cell tp2">75.6%<br><small style="color:#64748b">394</small></td>
+<td class="tp-cell tp3">47.1%<br><small style="color:#64748b">136</small></td>
+</tr><tr>
+<td class="rank">93</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span> <span class="factor">test: <span class="factor-val">U1X1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L + الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">1,252</span></td>
+<td style="text-align:center">
+  <span class="n-ok">520</span><br>
+  <span class="pct-ok">(41.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:16%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">732</span></td>
+<td class="tp-cell tp2">64.0%<br><small style="color:#64748b">333</small></td>
+<td class="tp-cell tp3">50.8%<br><small style="color:#64748b">264</small></td>
+</tr><tr>
+<td class="rank">94</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 متوسط</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,984</span></td>
+<td style="text-align:center">
+  <span class="n-ok">519</span><br>
+  <span class="pct-ok">(17.4%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:16%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,465</span></td>
+<td class="tp-cell tp2">79.0%<br><small style="color:#64748b">410</small></td>
+<td class="tp-cell tp3">58.9%<br><small style="color:#64748b">176</small></td>
+</tr><tr>
+<td class="rank">95</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">Asia</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">1,831</span></td>
+<td style="text-align:center">
+  <span class="n-ok">518</span><br>
+  <span class="pct-ok">(28.3%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:16%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,313</span></td>
+<td class="tp-cell tp2">76.8%<br><small style="color:#64748b">398</small></td>
+<td class="tp-cell tp3">51.8%<br><small style="color:#64748b">129</small></td>
+</tr><tr>
+<td class="rank">96</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">1,860</span></td>
+<td style="text-align:center">
+  <span class="n-ok">515</span><br>
+  <span class="pct-ok">(27.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:16%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,345</span></td>
+<td class="tp-cell tp2">78.8%<br><small style="color:#64748b">406</small></td>
+<td class="tp-cell tp3">59.5%<br><small style="color:#64748b">150</small></td>
+</tr><tr>
+<td class="rank">97</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">test: <span class="factor-val">U1X1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + نقطة الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">1,223</span></td>
+<td style="text-align:center">
+  <span class="n-ok">506</span><br>
+  <span class="pct-ok">(41.4%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:15%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">717</span></td>
+<td class="tp-cell tp2">71.1%<br><small style="color:#64748b">360</small></td>
+<td class="tp-cell tp3">57.3%<br><small style="color:#64748b">290</small></td>
+</tr><tr>
+<td class="rank">98</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">1,568</span></td>
+<td style="text-align:center">
+  <span class="n-ok">505</span><br>
+  <span class="pct-ok">(32.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:15%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,063</span></td>
+<td class="tp-cell tp2">77.2%<br><small style="color:#64748b">390</small></td>
+<td class="tp-cell tp3">53.7%<br><small style="color:#64748b">167</small></td>
+</tr><tr>
+<td class="rank">99</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,694</span></td>
+<td style="text-align:center">
+  <span class="n-ok">502</span><br>
+  <span class="pct-ok">(18.6%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:15%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,192</span></td>
+<td class="tp-cell tp2">84.5%<br><small style="color:#64748b">424</small></td>
+<td class="tp-cell tp3">70.1%<br><small style="color:#64748b">209</small></td>
+</tr><tr>
+<td class="rank">100</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,693</span></td>
+<td style="text-align:center">
+  <span class="n-ok">502</span><br>
+  <span class="pct-ok">(18.6%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:15%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,191</span></td>
+<td class="tp-cell tp2">84.5%<br><small style="color:#64748b">424</small></td>
+<td class="tp-cell tp3">70.1%<br><small style="color:#64748b">209</small></td>
+</tr><tr>
+<td class="rank">101</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,802</span></td>
+<td style="text-align:center">
+  <span class="n-ok">489</span><br>
+  <span class="pct-ok">(17.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:15%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,313</span></td>
+<td class="tp-cell tp2">85.1%<br><small style="color:#64748b">416</small></td>
+<td class="tp-cell tp3">69.9%<br><small style="color:#64748b">190</small></td>
+</tr><tr>
+<td class="rank">102</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,504</span></td>
+<td style="text-align:center">
+  <span class="n-ok">487</span><br>
+  <span class="pct-ok">(19.4%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:15%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,017</span></td>
+<td class="tp-cell tp2">76.6%<br><small style="color:#64748b">373</small></td>
+<td class="tp-cell tp3">55.2%<br><small style="color:#64748b">171</small></td>
+</tr><tr>
+<td class="rank">103</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,501</span></td>
+<td style="text-align:center">
+  <span class="n-ok">487</span><br>
+  <span class="pct-ok">(19.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:15%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,014</span></td>
+<td class="tp-cell tp2">76.6%<br><small style="color:#64748b">373</small></td>
+<td class="tp-cell tp3">55.2%<br><small style="color:#64748b">171</small></td>
+</tr><tr>
+<td class="rank">104</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">test: <span class="factor-val">DRX1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + نقطة الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">1,520</span></td>
+<td style="text-align:center">
+  <span class="n-ok">487</span><br>
+  <span class="pct-ok">(32.0%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:15%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,033</span></td>
+<td class="tp-cell tp2">100.0%<br><small style="color:#64748b">487</small></td>
+<td class="tp-cell tp3">—<br><small style="color:#64748b">—</small></td>
+</tr><tr>
+<td class="rank">105</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">L: <span class="factor-val">L/U1 متوسط</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,728</span></td>
+<td style="text-align:center">
+  <span class="n-ok">482</span><br>
+  <span class="pct-ok">(17.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,246</span></td>
+<td class="tp-cell tp2">80.7%<br><small style="color:#64748b">389</small></td>
+<td class="tp-cell tp3">56.0%<br><small style="color:#64748b">141</small></td>
+</tr><tr>
+<td class="rank">106</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span> <span class="factor">test: <span class="factor-val">DRX1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L + الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">1,212</span></td>
+<td style="text-align:center">
+  <span class="n-ok">482</span><br>
+  <span class="pct-ok">(39.8%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">730</span></td>
+<td class="tp-cell tp2">100.0%<br><small style="color:#64748b">482</small></td>
+<td class="tp-cell tp3">—<br><small style="color:#64748b">—</small></td>
+</tr><tr>
+<td class="rank">107</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,662</span></td>
+<td style="text-align:center">
+  <span class="n-ok">479</span><br>
+  <span class="pct-ok">(18.0%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,183</span></td>
+<td class="tp-cell tp2">82.9%<br><small style="color:#64748b">397</small></td>
+<td class="tp-cell tp3">68.8%<br><small style="color:#64748b">192</small></td>
+</tr><tr>
+<td class="rank">108</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">ارتداد</span></span> <span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">1,339</span></td>
+<td style="text-align:center">
+  <span class="n-ok">479</span><br>
+  <span class="pct-ok">(35.8%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">860</span></td>
+<td class="tp-cell tp2">82.7%<br><small style="color:#64748b">396</small></td>
+<td class="tp-cell tp3">64.6%<br><small style="color:#64748b">155</small></td>
+</tr><tr>
+<td class="rank">109</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,657</span></td>
+<td style="text-align:center">
+  <span class="n-ok">478</span><br>
+  <span class="pct-ok">(18.0%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,179</span></td>
+<td class="tp-cell tp2">82.8%<br><small style="color:#64748b">396</small></td>
+<td class="tp-cell tp3">68.8%<br><small style="color:#64748b">192</small></td>
+</tr><tr>
+<td class="rank">110</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح عميق ≥62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">1,142</span></td>
+<td style="text-align:center">
+  <span class="n-ok">475</span><br>
+  <span class="pct-ok">(41.6%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">667</span></td>
+<td class="tp-cell tp2">75.6%<br><small style="color:#64748b">359</small></td>
+<td class="tp-cell tp3">46.9%<br><small style="color:#64748b">114</small></td>
+</tr><tr>
+<td class="rank">111</td>
+<td class="label-cell"><span class="factor">prev_cls: <span class="factor-val">ZF</span></span> <span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الزاوية السابقة + الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">1,433</span></td>
+<td style="text-align:center">
+  <span class="n-ok">473</span><br>
+  <span class="pct-ok">(33.0%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">960</span></td>
+<td class="tp-cell tp2">77.6%<br><small style="color:#64748b">367</small></td>
+<td class="tp-cell tp3">49.6%<br><small style="color:#64748b">134</small></td>
+</tr><tr>
+<td class="rank">112</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">ارتداد</span></span> <span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">1,324</span></td>
+<td style="text-align:center">
+  <span class="n-ok">473</span><br>
+  <span class="pct-ok">(35.7%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">851</span></td>
+<td class="tp-cell tp2">83.5%<br><small style="color:#64748b">395</small></td>
+<td class="tp-cell tp3">61.2%<br><small style="color:#64748b">156</small></td>
+</tr><tr>
+<td class="rank">113</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 متوسط</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">1,368</span></td>
+<td style="text-align:center">
+  <span class="n-ok">469</span><br>
+  <span class="pct-ok">(34.3%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">899</span></td>
+<td class="tp-cell tp2">78.5%<br><small style="color:#64748b">368</small></td>
+<td class="tp-cell tp3">54.6%<br><small style="color:#64748b">130</small></td>
+</tr><tr>
+<td class="rank">114</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">1,782</span></td>
+<td style="text-align:center">
+  <span class="n-ok">467</span><br>
+  <span class="pct-ok">(26.2%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">1,315</span></td>
+<td class="tp-cell tp2">80.5%<br><small style="color:#64748b">376</small></td>
+<td class="tp-cell tp3">59.9%<br><small style="color:#64748b">145</small></td>
+</tr><tr>
+<td class="rank">115</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 كبير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,658</span></td>
+<td style="text-align:center">
+  <span class="n-ok">464</span><br>
+  <span class="pct-ok">(17.5%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,194</span></td>
+<td class="tp-cell tp2">89.0%<br><small style="color:#64748b">413</small></td>
+<td class="tp-cell tp3">77.0%<br><small style="color:#64748b">197</small></td>
+</tr><tr>
+<td class="rank">116</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,564</span></td>
+<td style="text-align:center">
+  <span class="n-ok">463</span><br>
+  <span class="pct-ok">(18.1%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,101</span></td>
+<td class="tp-cell tp2">84.9%<br><small style="color:#64748b">393</small></td>
+<td class="tp-cell tp3">69.8%<br><small style="color:#64748b">164</small></td>
+</tr><tr>
+<td class="rank">117</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,564</span></td>
+<td style="text-align:center">
+  <span class="n-ok">463</span><br>
+  <span class="pct-ok">(18.1%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,101</span></td>
+<td class="tp-cell tp2">84.9%<br><small style="color:#64748b">393</small></td>
+<td class="tp-cell tp3">69.8%<br><small style="color:#64748b">164</small></td>
+</tr><tr>
+<td class="rank">118</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,537</span></td>
+<td style="text-align:center">
+  <span class="n-ok">460</span><br>
+  <span class="pct-ok">(18.1%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,077</span></td>
+<td class="tp-cell tp2">84.1%<br><small style="color:#64748b">387</small></td>
+<td class="tp-cell tp3">69.2%<br><small style="color:#64748b">166</small></td>
+</tr><tr>
+<td class="rank">119</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,537</span></td>
+<td style="text-align:center">
+  <span class="n-ok">460</span><br>
+  <span class="pct-ok">(18.1%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,077</span></td>
+<td class="tp-cell tp2">84.1%<br><small style="color:#64748b">387</small></td>
+<td class="tp-cell tp3">69.2%<br><small style="color:#64748b">166</small></td>
+</tr><tr>
+<td class="rank">120</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,630</span></td>
+<td style="text-align:center">
+  <span class="n-ok">456</span><br>
+  <span class="pct-ok">(17.3%)</span>
+  <div class="bar-wrap"><div class="bar-ok" style="width:14%"></div></div>
+</td>
+<td style="text-align:center"><span class="n-fail" style="color:#94a3b8">2,174</span></td>
+<td class="tp-cell tp2">87.9%<br><small style="color:#64748b">401</small></td>
+<td class="tp-cell tp3">74.6%<br><small style="color:#64748b">185</small></td>
+</tr>
+</table>
+</div>
+
+<h2>❌ القسم الثاني — الأكثر ظهوراً والأكثر فشلاً (تجنبها)</h2>
+<p style="color:#94a3b8">مرتب تنازلياً حسب <b style="color:#f87171">عدد الإخفاقات المطلق</b> — هذه التوليفات التاريخ يقول تجنبها</p>
+<div class="sec">
+<table>
+<tr>
+<th>#</th><th>التوليفة / القانون</th>
+<th>إجمالي الظهور</th>
+<th>✅ نجاح</th>
+<th>❌ فشل (مطلق + نسبة)</th>
+<th>TP2%</th><th>TP3%</th>
+</tr>
+<tr>
+<td class="rank">1</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">ضعيفة</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">17,443</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">3,214</span></td>
+<td style="text-align:center">
+  <span class="n-fail">14,229</span><br>
+  <span class="pct-fail">(81.6% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:100%"></div></div>
+</td>
+<td class="tp-cell tp2">83.2%</td>
+<td class="tp-cell tp3">65.1%</td>
+</tr><tr>
+<td class="rank">2</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">ضعيفة</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">17,222</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">3,028</span></td>
+<td style="text-align:center">
+  <span class="n-fail">14,194</span><br>
+  <span class="pct-fail">(82.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:99%"></div></div>
+</td>
+<td class="tp-cell tp2">82.2%</td>
+<td class="tp-cell tp3">63.4%</td>
+</tr><tr>
+<td class="rank">3</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">قوية</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">10,796</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">2,983</span></td>
+<td style="text-align:center">
+  <span class="n-fail">7,813</span><br>
+  <span class="pct-fail">(72.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:54%"></div></div>
+</td>
+<td class="tp-cell tp2">80.0%</td>
+<td class="tp-cell tp3">56.8%</td>
+</tr><tr>
+<td class="rank">4</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">قوية</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">9,553</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">2,566</span></td>
+<td style="text-align:center">
+  <span class="n-fail">6,987</span><br>
+  <span class="pct-fail">(73.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:49%"></div></div>
+</td>
+<td class="tp-cell tp2">78.3%</td>
+<td class="tp-cell tp3">56.4%</td>
+</tr><tr>
+<td class="rank">5</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">7,922</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">2,487</span></td>
+<td style="text-align:center">
+  <span class="n-fail">5,435</span><br>
+  <span class="pct-fail">(68.6% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:38%"></div></div>
+</td>
+<td class="tp-cell tp2">79.4%</td>
+<td class="tp-cell tp3">52.1%</td>
+</tr><tr>
+<td class="rank">6</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">6,484</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,112</span></td>
+<td style="text-align:center">
+  <span class="n-fail">5,372</span><br>
+  <span class="pct-fail">(82.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:37%"></div></div>
+</td>
+<td class="tp-cell tp2">79.0%</td>
+<td class="tp-cell tp3">56.9%</td>
+</tr><tr>
+<td class="rank">7</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">6,481</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,110</span></td>
+<td style="text-align:center">
+  <span class="n-fail">5,371</span><br>
+  <span class="pct-fail">(82.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:37%"></div></div>
+</td>
+<td class="tp-cell tp2">79.1%</td>
+<td class="tp-cell tp3">57.0%</td>
+</tr><tr>
+<td class="rank">8</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">5,925</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">990</span></td>
+<td style="text-align:center">
+  <span class="n-fail">4,935</span><br>
+  <span class="pct-fail">(83.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:34%"></div></div>
+</td>
+<td class="tp-cell tp2">79.5%</td>
+<td class="tp-cell tp3">55.1%</td>
+</tr><tr>
+<td class="rank">9</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">5,921</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">990</span></td>
+<td style="text-align:center">
+  <span class="n-fail">4,931</span><br>
+  <span class="pct-fail">(83.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:34%"></div></div>
+</td>
+<td class="tp-cell tp2">79.5%</td>
+<td class="tp-cell tp3">55.1%</td>
+</tr><tr>
+<td class="rank">10</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">6,664</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">2,040</span></td>
+<td style="text-align:center">
+  <span class="n-fail">4,624</span><br>
+  <span class="pct-fail">(69.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:32%"></div></div>
+</td>
+<td class="tp-cell tp2">77.7%</td>
+<td class="tp-cell tp3">52.2%</td>
+</tr><tr>
+<td class="rank">11</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">5,596</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,002</span></td>
+<td style="text-align:center">
+  <span class="n-fail">4,594</span><br>
+  <span class="pct-fail">(82.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:32%"></div></div>
+</td>
+<td class="tp-cell tp2">83.4%</td>
+<td class="tp-cell tp3">67.0%</td>
+</tr><tr>
+<td class="rank">12</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">5,591</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,001</span></td>
+<td style="text-align:center">
+  <span class="n-fail">4,590</span><br>
+  <span class="pct-fail">(82.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:32%"></div></div>
+</td>
+<td class="tp-cell tp2">83.4%</td>
+<td class="tp-cell tp3">67.0%</td>
+</tr><tr>
+<td class="rank">13</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">5,333</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">991</span></td>
+<td style="text-align:center">
+  <span class="n-fail">4,342</span><br>
+  <span class="pct-fail">(81.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:30%"></div></div>
+</td>
+<td class="tp-cell tp2">84.5%</td>
+<td class="tp-cell tp3">68.3%</td>
+</tr><tr>
+<td class="rank">14</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">5,333</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">991</span></td>
+<td style="text-align:center">
+  <span class="n-fail">4,342</span><br>
+  <span class="pct-fail">(81.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:30%"></div></div>
+</td>
+<td class="tp-cell tp2">84.5%</td>
+<td class="tp-cell tp3">68.3%</td>
+</tr><tr>
+<td class="rank">15</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">5,307</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,723</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,584</span><br>
+  <span class="pct-fail">(67.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:25%"></div></div>
+</td>
+<td class="tp-cell tp2">80.6%</td>
+<td class="tp-cell tp3">51.1%</td>
+</tr><tr>
+<td class="rank">16</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">قوية</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح عميق ≥62%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">5,857</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">2,338</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,519</span><br>
+  <span class="pct-fail">(60.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:24%"></div></div>
+</td>
+<td class="tp-cell tp2">80.0%</td>
+<td class="tp-cell tp3">52.5%</td>
+</tr><tr>
+<td class="rank">17</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">4,823</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,531</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,292</span><br>
+  <span class="pct-fail">(68.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:23%"></div></div>
+</td>
+<td class="tp-cell tp2">78.3%</td>
+<td class="tp-cell tp3">54.9%</td>
+</tr><tr>
+<td class="rank">18</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">4,617</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,393</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,224</span><br>
+  <span class="pct-fail">(69.8% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:22%"></div></div>
+</td>
+<td class="tp-cell tp2">78.2%</td>
+<td class="tp-cell tp3">51.5%</td>
+</tr><tr>
+<td class="rank">19</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">3,894</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">670</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,224</span><br>
+  <span class="pct-fail">(82.8% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:22%"></div></div>
+</td>
+<td class="tp-cell tp2">82.1%</td>
+<td class="tp-cell tp3">65.6%</td>
+</tr><tr>
+<td class="rank">20</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">3,892</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">670</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,222</span><br>
+  <span class="pct-fail">(82.8% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:22%"></div></div>
+</td>
+<td class="tp-cell tp2">82.1%</td>
+<td class="tp-cell tp3">65.6%</td>
+</tr><tr>
+<td class="rank">21</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">L: <span class="factor-val">L/U1 كبير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">3,812</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">658</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,154</span><br>
+  <span class="pct-fail">(82.7% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:22%"></div></div>
+</td>
+<td class="tp-cell tp2">83.7%</td>
+<td class="tp-cell tp3">70.1%</td>
+</tr><tr>
+<td class="rank">22</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 كبير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">3,819</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">666</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,153</span><br>
+  <span class="pct-fail">(82.6% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:22%"></div></div>
+</td>
+<td class="tp-cell tp2">83.2%</td>
+<td class="tp-cell tp3">68.1%</td>
+</tr><tr>
+<td class="rank">23</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">4,521</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,376</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,145</span><br>
+  <span class="pct-fail">(69.6% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:22%"></div></div>
+</td>
+<td class="tp-cell tp2">81.8%</td>
+<td class="tp-cell tp3">55.2%</td>
+</tr><tr>
+<td class="rank">24</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">قوية</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح عميق ≥62%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">5,077</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,989</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,088</span><br>
+  <span class="pct-fail">(60.8% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:21%"></div></div>
+</td>
+<td class="tp-cell tp2">80.3%</td>
+<td class="tp-cell tp3">54.7%</td>
+</tr><tr>
+<td class="rank">25</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 >140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">3,743</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">655</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,088</span><br>
+  <span class="pct-fail">(82.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:21%"></div></div>
+</td>
+<td class="tp-cell tp2">77.9%</td>
+<td class="tp-cell tp3">53.4%</td>
+</tr><tr>
+<td class="rank">26</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 >140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">3,743</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">655</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,088</span><br>
+  <span class="pct-fail">(82.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:21%"></div></div>
+</td>
+<td class="tp-cell tp2">77.9%</td>
+<td class="tp-cell tp3">53.4%</td>
+</tr><tr>
+<td class="rank">27</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">4,180</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,110</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,070</span><br>
+  <span class="pct-fail">(73.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:21%"></div></div>
+</td>
+<td class="tp-cell tp2">78.8%</td>
+<td class="tp-cell tp3">52.8%</td>
+</tr><tr>
+<td class="rank">28</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">3,746</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">701</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,045</span><br>
+  <span class="pct-fail">(81.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:21%"></div></div>
+</td>
+<td class="tp-cell tp2">88.0%</td>
+<td class="tp-cell tp3">75.7%</td>
+</tr><tr>
+<td class="rank">29</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">3,740</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">700</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,040</span><br>
+  <span class="pct-fail">(81.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:21%"></div></div>
+</td>
+<td class="tp-cell tp2">88.0%</td>
+<td class="tp-cell tp3">75.7%</td>
+</tr><tr>
+<td class="rank">30</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">4,282</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,272</span></td>
+<td style="text-align:center">
+  <span class="n-fail">3,010</span><br>
+  <span class="pct-fail">(70.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:21%"></div></div>
+</td>
+<td class="tp-cell tp2">79.6%</td>
+<td class="tp-cell tp3">58.0%</td>
+</tr><tr>
+<td class="rank">31</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 >140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">3,590</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">593</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,997</span><br>
+  <span class="pct-fail">(83.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:21%"></div></div>
+</td>
+<td class="tp-cell tp2">79.1%</td>
+<td class="tp-cell tp3">51.8%</td>
+</tr><tr>
+<td class="rank">32</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 >140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">3,590</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">593</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,997</span><br>
+  <span class="pct-fail">(83.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:21%"></div></div>
+</td>
+<td class="tp-cell tp2">79.1%</td>
+<td class="tp-cell tp3">51.8%</td>
+</tr><tr>
+<td class="rank">33</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">4,470</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,505</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,965</span><br>
+  <span class="pct-fail">(66.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:20%"></div></div>
+</td>
+<td class="tp-cell tp2">80.9%</td>
+<td class="tp-cell tp3">57.9%</td>
+</tr><tr>
+<td class="rank">34</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">3,494</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">584</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,910</span><br>
+  <span class="pct-fail">(83.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:20%"></div></div>
+</td>
+<td class="tp-cell tp2">82.5%</td>
+<td class="tp-cell tp3">62.9%</td>
+</tr><tr>
+<td class="rank">35</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">4,030</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,295</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,735</span><br>
+  <span class="pct-fail">(67.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:19%"></div></div>
+</td>
+<td class="tp-cell tp2">80.5%</td>
+<td class="tp-cell tp3">56.9%</td>
+</tr><tr>
+<td class="rank">36</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">3,248</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">528</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,720</span><br>
+  <span class="pct-fail">(83.7% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:19%"></div></div>
+</td>
+<td class="tp-cell tp2">82.6%</td>
+<td class="tp-cell tp3">59.5%</td>
+</tr><tr>
+<td class="rank">37</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">3,473</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">932</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,541</span><br>
+  <span class="pct-fail">(73.2% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:17%"></div></div>
+</td>
+<td class="tp-cell tp2">76.2%</td>
+<td class="tp-cell tp3">52.3%</td>
+</tr><tr>
+<td class="rank">38</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">3,635</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,106</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,529</span><br>
+  <span class="pct-fail">(69.6% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:17%"></div></div>
+</td>
+<td class="tp-cell tp2">81.3%</td>
+<td class="tp-cell tp3">57.3%</td>
+</tr><tr>
+<td class="rank">39</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 متوسط</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,984</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">519</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,465</span><br>
+  <span class="pct-fail">(82.6% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:17%"></div></div>
+</td>
+<td class="tp-cell tp2">79.0%</td>
+<td class="tp-cell tp3">58.9%</td>
+</tr><tr>
+<td class="rank">40</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,802</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">489</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,313</span><br>
+  <span class="pct-fail">(82.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:16%"></div></div>
+</td>
+<td class="tp-cell tp2">85.1%</td>
+<td class="tp-cell tp3">69.9%</td>
+</tr><tr>
+<td class="rank">41</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">Asia</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,957</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">678</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,279</span><br>
+  <span class="pct-fail">(77.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:16%"></div></div>
+</td>
+<td class="tp-cell tp2">80.4%</td>
+<td class="tp-cell tp3">52.5%</td>
+</tr><tr>
+<td class="rank">42</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">L: <span class="factor-val">L/U1 كبير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,673</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">426</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,247</span><br>
+  <span class="pct-fail">(84.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:15%"></div></div>
+</td>
+<td class="tp-cell tp2">81.9%</td>
+<td class="tp-cell tp3">65.7%</td>
+</tr><tr>
+<td class="rank">43</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">L: <span class="factor-val">L/U1 متوسط</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,728</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">482</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,246</span><br>
+  <span class="pct-fail">(82.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:15%"></div></div>
+</td>
+<td class="tp-cell tp2">80.7%</td>
+<td class="tp-cell tp3">56.0%</td>
+</tr><tr>
+<td class="rank">44</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,776</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">562</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,214</span><br>
+  <span class="pct-fail">(79.8% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:15%"></div></div>
+</td>
+<td class="tp-cell tp2">78.6%</td>
+<td class="tp-cell tp3">58.8%</td>
+</tr><tr>
+<td class="rank">45</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,776</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">562</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,214</span><br>
+  <span class="pct-fail">(79.8% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:15%"></div></div>
+</td>
+<td class="tp-cell tp2">78.6%</td>
+<td class="tp-cell tp3">58.8%</td>
+</tr><tr>
+<td class="rank">46</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 كبير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,658</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">464</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,194</span><br>
+  <span class="pct-fail">(82.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:15%"></div></div>
+</td>
+<td class="tp-cell tp2">89.0%</td>
+<td class="tp-cell tp3">77.0%</td>
+</tr><tr>
+<td class="rank">47</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,694</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">502</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,192</span><br>
+  <span class="pct-fail">(81.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:15%"></div></div>
+</td>
+<td class="tp-cell tp2">84.5%</td>
+<td class="tp-cell tp3">70.1%</td>
+</tr><tr>
+<td class="rank">48</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,693</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">502</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,191</span><br>
+  <span class="pct-fail">(81.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:15%"></div></div>
+</td>
+<td class="tp-cell tp2">84.5%</td>
+<td class="tp-cell tp3">70.1%</td>
+</tr><tr>
+<td class="rank">49</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,662</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">479</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,183</span><br>
+  <span class="pct-fail">(82.0% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:15%"></div></div>
+</td>
+<td class="tp-cell tp2">82.9%</td>
+<td class="tp-cell tp3">68.8%</td>
+</tr><tr>
+<td class="rank">50</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,657</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">478</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,179</span><br>
+  <span class="pct-fail">(82.0% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:15%"></div></div>
+</td>
+<td class="tp-cell tp2">82.8%</td>
+<td class="tp-cell tp3">68.8%</td>
+</tr><tr>
+<td class="rank">51</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,630</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">456</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,174</span><br>
+  <span class="pct-fail">(82.7% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:15%"></div></div>
+</td>
+<td class="tp-cell tp2">87.9%</td>
+<td class="tp-cell tp3">74.6%</td>
+</tr><tr>
+<td class="rank">52</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">2,950</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">833</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,117</span><br>
+  <span class="pct-fail">(71.8% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:14%"></div></div>
+</td>
+<td class="tp-cell tp2">80.4%</td>
+<td class="tp-cell tp3">60.1%</td>
+</tr><tr>
+<td class="rank">53</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">قوية</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">3,091</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">989</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,102</span><br>
+  <span class="pct-fail">(68.0% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:14%"></div></div>
+</td>
+<td class="tp-cell tp2">77.5%</td>
+<td class="tp-cell tp3">53.9%</td>
+</tr><tr>
+<td class="rank">54</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,564</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">463</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,101</span><br>
+  <span class="pct-fail">(81.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:14%"></div></div>
+</td>
+<td class="tp-cell tp2">84.9%</td>
+<td class="tp-cell tp3">69.8%</td>
+</tr><tr>
+<td class="rank">55</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,564</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">463</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,101</span><br>
+  <span class="pct-fail">(81.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:14%"></div></div>
+</td>
+<td class="tp-cell tp2">84.9%</td>
+<td class="tp-cell tp3">69.8%</td>
+</tr><tr>
+<td class="rank">56</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,537</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">460</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,077</span><br>
+  <span class="pct-fail">(81.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:14%"></div></div>
+</td>
+<td class="tp-cell tp2">84.1%</td>
+<td class="tp-cell tp3">69.2%</td>
+</tr><tr>
+<td class="rank">57</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,537</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">460</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,077</span><br>
+  <span class="pct-fail">(81.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:14%"></div></div>
+</td>
+<td class="tp-cell tp2">84.1%</td>
+<td class="tp-cell tp3">69.2%</td>
+</tr><tr>
+<td class="rank">58</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">test: <span class="factor-val">DLX1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + نقطة الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">2,470</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">413</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,057</span><br>
+  <span class="pct-fail">(83.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:14%"></div></div>
+</td>
+<td class="tp-cell tp2">78.7%</td>
+<td class="tp-cell tp3">—</td>
+</tr><tr>
+<td class="rank">59</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,504</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">487</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,017</span><br>
+  <span class="pct-fail">(80.6% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:14%"></div></div>
+</td>
+<td class="tp-cell tp2">76.6%</td>
+<td class="tp-cell tp3">55.2%</td>
+</tr><tr>
+<td class="rank">60</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,501</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">487</span></td>
+<td style="text-align:center">
+  <span class="n-fail">2,014</span><br>
+  <span class="pct-fail">(80.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:14%"></div></div>
+</td>
+<td class="tp-cell tp2">76.6%</td>
+<td class="tp-cell tp3">55.2%</td>
+</tr><tr>
+<td class="rank">61</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">2,679</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">684</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,995</span><br>
+  <span class="pct-fail">(74.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:14%"></div></div>
+</td>
+<td class="tp-cell tp2">79.8%</td>
+<td class="tp-cell tp3">59.4%</td>
+</tr><tr>
+<td class="rank">62</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">session: <span class="factor-val">Asia</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,475</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">534</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,941</span><br>
+  <span class="pct-fail">(78.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:13%"></div></div>
+</td>
+<td class="tp-cell tp2">82.0%</td>
+<td class="tp-cell tp3">59.6%</td>
+</tr><tr>
+<td class="rank">63</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,349</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">426</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,923</span><br>
+  <span class="pct-fail">(81.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:13%"></div></div>
+</td>
+<td class="tp-cell tp2">78.6%</td>
+<td class="tp-cell tp3">53.4%</td>
+</tr><tr>
+<td class="rank">64</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,882</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">976</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,906</span><br>
+  <span class="pct-fail">(66.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:13%"></div></div>
+</td>
+<td class="tp-cell tp2">82.2%</td>
+<td class="tp-cell tp3">59.7%</td>
+</tr><tr>
+<td class="rank">65</td>
+<td class="label-cell"><span class="factor">family: <span class="factor-val">قوية</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الأسرة + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">2,716</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">813</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,903</span><br>
+  <span class="pct-fail">(70.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:13%"></div></div>
+</td>
+<td class="tp-cell tp2">78.2%</td>
+<td class="tp-cell tp3">54.9%</td>
+</tr><tr>
+<td class="rank">66</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,280</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">399</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,881</span><br>
+  <span class="pct-fail">(82.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:13%"></div></div>
+</td>
+<td class="tp-cell tp2">82.7%</td>
+<td class="tp-cell tp3">65.9%</td>
+</tr><tr>
+<td class="rank">67</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,280</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">399</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,881</span><br>
+  <span class="pct-fail">(82.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:13%"></div></div>
+</td>
+<td class="tp-cell tp2">82.7%</td>
+<td class="tp-cell tp3">65.9%</td>
+</tr><tr>
+<td class="rank">68</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,734</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">863</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,871</span><br>
+  <span class="pct-fail">(68.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:13%"></div></div>
+</td>
+<td class="tp-cell tp2">79.7%</td>
+<td class="tp-cell tp3">54.5%</td>
+</tr><tr>
+<td class="rank">69</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,241</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">372</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,869</span><br>
+  <span class="pct-fail">(83.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:13%"></div></div>
+</td>
+<td class="tp-cell tp2">77.7%</td>
+<td class="tp-cell tp3">51.1%</td>
+</tr><tr>
+<td class="rank">70</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,264</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">396</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,868</span><br>
+  <span class="pct-fail">(82.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:13%"></div></div>
+</td>
+<td class="tp-cell tp2">85.9%</td>
+<td class="tp-cell tp3">68.5%</td>
+</tr><tr>
+<td class="rank">71</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZO</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,264</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">396</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,868</span><br>
+  <span class="pct-fail">(82.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:13%"></div></div>
+</td>
+<td class="tp-cell tp2">85.9%</td>
+<td class="tp-cell tp3">68.5%</td>
+</tr><tr>
+<td class="rank">72</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,639</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">784</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,855</span><br>
+  <span class="pct-fail">(70.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:13%"></div></div>
+</td>
+<td class="tp-cell tp2">78.3%</td>
+<td class="tp-cell tp3">56.1%</td>
+</tr><tr>
+<td class="rank">73</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,808</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">964</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,844</span><br>
+  <span class="pct-fail">(65.7% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:12%"></div></div>
+</td>
+<td class="tp-cell tp2">79.3%</td>
+<td class="tp-cell tp3">54.9%</td>
+</tr><tr>
+<td class="rank">74</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,947</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">1,113</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,834</span><br>
+  <span class="pct-fail">(62.2% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:12%"></div></div>
+</td>
+<td class="tp-cell tp2">77.6%</td>
+<td class="tp-cell tp3">51.1%</td>
+</tr><tr>
+<td class="rank">75</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,181</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">363</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,818</span><br>
+  <span class="pct-fail">(83.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:12%"></div></div>
+</td>
+<td class="tp-cell tp2">81.8%</td>
+<td class="tp-cell tp3">63.3%</td>
+</tr><tr>
+<td class="rank">76</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,178</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">361</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,817</span><br>
+  <span class="pct-fail">(83.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:12%"></div></div>
+</td>
+<td class="tp-cell tp2">82.3%</td>
+<td class="tp-cell tp3">63.6%</td>
+</tr><tr>
+<td class="rank">77</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">test: <span class="factor-val">DLX1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + نقطة الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">2,046</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">235</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,811</span><br>
+  <span class="pct-fail">(88.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:12%"></div></div>
+</td>
+<td class="tp-cell tp2">95.7%</td>
+<td class="tp-cell tp3">—</td>
+</tr><tr>
+<td class="rank">78</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">test: <span class="factor-val">DLX1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">2,045</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">234</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,811</span><br>
+  <span class="pct-fail">(88.6% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:12%"></div></div>
+</td>
+<td class="tp-cell tp2">96.2%</td>
+<td class="tp-cell tp3">—</td>
+</tr><tr>
+<td class="rank">79</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 60-100%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,523</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">733</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,790</span><br>
+  <span class="pct-fail">(70.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:12%"></div></div>
+</td>
+<td class="tp-cell tp2">80.5%</td>
+<td class="tp-cell tp3">59.9%</td>
+</tr><tr>
+<td class="rank">80</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZC</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">2,529</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">787</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,742</span><br>
+  <span class="pct-fail">(68.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:12%"></div></div>
+</td>
+<td class="tp-cell tp2">80.3%</td>
+<td class="tp-cell tp3">57.1%</td>
+</tr><tr>
+<td class="rank">81</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,070</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">329</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,741</span><br>
+  <span class="pct-fail">(84.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:12%"></div></div>
+</td>
+<td class="tp-cell tp2">86.9%</td>
+<td class="tp-cell tp3">76.1%</td>
+</tr><tr>
+<td class="rank">82</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">test: <span class="factor-val">DLX1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + نقطة الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">2,088</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">366</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,722</span><br>
+  <span class="pct-fail">(82.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:12%"></div></div>
+</td>
+<td class="tp-cell tp2">84.7%</td>
+<td class="tp-cell tp3">—</td>
+</tr><tr>
+<td class="rank">83</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,394</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">686</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,708</span><br>
+  <span class="pct-fail">(71.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:12%"></div></div>
+</td>
+<td class="tp-cell tp2">81.2%</td>
+<td class="tp-cell tp3">58.6%</td>
+</tr><tr>
+<td class="rank">84</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">Asia</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">1,934</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">244</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,690</span><br>
+  <span class="pct-fail">(87.4% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">79.9%</td>
+<td class="tp-cell tp3">53.5%</td>
+</tr><tr>
+<td class="rank">85</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">session: <span class="factor-val">Asia</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">1,932</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">242</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,690</span><br>
+  <span class="pct-fail">(87.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">80.6%</td>
+<td class="tp-cell tp3">54.0%</td>
+</tr><tr>
+<td class="rank">86</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 >140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,293</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">624</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,669</span><br>
+  <span class="pct-fail">(72.8% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">77.9%</td>
+<td class="tp-cell tp3">48.9%</td>
+</tr><tr>
+<td class="rank">87</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 كبير</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,278</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">622</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,656</span><br>
+  <span class="pct-fail">(72.7% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">78.6%</td>
+<td class="tp-cell tp3">59.4%</td>
+</tr><tr>
+<td class="rank">88</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,366</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">728</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,638</span><br>
+  <span class="pct-fail">(69.2% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">81.5%</td>
+<td class="tp-cell tp3">51.7%</td>
+</tr><tr>
+<td class="rank">89</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,434</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">806</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,628</span><br>
+  <span class="pct-fail">(66.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">83.7%</td>
+<td class="tp-cell tp3">62.8%</td>
+</tr><tr>
+<td class="rank">90</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">test: <span class="factor-val">DLX1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + نقطة الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">1,837</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">216</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,621</span><br>
+  <span class="pct-fail">(88.2% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">96.3%</td>
+<td class="tp-cell tp3">—</td>
+</tr><tr>
+<td class="rank">91</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">test: <span class="factor-val">DLX1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">1,836</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">216</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,620</span><br>
+  <span class="pct-fail">(88.2% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">96.3%</td>
+<td class="tp-cell tp3">—</td>
+</tr><tr>
+<td class="rank">92</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 >140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,200</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">588</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,612</span><br>
+  <span class="pct-fail">(73.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">77.6%</td>
+<td class="tp-cell tp3">49.5%</td>
+</tr><tr>
+<td class="rank">93</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZC</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">2,370</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">761</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,609</span><br>
+  <span class="pct-fail">(67.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">79.2%</td>
+<td class="tp-cell tp3">58.9%</td>
+</tr><tr>
+<td class="rank">94</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 متوسط</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L/U1</span></td>
+<td style="text-align:center"><span class="n-total">2,264</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">684</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,580</span><br>
+  <span class="pct-fail">(69.8% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">77.5%</td>
+<td class="tp-cell tp3">54.4%</td>
+</tr><tr>
+<td class="rank">95</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">1,948</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">368</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,580</span><br>
+  <span class="pct-fail">(81.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">89.4%</td>
+<td class="tp-cell tp3">78.7%</td>
+</tr><tr>
+<td class="rank">96</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">1,904</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">326</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,578</span><br>
+  <span class="pct-fail">(82.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">80.7%</td>
+<td class="tp-cell tp3">60.1%</td>
+</tr><tr>
+<td class="rank">97</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">1,904</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">326</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,578</span><br>
+  <span class="pct-fail">(82.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:11%"></div></div>
+</td>
+<td class="tp-cell tp2">80.7%</td>
+<td class="tp-cell tp3">60.1%</td>
+</tr><tr>
+<td class="rank">98</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">session: <span class="factor-val">Asia</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">1,787</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">223</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,564</span><br>
+  <span class="pct-fail">(87.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">85.2%</td>
+<td class="tp-cell tp3">54.2%</td>
+</tr><tr>
+<td class="rank">99</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">session: <span class="factor-val">Asia</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">1,786</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">223</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,563</span><br>
+  <span class="pct-fail">(87.5% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">85.2%</td>
+<td class="tp-cell tp3">54.2%</td>
+</tr><tr>
+<td class="rank">100</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,511</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">949</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,562</span><br>
+  <span class="pct-fail">(62.2% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">74.5%</td>
+<td class="tp-cell tp3">49.1%</td>
+</tr><tr>
+<td class="rank">101</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">1,895</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">336</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,559</span><br>
+  <span class="pct-fail">(82.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">81.5%</td>
+<td class="tp-cell tp3">65.5%</td>
+</tr><tr>
+<td class="rank">102</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">1,894</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">336</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,558</span><br>
+  <span class="pct-fail">(82.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">81.5%</td>
+<td class="tp-cell tp3">65.5%</td>
+</tr><tr>
+<td class="rank">103</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,131</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">594</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,537</span><br>
+  <span class="pct-fail">(72.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">82.5%</td>
+<td class="tp-cell tp3">62.6%</td>
+</tr><tr>
+<td class="rank">104</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,276</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">756</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,520</span><br>
+  <span class="pct-fail">(66.8% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">78.7%</td>
+<td class="tp-cell tp3">55.8%</td>
+</tr><tr>
+<td class="rank">105</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZE</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">2,132</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">633</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,499</span><br>
+  <span class="pct-fail">(70.3% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">80.3%</td>
+<td class="tp-cell tp3">57.7%</td>
+</tr><tr>
+<td class="rank">106</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">كسر</span></span> <span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">2,205</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">707</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,498</span><br>
+  <span class="pct-fail">(67.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">82.7%</td>
+<td class="tp-cell tp3">59.1%</td>
+</tr><tr>
+<td class="rank">107</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح عميق ≥62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">2,465</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">969</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,496</span><br>
+  <span class="pct-fail">(60.7% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">81.3%</td>
+<td class="tp-cell tp3">51.8%</td>
+</tr><tr>
+<td class="rank">108</td>
+<td class="label-cell"><span class="factor">prev_out: <span class="factor-val">ارتداد</span></span> <span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">السابقة + الاتجاه + الكلاس</span></td>
+<td style="text-align:center"><span class="n-total">1,873</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">390</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,483</span><br>
+  <span class="pct-fail">(79.2% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">79.7%</td>
+<td class="tp-cell tp3">57.8%</td>
+</tr><tr>
+<td class="rank">109</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZH</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">1,889</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">413</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,476</span><br>
+  <span class="pct-fail">(78.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">83.1%</td>
+<td class="tp-cell tp3">63.3%</td>
+</tr><tr>
+<td class="rank">110</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZH</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">1,889</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">413</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,476</span><br>
+  <span class="pct-fail">(78.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">83.1%</td>
+<td class="tp-cell tp3">63.3%</td>
+</tr><tr>
+<td class="rank">111</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">1,835</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">367</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,468</span><br>
+  <span class="pct-fail">(80.0% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">88.3%</td>
+<td class="tp-cell tp3">79.3%</td>
+</tr><tr>
+<td class="rank">112</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">session: <span class="factor-val">NewYork</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + الجلسة</span></td>
+<td style="text-align:center"><span class="n-total">1,832</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">366</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,466</span><br>
+  <span class="pct-fail">(80.0% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">88.3%</td>
+<td class="tp-cell tp3">79.2%</td>
+</tr><tr>
+<td class="rank">113</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZH</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span><br><span class="grp-tag">الكلاس + الاتجاه</span></td>
+<td style="text-align:center"><span class="n-total">1,817</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">366</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,451</span><br>
+  <span class="pct-fail">(79.9% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">86.6%</td>
+<td class="tp-cell tp3">72.4%</td>
+</tr><tr>
+<td class="rank">114</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZH</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">1,815</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">366</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,449</span><br>
+  <span class="pct-fail">(79.8% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">86.6%</td>
+<td class="tp-cell tp3">72.4%</td>
+</tr><tr>
+<td class="rank">115</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZD</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">corr: <span class="factor-val">تصحيح متوسط 38-62%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح</span></td>
+<td style="text-align:center"><span class="n-total">2,031</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">586</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,445</span><br>
+  <span class="pct-fail">(71.1% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">82.4%</td>
+<td class="tp-cell tp3">59.8%</td>
+</tr><tr>
+<td class="rank">116</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">L: <span class="factor-val">L/U1 صغير</span></span> <span class="factor">test: <span class="factor-val">DLX1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + L + الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">1,669</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">231</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,438</span><br>
+  <span class="pct-fail">(86.2% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">81.8%</td>
+<td class="tp-cell tp3">—</td>
+</tr><tr>
+<td class="rank">117</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">1,728</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">294</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,434</span><br>
+  <span class="pct-fail">(83.0% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">82.3%</td>
+<td class="tp-cell tp3">69.4%</td>
+</tr><tr>
+<td class="rank">118</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZG</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">corr: <span class="factor-val">تصحيح ضعيف <38%</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + التصحيح + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">1,728</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">294</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,434</span><br>
+  <span class="pct-fail">(83.0% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">82.3%</td>
+<td class="tp-cell tp3">69.4%</td>
+</tr><tr>
+<td class="rank">119</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZB</span></span> <span class="factor">dir: <span class="factor-val">SELL</span></span> <span class="factor">ratio: <span class="factor-val">U1/U2 100-140%</span></span><br><span class="grp-tag">الكلاس + الاتجاه + النسبة</span></td>
+<td style="text-align:center"><span class="n-total">2,049</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">619</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,430</span><br>
+  <span class="pct-fail">(69.8% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:10%"></div></div>
+</td>
+<td class="tp-cell tp2">78.4%</td>
+<td class="tp-cell tp3">54.7%</td>
+</tr><tr>
+<td class="rank">120</td>
+<td class="label-cell"><span class="factor">cls: <span class="factor-val">ZF</span></span> <span class="factor">dir: <span class="factor-val">BUY</span></span> <span class="factor">test: <span class="factor-val">U1X1</span></span><br><span class="grp-tag">الكلاس + الاتجاه + نقطة الاختبار</span></td>
+<td style="text-align:center"><span class="n-total">1,790</span></td>
+<td style="text-align:center"><span style="color:#94a3b8">373</span></td>
+<td style="text-align:center">
+  <span class="n-fail">1,417</span><br>
+  <span class="pct-fail">(79.2% فشل)</span>
+  <div class="bar-wrap"><div class="bar-fail" style="width:9%"></div></div>
+</td>
+<td class="tp-cell tp2">62.2%</td>
+<td class="tp-cell tp3">57.9%</td>
+</tr>
+</table>
+</div>
+
+<p style="color:#334155;font-size:0.8em;margin-top:40px;border-top:1px solid #1e293b;padding-top:14px">
+الحد الأدنى 30 ظهور | 2,511 توليفة | بيانات 1999–2026 | AIB Angles Expert
+</p>
+</body></html>
