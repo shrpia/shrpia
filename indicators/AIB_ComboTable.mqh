@@ -4009,3 +4009,48 @@ void ComboTable_Init() {
 
    g_combos_init = true;
 }
+
+//──────────────────────────────────────────────────────────────
+// ComboCode() — build 5-char code from angle parameters
+//   ratio_pct : U1/U2 ratio %  (e.g. 125.0)
+//   L_u1_pct  : L/U1 ratio %   (e.g. 55.3)
+//   prev_ltr  : single letter of prev angle class (e.g. "B"), or "X"
+//──────────────────────────────────────────────────────────────
+string ComboCode(string cls, string dir,
+                 double ratio_pct, double L_u1_pct, string prev_ltr)
+{
+   string c = StringSubstr(cls, 1, 1);
+   string d = (dir=="BUY") ? "B" : "S";
+   string r;
+   if(ratio_pct > 140)        r = "4";
+   else if(ratio_pct >= 100)  r = "3";
+   else if(ratio_pct >= 60)   r = "2";
+   else                       r = "1";
+   string l;
+   if(L_u1_pct <= COMBO_P33)       l = "S";
+   else if(L_u1_pct <= COMBO_P67)  l = "M";
+   else                             l = "L";
+   string p = (prev_ltr=="" || prev_ltr=="X" || StringLen(prev_ltr)==0) ? "X" : prev_ltr;
+   return c+d+r+l+p;
+}
+
+//──────────────────────────────────────────────────────────────
+// ComboFind() — linear search, returns index or -1
+//──────────────────────────────────────────────────────────────
+int ComboFind(string code)
+{
+   if(!g_combos_init) ComboTable_Init();
+   for(int i = 0; i < COMBO_COUNT; i++)
+      if(g_combos[i].code == code) return i;
+   return -1;
+}
+
+// Test name → array index
+int ComboTestIdx(string tp)
+{
+   if(tp=="U1X1") return 0;
+   if(tp=="U2X1") return 1;
+   if(tp=="DLX1") return 2;
+   if(tp=="DRX1") return 3;
+   return -1;
+}

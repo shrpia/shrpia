@@ -413,7 +413,9 @@ bool Sig_IsOld(int ai)
 void Sig_SelectTests(int ai, int cidx, bool &showTi[])
 {
    // Rank valid tests by nok[ti] descending (absolute success count)
-   int    rankIdx[4]; double rankP1[4]; int rankN = 0;
+   int    rankIdx[4]; ArrayInitialize(rankIdx, 0);
+   double rankP1[4];  ArrayInitialize(rankP1,  0.0);
+   int rankN = 0;
    for(int ti = 0; ti < MON_NPTS; ti++) {
       if(g_mon[ai].test[ti].react[0] == MON_REACT_NA) continue;
       rankIdx[rankN] = ti;
