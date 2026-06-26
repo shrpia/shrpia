@@ -1,27 +1,31 @@
 //==================================================================
-//  AIB_Signal.mqh  v4.3
+//  AIB_Signal.mqh  v4.4
 //
-//  v4.2 → v4.3 additions (cumulative — no features removed):
+//  v4.3 → v4.4 additions (cumulative — no features removed):
+//  • New 283-combo table (Confirmed=1, deduped, no ZA class)
+//  • 5-tier classification: Full Margin/Strong/Good/Weak/Very Weak
+//  • Signal Score = sqrt(n_ang) * nok[best_test] (statistical weight)
+//  • Test selection ranked by nok[ti] instead of p1[ti]
+//  • Tier 5 (Very Weak) angles skipped entirely
+//  • Trade direction per zone: away<0 → BUY, away>0 → SELL
+//
+//  v4.3 features preserved:
 //  • Two themes: InpSigLightBg (dark/white background)
 //  • Blue-family color palette (user preference)
 //  • Fill opacity control: InpSigFillAlpha (10-100)
 //  • Price labels restored: InpSigShowPrices input
-//  • Test selection: show all touched + top 2 untouched by p1[ti] rank
-//    If a 3rd becomes eligible (slot freed by close), it activates
+//  • Test selection: show all touched + top 2 untouched
 //  • cidx==-1 (combo not in table) → zone fully ignored
-//
-//  v4.2 features preserved:
 //  • PREVIEW (50% dim) / INCOMING (20% dim) / ACTIVE / CLOSED states
 //  • BREAK: shrink 3 candles, no text
 //  • BOUNCE: shrink 6 candles, "PROTECTED"
 //  • UNTOUCHED auto-delete after InpSigUntouchedMax newer angles
 //  • 2-candle gap between overlapping slots
-//  • Panel: "AIB SIGNAL v4.3  X active  Y coming"
 //  • Sort: PENDING → INCOMING → historical
 //==================================================================
 
 //─── Inputs ────────────────────────────────────────────────────────
-input string InpSigSep1           = "─── AIB Signal v4.3 ────";
+input string InpSigSep1           = "─── AIB Signal v4.4 ────";
 input bool   InpSigEnabled        = true;
 
 input string InpSigSep2           = "─── Display ─────────────";
@@ -167,24 +171,24 @@ color Sig_BtnText()    { return InpSigLightBg ? (color)C'14,35,88'    : clrWhite
 //══════════════════════════════════════════════════════════════════
 //  Classification
 //══════════════════════════════════════════════════════════════════
+// tier: 1=Full Margin, 2=Strong, 3=Good, 4=Weak, 5=Very Weak
+// clsLevel: 5=Full Margin, 4=Strong, 3=Good, 2=Weak, 1=Very Weak
 int Sig_Classify(int cidx)
 {
    if(cidx < 0 || cidx >= COMBO_COUNT) return 0;
-   if(g_combos[cidx].n_ang < 40)       return 1;
-   double p = g_combos[cidx].p_total;
-   if(p >= 45.0) return 4;
-   if(p >= 30.0) return 3;
-   if(p >= 10.0) return 2;
-   return 1;
+   int t = g_combos[cidx].tier;
+   if(t < 1 || t > 5) return 0;
+   return 6 - t;  // tier1→5, tier2→4, tier3→3, tier4→2, tier5→1
 }
 
 string Sig_ClsStr(int lvl)
 {
    switch(lvl) {
-      case 4: return "STRONG";
-      case 3: return "GOOD";
-      case 2: return "WEAK";
-      case 1: return "VERY WEAK";
+      case 5: return "Full Margin";
+      case 4: return "Strong";
+      case 3: return "Good";
+      case 2: return "Weak";
+      case 1: return "Very Weak";
    }
    return "NO TRADE";
 }
@@ -192,6 +196,7 @@ string Sig_ClsStr(int lvl)
 color Sig_ClsColor(int lvl)
 {
    switch(lvl) {
+      case 5: return InpSigLightBg ? (color)C'8,110,45'   : (color)C'20,210,90';
       case 4: return InpSigLightBg ? (color)C'12,128,55'  : (color)C'28,190,100';
       case 3: return InpSigLightBg ? (color)C'138,108,8'  : (color)C'190,155,40';
       case 2: return InpSigLightBg ? (color)C'45,80,125'  : (color)C'82,118,155';
@@ -202,8 +207,8 @@ color Sig_ClsColor(int lvl)
 
 color Sig_AdviceColor(int lvl)
 {
-   if(lvl == 4) return InpSigLightBg ? (color)C'158,118,0'  : (color)C'218,175,32';
-   if(lvl == 3) return InpSigLightBg ? (color)C'8,148,48'   : (color)C'60,200,90';
+   if(lvl >= 4) return InpSigLightBg ? (color)C'8,148,48'   : (color)C'60,200,90';
+   if(lvl == 3) return InpSigLightBg ? (color)C'158,118,0'  : (color)C'218,175,32';
    if(lvl >= 1) return InpSigLightBg ? (color)C'168,28,28'  : (color)C'210,55,55';
    return InpSigLightBg ? (color)C'28,28,28' : clrWhite;
 }
@@ -211,7 +216,7 @@ color Sig_AdviceColor(int lvl)
 double Sig_Score(int cidx, int ti)
 {
    if(cidx < 0 || cidx >= COMBO_COUNT) return 0.0;
-   return g_combos[cidx].nok[ti] * (g_combos[cidx].p1[ti] / 100.0);
+   return (double)g_combos[cidx].nok[ti];
 }
 
 //══════════════════════════════════════════════════════════════════
@@ -407,12 +412,12 @@ bool Sig_IsOld(int ai)
 //══════════════════════════════════════════════════════════════════
 void Sig_SelectTests(int ai, int cidx, bool &showTi[])
 {
-   // Rank valid tests by p1[ti] descending
+   // Rank valid tests by nok[ti] descending (absolute success count)
    int    rankIdx[4]; double rankP1[4]; int rankN = 0;
    for(int ti = 0; ti < MON_NPTS; ti++) {
       if(g_mon[ai].test[ti].react[0] == MON_REACT_NA) continue;
       rankIdx[rankN] = ti;
-      rankP1[rankN]  = (cidx >= 0 && cidx < COMBO_COUNT) ? g_combos[cidx].p1[ti] : 0.0;
+      rankP1[rankN]  = (cidx >= 0 && cidx < COMBO_COUNT) ? (double)g_combos[cidx].nok[ti] : 0.0;
       rankN++;
    }
    for(int a = 0; a < rankN-1; a++)
@@ -762,16 +767,20 @@ string Sig_BuildAdvice(SigEntry &entries[], int eCount, int &topClsOut)
    int cnt = pendBuy + pendSell;
    string d = top.dir;
 
+   if(top.clsLevel == 5) {
+      if(cnt >= 2) return StringFormat("Full Margin x%d [%s] — Highest confidence. Enter full size.", cnt, d);
+      return "Full Margin: "+top.code+" ["+d+"] — Enter full position size.";
+   }
    if(top.clsLevel == 4) {
-      if(cnt >= 2) return StringFormat("STRONG x%d [%s] — Multiple signals. Enter now.", cnt, d);
-      return "STRONG: "+top.code+" ["+d+"] — Enter, standard risk.";
+      if(cnt >= 2) return StringFormat("Strong x%d [%s] — Multiple signals. Enter now.", cnt, d);
+      return "Strong: "+top.code+" ["+d+"] — Enter, standard risk.";
    }
    if(top.clsLevel == 3) {
-      if(cnt >= 2) return StringFormat("GOOD x%d [%s] — Acceptable. Enter at market.", cnt, d);
-      return "GOOD: "+top.code+" ["+d+"] — Acceptable risk. Enter.";
+      if(cnt >= 2) return StringFormat("Good x%d [%s] — Acceptable. Enter at market.", cnt, d);
+      return "Good: "+top.code+" ["+d+"] — Acceptable risk. Enter.";
    }
-   if(top.clsLevel == 2) return "WEAK: "+top.code+" ["+d+"] — Reduce size or avoid.";
-   return "VERY WEAK signal. Do not trade — wait for better setup.";
+   if(top.clsLevel == 2) return "Weak: "+top.code+" ["+d+"] — Reduce size or avoid.";
+   return "Very Weak signal. Do not trade — wait for better setup.";
 }
 
 //══════════════════════════════════════════════════════════════════
@@ -824,7 +833,7 @@ void Sig_DrawPanel(SigEntry &entries[], int eCount)
                   (g_sigHideAll  ? Sig_BtnDanger() : Sig_PanelTxt()));
 
    Sig_SLabel(Sig_PN("TITLE"), PX+8, base-7,
-              StringFormat("AIB SIGNAL v4.3  %d active  %d coming%s",
+              StringFormat("AIB SIGNAL v4.4  %d active  %d coming%s",
                            activeCnt, comingCnt, modeStr),
               modeCol, 9, corn);
 
@@ -1013,7 +1022,7 @@ void Sig_OnCalculate()
       }
 
       int clsLvl = Sig_Classify(cidx);
-      if(clsLvl <= 0) {
+      if(clsLvl <= 1) {  // skip unknown(0) and Very Weak/tier5(1)
          for(int ti = 0; ti < MON_NPTS; ti++) Sig_DeleteZone(ai,ti);
          continue;
       }
@@ -1049,12 +1058,18 @@ void Sig_OnCalculate()
          double pMin  = MathMin(MathMin(entry,sl), tp1);
          double pMax  = MathMax(MathMax(entry,sl), tp1);
 
+         // Trade direction is determined by zone's own away value, not parent angle dir
+         // away < 0 → entry below anchor, SL below → BUY trade
+         // away > 0 → entry above anchor, SL above → SELL trade
+         string zoneDir = (away < 0) ? "BUY" : "SELL";
+         bool   zoneBuy = (away < 0);
+
          datetime bTime = isUntouch ? g_mon[ai].formTime : g_mon[ai].test[ti].touchTime;
          if(!isUntouch && bTime <= 0) { Sig_DeleteZone(ai,ti); continue; }
 
          SigZone z;
          z.ai=ai; z.ti=ti; z.clsLevel=clsLvl; z.score=score;
-         z.code=code; z.clsL=clsL; z.dir=dir; z.angleCls=cls; z.isBuy=isBuy;
+         z.code=code; z.clsL=clsL; z.dir=zoneDir; z.angleCls=cls; z.isBuy=zoneBuy;
          z.isPreview=isPreview; z.isIncoming=isIncoming;
          z.pMin=pMin; z.pMax=pMax; z.baseTime=bTime;
          z.grpId=0; z.grpSlot=0; z.grpSize=1;
@@ -1063,12 +1078,12 @@ void Sig_OnCalculate()
 
          SigEntry e;
          e.ai=ai; e.ti=ti; e.clsLevel=clsLvl; e.score=score;
-         e.code=code; e.clsL=clsL; e.testName=Sig_TestName(ti); e.dir=dir;
+         e.code=code; e.clsL=clsL; e.testName=Sig_TestName(ti); e.dir=zoneDir;
          e.isPending  = (react == MON_REACT_PENDING);
          e.isIncoming = isIncoming;
          entries[eCount++]=e;
 
-         if(!isUntouch) Sig_CheckTouchAlert(ai,ti,code,dir);
+         if(!isUntouch) Sig_CheckTouchAlert(ai,ti,code,zoneDir);
       }
    }
 
