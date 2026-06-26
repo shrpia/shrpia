@@ -1010,48 +1010,46 @@ void Sig_OnCalculate()
       string cls   = g_mon[ai].cls;
       string clsL  = (StringLen(cls)>=2 ? StringSubstr(cls,1,1) : cls);
       string dir   = (g_mon[ai].dir > 0 ? "BUY" : "SELL");
-      bool   isBuy = (g_mon[ai].dir > 0);
       double rat   = g_mon[ai].ratio;
       double lu1   = (g_mon[ai].u1R > 1e-10 ? g_mon[ai].L / g_mon[ai].u1R * 100.0 : 0.0);
       string prev  = Sig_PrevClsLtr(ai);
       string code  = ComboCode(cls, dir, rat, lu1, prev);
       int    cidx  = ComboFind(code);
+      int    clsLvl = Sig_Classify(cidx);   // 0 if cidx < 0
 
-      // cidx==-1: combo not in table → skip this angle entirely
-      if(cidx < 0) {
-         for(int ti = 0; ti < MON_NPTS; ti++) Sig_DeleteZone(ai,ti);
-         continue;
-      }
-
-      int clsLvl = Sig_Classify(cidx);
-      if(clsLvl <= 1) {  // skip unknown(0) and Very Weak/tier5(1)
-         for(int ti = 0; ti < MON_NPTS; ti++) Sig_DeleteZone(ai,ti);
-         continue;
-      }
-
-      // Determine which tests to show (top 2 untouched + all touched)
+      // Build showTi only when combo is valid and tier >= 2 (for untouched selection)
       bool showTi[4] = {false, false, false, false};
-      Sig_SelectTests(ai, cidx, showTi);
+      if(cidx >= 0 && clsLvl > 1)
+         Sig_SelectTests(ai, cidx, showTi);
 
       for(int ti = 0; ti < MON_NPTS; ti++) {
          int react = g_mon[ai].test[ti].react[0];
 
-         // Skip if NA or not selected by ranking
-         if(react == MON_REACT_NA || !showTi[ti]) {
-            Sig_DeleteZone(ai,ti);
-            continue;
+         if(react == MON_REACT_NA) { Sig_DeleteZone(ai,ti); continue; }
+
+         bool isTouched = (react == MON_REACT_PENDING ||
+                           react == MON_REACT_BOUNCE  ||
+                           react == MON_REACT_BREAK);
+
+         // TOUCHED zones (PENDING/BOUNCE/BREAK) are NEVER deleted — user may have
+         // an open trade. Combo table or tier changes must not remove them.
+         if(!isTouched) {
+            // Untouched: apply combo / tier / selection / age filters
+            if(cidx < 0 || clsLvl <= 1 || !showTi[ti]) {
+               Sig_DeleteZone(ai,ti);
+               continue;
+            }
+            if(Sig_IsOld(ai)) { Sig_DeleteZone(ai,ti); continue; }
          }
 
          bool isUntouch  = (react == MON_REACT_UNTOUCHED);
-         bool isIncoming = false;
+         bool isIncoming = isUntouch && Sig_IsIncoming(ai, ti);
 
-         if(isUntouch) {
-            if(Sig_IsOld(ai)) { Sig_DeleteZone(ai,ti); continue; }
-            isIncoming = Sig_IsIncoming(ai, ti);
-         }
-
-         double score  = Sig_Score(cidx, ti);
-         bool isPreview = isUntouch;
+         // For touched zones whose combo is no longer in the table, use tier 3 (Good)
+         // as display fallback so the zone stays visible with reasonable styling.
+         int    dispLevel = (clsLvl > 0) ? clsLvl : 3;
+         double score     = (cidx >= 0)  ? Sig_Score(cidx, ti) : 0.0;
+         bool   isPreview = isUntouch;
 
          double away  = g_mon[ai].test[ti].away;
          double entry = g_mon[ai].test[ti].anchor + g_mon[ai].L * away;
@@ -1060,9 +1058,7 @@ void Sig_OnCalculate()
          double pMin  = MathMin(MathMin(entry,sl), tp1);
          double pMax  = MathMax(MathMax(entry,sl), tp1);
 
-         // Trade direction is determined by zone's own away value, not parent angle dir
-         // away < 0 → entry below anchor, SL below → BUY trade
-         // away > 0 → entry above anchor, SL above → SELL trade
+         // Trade direction per zone: away<0 → BUY (SL below), away>0 → SELL (SL above)
          string zoneDir = (away < 0) ? "BUY" : "SELL";
          bool   zoneBuy = (away < 0);
 
@@ -1070,7 +1066,7 @@ void Sig_OnCalculate()
          if(!isUntouch && bTime <= 0) { Sig_DeleteZone(ai,ti); continue; }
 
          SigZone z;
-         z.ai=ai; z.ti=ti; z.clsLevel=clsLvl; z.score=score;
+         z.ai=ai; z.ti=ti; z.clsLevel=dispLevel; z.score=score;
          z.code=code; z.clsL=clsL; z.dir=zoneDir; z.angleCls=cls; z.isBuy=zoneBuy;
          z.isPreview=isPreview; z.isIncoming=isIncoming;
          z.pMin=pMin; z.pMax=pMax; z.baseTime=bTime;
@@ -1079,7 +1075,7 @@ void Sig_OnCalculate()
          zones[zCount++]=z;
 
          SigEntry e;
-         e.ai=ai; e.ti=ti; e.clsLevel=clsLvl; e.score=score;
+         e.ai=ai; e.ti=ti; e.clsLevel=dispLevel; e.score=score;
          e.code=code; e.clsL=clsL; e.testName=Sig_TestName(ti); e.dir=zoneDir;
          e.isPending  = (react == MON_REACT_PENDING);
          e.isIncoming = isIncoming;
