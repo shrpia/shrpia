@@ -255,7 +255,8 @@ void Sig_DeleteZone(int ai, int ti)
 {
    string tags[] = {"SL","TP1","TP2","TP3","ELINE",
                     "LBL_E","LBL_SL","LBL_T1","LBL_T2","LBL_T3",
-                    "LBL_ZONE","PREV_SL","PREV_TP","PREV_LBL"};
+                    "LBL_ZONE","LBL_TP1_IN","LBL_TP2_IN","LBL_TP3_IN",
+                    "PREV_SL","PREV_TP","PREV_LBL"};
    for(int i = 0; i < ArraySize(tags); i++) Sig_DelObj(Sig_N(ai,ti,tags[i]));
 }
 
@@ -415,29 +416,54 @@ void Sig_DrawZoneV4(SigZone &z)
    color cTP2 = h2 ? Sig_TpHitBg() : (broke ? Sig_Blend(Sig_Tp2Bg(),clrBlack,55) : Sig_Tp2Bg());
    color cTP3 = h3 ? Sig_TpHitBg() : (broke ? Sig_Blend(Sig_Tp3Bg(),clrBlack,55) : Sig_Tp3Bg());
 
+   datetime midT = tL + (datetime)((tR - tL) / 2);
+
    //── Rectangles ────────────────────────────────────────────────
    // SL zone: entry → sl
    Sig_Rect(Sig_N(ai,ti,"SL"),  tL, entry, tR, sl,  cSL,  InpSigFill);
    // TP zones: stacked
    Sig_Rect(Sig_N(ai,ti,"TP1"), tL, entry, tR, tp1, cTP1, InpSigFill);
-   if(tp2 != 0.0) Sig_Rect(Sig_N(ai,ti,"TP2"), tL, tp1, tR, tp2, cTP2, InpSigFill);
+   if(tp2 != 0.0) Sig_Rect(Sig_N(ai,ti,"TP2"), tL, tp1,  tR, tp2, cTP2, InpSigFill);
    else           Sig_DelObj(Sig_N(ai,ti,"TP2"));
-   if(tp3 != 0.0) Sig_Rect(Sig_N(ai,ti,"TP3"), tL, tp2, tR, tp3, cTP3, InpSigFill);
+   if(tp3 != 0.0) Sig_Rect(Sig_N(ai,ti,"TP3"), tL, tp2,  tR, tp3, cTP3, InpSigFill);
    else           Sig_DelObj(Sig_N(ai,ti,"TP3"));
 
    //── Entry line ────────────────────────────────────────────────
    Sig_HLine(Sig_N(ai,ti,"ELINE"), tL, tR, entry, Sig_EntryLine(), 1);
 
-   //── Zone info label inside SL zone ────────────────────────────
+   //── Text labels inside ALL rectangles ─────────────────────────
+   if(!broke)
    {
-      string zoneLbl = "["+Sig_ClsStr(z.clsLevel)+"] "+z.code+" "+z.angleCls;
-      datetime midT  = tL + (datetime)((tR-tL)/2);
-      double   midSL = (entry + sl) / 2.0;
-      Sig_Text(Sig_N(ai,ti,"LBL_ZONE"), midT, midSL, zoneLbl, clrWhite, fsz, ANCHOR_CENTER);
-   }
+      // SL zone: [STRENGTH] combo_code angle_class
+      {
+         string zoneLbl = "["+Sig_ClsStr(z.clsLevel)+"] "+z.code+" "+z.angleCls;
+         double midSL   = (entry + sl) / 2.0;
+         Sig_Text(Sig_N(ai,ti,"LBL_ZONE"), midT, midSL, zoneLbl, clrWhite, fsz, ANCHOR_CENTER);
+      }
+      // TP1 zone: "TP1" label at center
+      {
+         double midTP1 = (entry + tp1) / 2.0;
+         Sig_Text(Sig_N(ai,ti,"LBL_TP1_IN"), midT, midTP1, "TP1",
+                  h1 ? clrWhite : Sig_LblTP1(), fsz, ANCHOR_CENTER);
+      }
+      // TP2 zone: "TP2" label at center
+      if(tp2 != 0.0) {
+         double midTP2 = (tp1 + tp2) / 2.0;
+         Sig_Text(Sig_N(ai,ti,"LBL_TP2_IN"), midT, midTP2, "TP2",
+                  h2 ? clrWhite : Sig_LblTP2(), fsz, ANCHOR_CENTER);
+      } else {
+         Sig_DelObj(Sig_N(ai,ti,"LBL_TP2_IN"));
+      }
+      // TP3 zone: "TP3" label at center
+      if(tp3 != 0.0) {
+         double midTP3 = (tp2 + tp3) / 2.0;
+         Sig_Text(Sig_N(ai,ti,"LBL_TP3_IN"), midT, midTP3, "TP3",
+                  h3 ? clrWhite : Sig_LblTP3(), fsz, ANCHOR_CENTER);
+      } else {
+         Sig_DelObj(Sig_N(ai,ti,"LBL_TP3_IN"));
+      }
 
-   //── Price labels at right edge ────────────────────────────────
-   if(!broke) {
+      //── Price labels at right edge ────────────────────────────
       Sig_PriceLabel(Sig_N(ai,ti,"LBL_E"),  tR, entry, "E:", Sig_LblEntry(), fsz);
       Sig_PriceLabel(Sig_N(ai,ti,"LBL_SL"), tR, sl,    "S:", Sig_LblSL(),   fsz);
       Sig_PriceLabel(Sig_N(ai,ti,"LBL_T1"), tR, tp1,   "1:", Sig_LblTP1(),  fsz);
@@ -445,10 +471,14 @@ void Sig_DrawZoneV4(SigZone &z)
       else           Sig_DelObj(Sig_N(ai,ti,"LBL_T2"));
       if(tp3 != 0.0) Sig_PriceLabel(Sig_N(ai,ti,"LBL_T3"), tR, tp3, "3:", Sig_LblTP3(), fsz);
       else           Sig_DelObj(Sig_N(ai,ti,"LBL_T3"));
-   } else {
-      Sig_DelObj(Sig_N(ai,ti,"LBL_E"));    Sig_DelObj(Sig_N(ai,ti,"LBL_SL"));
-      Sig_DelObj(Sig_N(ai,ti,"LBL_T1"));   Sig_DelObj(Sig_N(ai,ti,"LBL_T2"));
-      Sig_DelObj(Sig_N(ai,ti,"LBL_T3"));   Sig_DelObj(Sig_N(ai,ti,"LBL_ZONE"));
+   }
+   else
+   {
+      Sig_DelObj(Sig_N(ai,ti,"LBL_E"));       Sig_DelObj(Sig_N(ai,ti,"LBL_SL"));
+      Sig_DelObj(Sig_N(ai,ti,"LBL_T1"));      Sig_DelObj(Sig_N(ai,ti,"LBL_T2"));
+      Sig_DelObj(Sig_N(ai,ti,"LBL_T3"));      Sig_DelObj(Sig_N(ai,ti,"LBL_ZONE"));
+      Sig_DelObj(Sig_N(ai,ti,"LBL_TP1_IN")); Sig_DelObj(Sig_N(ai,ti,"LBL_TP2_IN"));
+      Sig_DelObj(Sig_N(ai,ti,"LBL_TP3_IN"));
    }
 }
 
