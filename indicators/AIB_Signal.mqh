@@ -41,7 +41,7 @@ input int    InpSigTP1Pct         = 50;
 input int    InpSigTP2Pct         = 30;
 input int    InpSigTP3Pct         = 20;
 input bool   InpSigAlerts         = true;
-input int    InpSigFontSize       = 8;
+input int    InpSigFontSize       = 10;
 
 //─── Layout ────────────────────────────────────────────────────────
 #define SIG_PFX   "AIBSIG_"
@@ -465,7 +465,10 @@ void Sig_DrawZoneV4(SigZone &z)
 
    datetime midT = tL + (datetime)((tR - tL) / 2);
    bool narrow   = (z.grpSize > 1);
-   int  fsz      = MathMax(5, InpSigFontSize - MathMax(0, z.grpSize-1));
+   // Scale font only when 3+ zones overlap; keep readable otherwise
+   int  fsz      = (z.grpSize >= 3) ? MathMax(7, InpSigFontSize - 2) :
+                   (z.grpSize == 2) ? MathMax(8, InpSigFontSize - 1) :
+                                       InpSigFontSize;
 
    // Dim factor per state
    int dimPct = 0;
@@ -517,16 +520,17 @@ void Sig_DrawZoneV4(SigZone &z)
                (color)C'200,165,40', fsz, ANCHOR_CENTER);
    }
    else if(isPreview) {
-      // PREVIEW: [P] label only in SL zone, no price labels
+      // PREVIEW: [P] + strength label in SL zone, no TP or price labels
       Sig_DelObj(Sig_N(ai,ti,"LBL_E"));      Sig_DelObj(Sig_N(ai,ti,"LBL_SL"));
       Sig_DelObj(Sig_N(ai,ti,"LBL_T1"));     Sig_DelObj(Sig_N(ai,ti,"LBL_T2"));
       Sig_DelObj(Sig_N(ai,ti,"LBL_T3"));
       Sig_DelObj(Sig_N(ai,ti,"LBL_TP1_IN")); Sig_DelObj(Sig_N(ai,ti,"LBL_TP2_IN"));
       Sig_DelObj(Sig_N(ai,ti,"LBL_TP3_IN"));
       double midSL = (entry + sl) / 2.0;
-      string pLbl  = "[P] " + z.code + " " + z.angleCls;
-      Sig_Text(Sig_N(ai,ti,"LBL_ZONE"), midT, midSL, pLbl,
-               Sig_Dim((color)C'165,152,52', 30), fsz, ANCHOR_CENTER);
+      // Show [P] + strength so trader knows quality at a glance
+      string pLbl  = "[P] [" + Sig_ClsStr(z.clsLevel) + "] " + z.code;
+      color  pCol  = Sig_Dim(Sig_ClsColor(z.clsLevel), 20);
+      Sig_Text(Sig_N(ai,ti,"LBL_ZONE"), midT, midSL, pLbl, pCol, fsz, ANCHOR_CENTER);
    }
    else {
       // INCOMING or ACTIVE: full labels
@@ -572,14 +576,15 @@ void Sig_DrawZoneV4(SigZone &z)
          if(tp3 != 0.0) Sig_PriceLabel(Sig_N(ai,ti,"LBL_T3"), tR, tp3, "3:", Sig_Dim(Sig_LblTP3(),dimPct), fsz);
          else           Sig_DelObj(Sig_N(ai,ti,"LBL_T3"));
       } else {
-         // Narrow: short SL/TP labels inside rects, no right-edge price labels
+         // Narrow overlapping: show strength abbreviation in SL zone, no right-edge price labels
          Sig_DelObj(Sig_N(ai,ti,"LBL_E")); Sig_DelObj(Sig_N(ai,ti,"LBL_SL"));
          Sig_DelObj(Sig_N(ai,ti,"LBL_T1")); Sig_DelObj(Sig_N(ai,ti,"LBL_T2"));
          Sig_DelObj(Sig_N(ai,ti,"LBL_T3"));
-         // Replace SL zone label with just "SL"
-         double midSL = (entry + sl) / 2.0;
-         Sig_Text(Sig_N(ai,ti,"LBL_ZONE"), midT, midSL, "SL",
-                  Sig_Dim(clrWhite, dimPct), fsz, ANCHOR_CENTER);
+         // SL zone: "SL [STR] CODE" with strength color
+         string narrowLbl = "SL [" + Sig_ClsStr(z.clsLevel) + "] " + z.code;
+         double midSL     = (entry + sl) / 2.0;
+         Sig_Text(Sig_N(ai,ti,"LBL_ZONE"), midT, midSL, narrowLbl,
+                  Sig_Dim(Sig_ClsColor(z.clsLevel), dimPct), fsz, ANCHOR_CENTER);
       }
    }
 
