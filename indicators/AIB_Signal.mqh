@@ -1,17 +1,27 @@
 //==================================================================
-//  AIB_Signal.mqh  v4.2
+//  AIB_Signal.mqh  v4.3
 //
-//  Visual zone lifecycle:
-//    UNTOUCHED + far  → PREVIEW   (solid, 50% dim, label [P])
-//    UNTOUCHED + near → INCOMING  (solid, 20% dim, all labels)
-//    PENDING          → ACTIVE    (full brightness)
-//    BOUNCE (TP1 hit) → CLOSED/B  (shrink 6 candles, "PROTECTED")
-//    BREAK  (SL  hit) → CLOSED/K  (shrink 3 candles, no text)
-//    UNTOUCHED after InpSigUntouchedMax newer angles → auto-delete
+//  v4.2 → v4.3 additions (cumulative — no features removed):
+//  • Two themes: InpSigLightBg (dark/white background)
+//  • Blue-family color palette (user preference)
+//  • Fill opacity control: InpSigFillAlpha (10-100)
+//  • Price labels restored: InpSigShowPrices input
+//  • Test selection: show all touched + top 2 untouched by p1[ti] rank
+//    If a 3rd becomes eligible (slot freed by close), it activates
+//  • cidx==-1 (combo not in table) → zone fully ignored
+//
+//  v4.2 features preserved:
+//  • PREVIEW (50% dim) / INCOMING (20% dim) / ACTIVE / CLOSED states
+//  • BREAK: shrink 3 candles, no text
+//  • BOUNCE: shrink 6 candles, "PROTECTED"
+//  • UNTOUCHED auto-delete after InpSigUntouchedMax newer angles
+//  • 2-candle gap between overlapping slots
+//  • Panel: "AIB SIGNAL v4.3  X active  Y coming"
+//  • Sort: PENDING → INCOMING → historical
 //==================================================================
 
 //─── Inputs ────────────────────────────────────────────────────────
-input string InpSigSep1           = "─── AIB Signal v4.2 ────";
+input string InpSigSep1           = "─── AIB Signal v4.3 ────";
 input bool   InpSigEnabled        = true;
 
 input string InpSigSep2           = "─── Display ─────────────";
@@ -19,13 +29,14 @@ input bool   InpSigShowPreview    = true;
 input bool   InpSigShowPending    = true;
 input bool   InpSigShowHistory    = true;
 input bool   InpSigFill           = true;
+input bool   InpSigShowPrices     = true;    // show price labels on zone right edge
 
 input string InpSigSep3           = "─── Incoming Zone ───────";
-input int    InpSigIncomingPips   = 20;    // pips from entry → INCOMING
-input int    InpSigIncomingBars   = 1;     // chart candles since formTime → INCOMING
-input int    InpSigBreakBars      = 3;     // candles to keep BREAK zone
-input int    InpSigBounceBars     = 6;     // candles to keep BOUNCE zone
-input int    InpSigUntouchedMax   = 10;    // newer angles before auto-delete
+input int    InpSigIncomingPips   = 20;
+input int    InpSigIncomingBars   = 1;
+input int    InpSigBreakBars      = 3;
+input int    InpSigBounceBars     = 6;
+input int    InpSigUntouchedMax   = 10;
 
 input string InpSigSep4           = "─── Panel ───────────────";
 input bool   InpSigShowPanel      = true;
@@ -42,6 +53,10 @@ input int    InpSigTP2Pct         = 30;
 input int    InpSigTP3Pct         = 20;
 input bool   InpSigAlerts         = true;
 input int    InpSigFontSize       = 10;
+
+input string InpSigSep6           = "─── Theme ───────────────";
+input bool   InpSigLightBg        = false;   // true = white/light chart background
+input int    InpSigFillAlpha      = 80;      // zone fill opacity 10-100
 
 //─── Layout ────────────────────────────────────────────────────────
 #define SIG_PFX   "AIBSIG_"
@@ -73,30 +88,81 @@ color Sig_Blend(color base, color mix, int pct)
    return (color)(b | (g<<8) | (r<<16));
 }
 
-// Dim a color toward black by pct percent (0=unchanged, 50=half brightness, 100=black)
+// Dim toward background (dark→black, light→white) by pct%
 color Sig_Dim(color c, int pct)
 {
    if(pct <= 0) return c;
    pct = MathMin(pct, 100);
-   int b = ((int)c & 255)         * (100-pct) / 100;
-   int g = (((int)c >> 8)  & 255) * (100-pct) / 100;
-   int r = (((int)c >> 16) & 255) * (100-pct) / 100;
-   return (color)(b | (g<<8) | (r<<16));
+   color target = InpSigLightBg ? (color)C'255,255,255' : (color)C'0,0,0';
+   return Sig_Blend(c, target, pct);
 }
 
-color Sig_SlBg()      { return (color)C'160,22,22';   }
-color Sig_Tp1Bg()     { return (color)C'18,85,45';    }
-color Sig_Tp2Bg()     { return (color)C'15,70,62';    }
-color Sig_Tp3Bg()     { return (color)C'12,55,72';    }
-color Sig_TpHitBg()   { return (color)C'22,115,80';   }
-color Sig_FailBg()    { return (color)C'48,10,10';    }
-color Sig_EntryLine() { return (color)C'100,145,195'; }
+// Apply fill opacity by blending toward chart background
+color Sig_FillC(color c)
+{
+   int a = MathMax(10, MathMin(100, InpSigFillAlpha));
+   color bg = InpSigLightBg ? (color)C'248,248,255' : (color)C'0,0,8';
+   return Sig_Blend(c, bg, 100-a);
+}
 
-color Sig_LblEntry()  { return (color)C'130,172,218'; }
-color Sig_LblSL()     { return (color)C'255,110,110'; }
-color Sig_LblTP1()    { return (color)C'90,200,125';  }
-color Sig_LblTP2()    { return (color)C'75,175,158';  }
-color Sig_LblTP3()    { return (color)C'65,150,185';  }
+//──── Zone colors (blue family, theme-aware) ────────────────────
+color Sig_SlBg()
+{ return InpSigLightBg ? (color)C'195,35,35'  : (color)C'140,20,20'; }
+
+color Sig_Tp1Bg()
+{ return InpSigLightBg ? (color)C'20,80,168'  : (color)C'14,52,108'; }
+
+color Sig_Tp2Bg()
+{ return InpSigLightBg ? (color)C'15,62,145'  : (color)C'10,40,92';  }
+
+color Sig_Tp3Bg()
+{ return InpSigLightBg ? (color)C'10,48,122'  : (color)C'7,28,72';   }
+
+color Sig_TpHitBg()
+{ return InpSigLightBg ? (color)C'22,105,210' : (color)C'16,75,158'; }
+
+color Sig_FailBg()
+{ return InpSigLightBg ? (color)C'78,15,15'   : (color)C'48,10,10';  }
+
+color Sig_EntryLine()
+{ return InpSigLightBg ? (color)C'20,82,188'  : (color)C'75,138,218'; }
+
+//──── Label colors ──────────────────────────────────────────────
+color Sig_LblEntry()
+{ return InpSigLightBg ? (color)C'12,65,162'  : (color)C'95,162,238'; }
+
+color Sig_LblSL()
+{ return InpSigLightBg ? (color)C'178,22,22'  : (color)C'220,80,80';  }
+
+color Sig_LblTP1()
+{ return InpSigLightBg ? (color)C'18,78,182'  : (color)C'78,152,225'; }
+
+color Sig_LblTP2()
+{ return InpSigLightBg ? (color)C'14,60,155'  : (color)C'60,128,200'; }
+
+color Sig_LblTP3()
+{ return InpSigLightBg ? (color)C'10,46,130'  : (color)C'45,105,175'; }
+
+color Sig_ZoneLblColor()
+{ return InpSigLightBg ? (color)C'15,20,50'   : clrWhite; }
+
+//──── Panel colors ──────────────────────────────────────────────
+color Sig_PanelBg()
+{ return InpSigLightBg ? (color)C'230,238,250' : (color)C'12,15,22'; }
+
+color Sig_PanelHdr()
+{ return InpSigLightBg ? (color)C'205,220,244' : (color)C'18,28,50'; }
+
+color Sig_PanelTxt()
+{ return InpSigLightBg ? (color)C'14,38,90'    : (color)C'138,185,240'; }
+
+color Sig_AdvBorder(color cls)
+{ return InpSigLightBg ? Sig_Blend(cls,(color)C'200,212,235',55) : Sig_Blend(cls,(color)C'12,16,28',55); }
+
+color Sig_BtnNormal()  { return InpSigLightBg ? (color)C'175,198,232' : (color)C'28,44,72';  }
+color Sig_BtnActive()  { return InpSigLightBg ? (color)C'210,165,60'  : (color)C'72,44,14';  }
+color Sig_BtnDanger()  { return InpSigLightBg ? (color)C'210,80,80'   : (color)C'68,16,16';  }
+color Sig_BtnText()    { return InpSigLightBg ? (color)C'14,35,88'    : clrWhite;             }
 
 //══════════════════════════════════════════════════════════════════
 //  Classification
@@ -126,20 +192,20 @@ string Sig_ClsStr(int lvl)
 color Sig_ClsColor(int lvl)
 {
    switch(lvl) {
-      case 4: return (color)C'28,190,100';
-      case 3: return (color)C'190,155,40';
-      case 2: return (color)C'82,118,155';
-      case 1: return (color)C'92,92,92';
+      case 4: return InpSigLightBg ? (color)C'12,128,55'  : (color)C'28,190,100';
+      case 3: return InpSigLightBg ? (color)C'138,108,8'  : (color)C'190,155,40';
+      case 2: return InpSigLightBg ? (color)C'45,80,125'  : (color)C'82,118,155';
+      case 1: return InpSigLightBg ? (color)C'62,62,62'   : (color)C'92,92,92';
    }
-   return (color)C'52,52,52';
+   return InpSigLightBg ? (color)C'38,38,38' : (color)C'52,52,52';
 }
 
 color Sig_AdviceColor(int lvl)
 {
-   if(lvl == 4) return (color)C'218,175,32';
-   if(lvl == 3) return (color)C'60,200,90';
-   if(lvl >= 1) return (color)C'210,55,55';
-   return clrWhite;
+   if(lvl == 4) return InpSigLightBg ? (color)C'158,118,0'  : (color)C'218,175,32';
+   if(lvl == 3) return InpSigLightBg ? (color)C'8,148,48'   : (color)C'60,200,90';
+   if(lvl >= 1) return InpSigLightBg ? (color)C'168,28,28'  : (color)C'210,55,55';
+   return InpSigLightBg ? (color)C'28,28,28' : clrWhite;
 }
 
 double Sig_Score(int cidx, int ti)
@@ -233,7 +299,7 @@ void Sig_SRect(const string nm, int x, int y, int w, int h,
    ObjectSetInteger(0,nm,OBJPROP_YSIZE,      h);
    ObjectSetInteger(0,nm,OBJPROP_BGCOLOR,    c);
    ObjectSetInteger(0,nm,OBJPROP_BORDER_TYPE,BORDER_FLAT);
-   ObjectSetInteger(0,nm,OBJPROP_COLOR,      Sig_Blend(c,clrSilver,20));
+   ObjectSetInteger(0,nm,OBJPROP_COLOR,      Sig_Blend(c,clrSilver,18));
    ObjectSetInteger(0,nm,OBJPROP_SELECTABLE, false);
    ObjectSetInteger(0,nm,OBJPROP_BACK,       false);
 }
@@ -310,26 +376,19 @@ bool Sig_IsVisible(int ai, int ti)
    return true;
 }
 
-// Returns true if zone is "INCOMING" (price near entry OR zone is brand new)
 bool Sig_IsIncoming(int ai, int ti)
 {
    double away  = g_mon[ai].test[ti].away;
    double entry = g_mon[ai].test[ti].anchor + g_mon[ai].L * away;
-
-   // Price proximity check: use Ask for resistance (away>0), Bid for support (away<0)
    double curPrice = (away > 0 ? Ask : Bid);
    double pips     = MathAbs(curPrice - entry) / Sig_PipSz();
    if(pips <= (double)InpSigIncomingPips) return true;
-
-   // Time proximity: zone formed within InpSigIncomingBars chart candles ago
-   long barSecs    = (long)Period() * 60;
-   long elapsed    = (long)(Time[0] - g_mon[ai].formTime) / MathMax(barSecs, 1);
+   long barSecs = (long)Period() * 60;
+   long elapsed = (long)(Time[0] - g_mon[ai].formTime) / MathMax(barSecs, 1);
    if(elapsed >= 0 && elapsed <= (long)InpSigIncomingBars) return true;
-
    return false;
 }
 
-// Returns true if this UNTOUCHED zone has >= InpSigUntouchedMax newer angles
 bool Sig_IsOld(int ai)
 {
    int newer = 0;
@@ -338,6 +397,44 @@ bool Sig_IsOld(int ai)
       if(g_mon[i].formTime > g_mon[ai].formTime) newer++;
    }
    return (newer >= InpSigUntouchedMax);
+}
+
+//══════════════════════════════════════════════════════════════════
+//  Test selection: which ti to draw for a given angle + combo
+//  Rule: show ALL touched (PENDING/BOUNCE/BREAK) + top 2 UNTOUCHED
+//        ranked by p1[ti] from combo table.
+//        showTi[4] must be pre-allocated and zero-filled.
+//══════════════════════════════════════════════════════════════════
+void Sig_SelectTests(int ai, int cidx, bool &showTi[])
+{
+   // Rank valid tests by p1[ti] descending
+   int    rankIdx[4]; double rankP1[4]; int rankN = 0;
+   for(int ti = 0; ti < MON_NPTS; ti++) {
+      if(g_mon[ai].test[ti].react[0] == MON_REACT_NA) continue;
+      rankIdx[rankN] = ti;
+      rankP1[rankN]  = (cidx >= 0 && cidx < COMBO_COUNT) ? g_combos[cidx].p1[ti] : 0.0;
+      rankN++;
+   }
+   for(int a = 0; a < rankN-1; a++)
+      for(int b = a+1; b < rankN; b++)
+         if(rankP1[a] < rankP1[b]) {
+            double tp = rankP1[a]; rankP1[a] = rankP1[b]; rankP1[b] = tp;
+            int    tt = rankIdx[a]; rankIdx[a] = rankIdx[b]; rankIdx[b] = tt;
+         }
+
+   int untouchedSlots = 0;
+   for(int r = 0; r < rankN; r++) {
+      int ti    = rankIdx[r];
+      int react = g_mon[ai].test[ti].react[0];
+      bool touched = (react == MON_REACT_PENDING ||
+                      react == MON_REACT_BOUNCE  ||
+                      react == MON_REACT_BREAK);
+      if(touched) {
+         showTi[ti] = true;
+      } else {
+         if(untouchedSlots < 2) { showTi[ti] = true; untouchedSlots++; }
+      }
+   }
 }
 
 //══════════════════════════════════════════════════════════════════
@@ -381,7 +478,7 @@ void Sig_ComputeSlots(SigZone &zones[], int n)
    }
 
    long barSecs = (long)Period() * 60;
-   long gapSecs = 2 * barSecs;   // 2-candle gap between overlapping slots
+   long gapSecs = 2 * barSecs;
 
    for(int g = 0; g < grpNext; g++) {
       int members[]; int mc = 0;
@@ -395,9 +492,8 @@ void Sig_ComputeSlots(SigZone &zones[], int n)
                { int tmp=members[a]; members[a]=members[b]; members[b]=tmp; }
       int slotCount = MathMin(mc, 3);
       for(int s = 0; s < mc; s++) {
-         int idx = members[s];
-         zones[idx].grpSlot = (s < slotCount) ? s : -1;
-         zones[idx].grpSize = slotCount;
+         zones[members[s]].grpSlot = (s < slotCount) ? s : -1;
+         zones[members[s]].grpSize = slotCount;
       }
    }
 
@@ -405,9 +501,9 @@ void Sig_ComputeSlots(SigZone &zones[], int n)
       int  slot = zones[i].grpSlot;
       int  N    = zones[i].grpSize;
       if(slot<0||N<=0) { slot=0; N=1; }
-      datetime base    = zones[i].baseTime;
-      long     unitLen = (long)g_unitSeconds;
-      long     totalGap = gapSecs * (long)(N - 1);
+      datetime base     = zones[i].baseTime;
+      long     unitLen  = (long)g_unitSeconds;
+      long     totalGap = gapSecs * (long)(N-1);
       long     slotLen  = MathMax((unitLen - totalGap) / (long)N, barSecs);
       zones[i].slotTL   = base + (datetime)((long)slot * (slotLen + gapSecs));
       zones[i].slotTR   = zones[i].slotTL + (datetime)slotLen;
@@ -424,7 +520,7 @@ void Sig_PriceLabel(const string nm, datetime tR, double price,
 }
 
 //══════════════════════════════════════════════════════════════════
-//  Draw one zone (all lifecycle states)
+//  Draw one zone — all lifecycle states
 //══════════════════════════════════════════════════════════════════
 void Sig_DrawZoneV4(SigZone &z)
 {
@@ -434,7 +530,8 @@ void Sig_DrawZoneV4(SigZone &z)
    bool bounced    = (react == MON_REACT_BOUNCE);
    bool broke      = (react == MON_REACT_BREAK);
    bool isIncoming = z.isIncoming;
-   bool isPreview  = z.isPreview && !isIncoming;   // PREVIEW = untouched AND far
+   bool isPreview  = z.isPreview && !isIncoming;
+   bool narrow     = (z.grpSize > 1);
 
    if( isPending && !InpSigShowPending) return;
    if(!isPending && !bounced && !broke && !InpSigShowPreview) return;
@@ -454,21 +551,15 @@ void Sig_DrawZoneV4(SigZone &z)
    bool   h2     = g_mon[ai].test[ti].tpHit[1];
    bool   h3     = g_mon[ai].test[ti].tpHit[2];
 
-   datetime tL = z.slotTL;
-   datetime tR = z.slotTR;
+   datetime tL = z.slotTL, tR = z.slotTR;
    long barSecs = (long)Period() * 60;
-
-   // BREAK: shrink to InpSigBreakBars candles
    if(broke)   tR = tL + (datetime)((long)InpSigBreakBars  * barSecs);
-   // BOUNCE: shrink to InpSigBounceBars candles
    if(bounced) tR = tL + (datetime)((long)InpSigBounceBars * barSecs);
 
    datetime midT = tL + (datetime)((tR - tL) / 2);
-   bool narrow   = (z.grpSize > 1);
-   // Scale font only when 3+ zones overlap; keep readable otherwise
-   int  fsz      = (z.grpSize >= 3) ? MathMax(7, InpSigFontSize - 2) :
-                   (z.grpSize == 2) ? MathMax(8, InpSigFontSize - 1) :
-                                       InpSigFontSize;
+   int fsz = (z.grpSize >= 3) ? MathMax(7, InpSigFontSize-2) :
+             (z.grpSize == 2) ? MathMax(8, InpSigFontSize-1) :
+                                 InpSigFontSize;
 
    // Dim factor per state
    int dimPct = 0;
@@ -476,14 +567,19 @@ void Sig_DrawZoneV4(SigZone &z)
    if(isIncoming) dimPct = 20;
    if(broke)      dimPct = 60;
 
-   // SL zone colors
-   color cSL = Sig_Dim(broke ? Sig_FailBg() : Sig_SlBg(), dimPct);
-   if(bounced) cSL = Sig_Dim(Sig_Blend(Sig_SlBg(), clrBlack, 30), dimPct);
-
-   // TP colors
-   color cTP1 = Sig_Dim(h1 ? Sig_TpHitBg() : (broke ? Sig_Blend(Sig_Tp1Bg(),clrBlack,55) : Sig_Tp1Bg()), dimPct);
-   color cTP2 = Sig_Dim(h2 ? Sig_TpHitBg() : (broke ? Sig_Blend(Sig_Tp2Bg(),clrBlack,55) : Sig_Tp2Bg()), dimPct);
-   color cTP3 = Sig_Dim(h3 ? Sig_TpHitBg() : (broke ? Sig_Blend(Sig_Tp3Bg(),clrBlack,55) : Sig_Tp3Bg()), dimPct);
+   // Zone rect colors — theme + opacity + state dim
+   color cSL  = Sig_Dim(Sig_FillC(broke ? Sig_FailBg() :
+                         bounced ? Sig_Blend(Sig_SlBg(),Sig_Dim(clrBlack,0),30) :
+                         Sig_SlBg()), dimPct);
+   color cTP1 = Sig_Dim(Sig_FillC(h1 ? Sig_TpHitBg() :
+                         broke ? Sig_Blend(Sig_Tp1Bg(),Sig_Dim(clrBlack,0),55) :
+                         Sig_Tp1Bg()), dimPct);
+   color cTP2 = Sig_Dim(Sig_FillC(h2 ? Sig_TpHitBg() :
+                         broke ? Sig_Blend(Sig_Tp2Bg(),Sig_Dim(clrBlack,0),55) :
+                         Sig_Tp2Bg()), dimPct);
+   color cTP3 = Sig_Dim(Sig_FillC(h3 ? Sig_TpHitBg() :
+                         broke ? Sig_Blend(Sig_Tp3Bg(),Sig_Dim(clrBlack,0),55) :
+                         Sig_Tp3Bg()), dimPct);
 
    // Rectangles
    Sig_Rect(Sig_N(ai,ti,"SL"),  tL, entry, tR, sl,  cSL,  InpSigFill);
@@ -493,15 +589,15 @@ void Sig_DrawZoneV4(SigZone &z)
    if(tp3 != 0.0) Sig_Rect(Sig_N(ai,ti,"TP3"), tL, tp2, tR, tp3, cTP3, InpSigFill);
    else           Sig_DelObj(Sig_N(ai,ti,"TP3"));
 
-   // Entry line (not shown for BREAK/BOUNCE)
+   // Entry line
    if(!broke && !bounced)
-      Sig_HLine(Sig_N(ai,ti,"ELINE"), tL, tR, entry, Sig_Dim(Sig_EntryLine(), dimPct), 1);
+      Sig_HLine(Sig_N(ai,ti,"ELINE"), tL, tR, entry,
+                Sig_Dim(Sig_EntryLine(), dimPct), 1);
    else
       Sig_DelObj(Sig_N(ai,ti,"ELINE"));
 
-   //── Labels by state ───────────────────────────────────────────
+   //── Labels by lifecycle state ─────────────────────────────────
    if(broke) {
-      // BREAK: no text at all
       Sig_DelObj(Sig_N(ai,ti,"LBL_E"));      Sig_DelObj(Sig_N(ai,ti,"LBL_SL"));
       Sig_DelObj(Sig_N(ai,ti,"LBL_T1"));     Sig_DelObj(Sig_N(ai,ti,"LBL_T2"));
       Sig_DelObj(Sig_N(ai,ti,"LBL_T3"));     Sig_DelObj(Sig_N(ai,ti,"LBL_ZONE"));
@@ -509,7 +605,6 @@ void Sig_DrawZoneV4(SigZone &z)
       Sig_DelObj(Sig_N(ai,ti,"LBL_TP3_IN"));
    }
    else if(bounced) {
-      // BOUNCE: only "PROTECTED" in center
       Sig_DelObj(Sig_N(ai,ti,"LBL_E"));      Sig_DelObj(Sig_N(ai,ti,"LBL_SL"));
       Sig_DelObj(Sig_N(ai,ti,"LBL_T1"));     Sig_DelObj(Sig_N(ai,ti,"LBL_T2"));
       Sig_DelObj(Sig_N(ai,ti,"LBL_T3"));
@@ -517,57 +612,57 @@ void Sig_DrawZoneV4(SigZone &z)
       Sig_DelObj(Sig_N(ai,ti,"LBL_TP3_IN"));
       double midProt = (entry + tp1) / 2.0;
       Sig_Text(Sig_N(ai,ti,"LBL_ZONE"), midT, midProt, "PROTECTED",
-               (color)C'200,165,40', fsz, ANCHOR_CENTER);
+               (color)(InpSigLightBg ? C'130,100,0' : C'200,165,40'), fsz, ANCHOR_CENTER);
    }
    else if(isPreview) {
-      // PREVIEW: [P] + strength label in SL zone, no TP or price labels
       Sig_DelObj(Sig_N(ai,ti,"LBL_E"));      Sig_DelObj(Sig_N(ai,ti,"LBL_SL"));
       Sig_DelObj(Sig_N(ai,ti,"LBL_T1"));     Sig_DelObj(Sig_N(ai,ti,"LBL_T2"));
       Sig_DelObj(Sig_N(ai,ti,"LBL_T3"));
       Sig_DelObj(Sig_N(ai,ti,"LBL_TP1_IN")); Sig_DelObj(Sig_N(ai,ti,"LBL_TP2_IN"));
       Sig_DelObj(Sig_N(ai,ti,"LBL_TP3_IN"));
+      // [P] + strength label with cls color
       double midSL = (entry + sl) / 2.0;
-      // Show [P] + strength so trader knows quality at a glance
       string pLbl  = "[P] [" + Sig_ClsStr(z.clsLevel) + "] " + z.code;
-      color  pCol  = Sig_Dim(Sig_ClsColor(z.clsLevel), 20);
-      Sig_Text(Sig_N(ai,ti,"LBL_ZONE"), midT, midSL, pLbl, pCol, fsz, ANCHOR_CENTER);
+      Sig_Text(Sig_N(ai,ti,"LBL_ZONE"), midT, midSL, pLbl,
+               Sig_Dim(Sig_ClsColor(z.clsLevel), 20), fsz, ANCHOR_CENTER);
    }
    else {
       // INCOMING or ACTIVE: full labels
-      // SL zone: [STRENGTH] code angleCls
+
+      // SL zone label — shows strength always; narrow = abbreviated
       {
-         string zoneLbl = "["+Sig_ClsStr(z.clsLevel)+"] "+z.code+" "+z.angleCls;
-         if(isIncoming) zoneLbl = "[I] " + zoneLbl;
-         double midSL = (entry + sl) / 2.0;
-         Sig_Text(Sig_N(ai,ti,"LBL_ZONE"), midT, midSL, zoneLbl,
-                  Sig_Dim(clrWhite, dimPct), fsz, ANCHOR_CENTER);
+         string slLbl;
+         if(narrow)
+            slLbl = "SL [" + Sig_ClsStr(z.clsLevel) + "] " + z.code;
+         else {
+            slLbl = "[" + Sig_ClsStr(z.clsLevel) + "] " + z.code + " " + z.angleCls;
+            if(isIncoming) slLbl = "[I] " + slLbl;
+         }
+         double midSL   = (entry + sl) / 2.0;
+         color  slLblC  = narrow ? Sig_ClsColor(z.clsLevel) : Sig_ZoneLblColor();
+         Sig_Text(Sig_N(ai,ti,"LBL_ZONE"), midT, midSL, slLbl,
+                  Sig_Dim(slLblC, dimPct), fsz, ANCHOR_CENTER);
       }
 
-      // Inner TP labels — short if narrow, long otherwise
+      // Inner TP labels
       {
-         string lTP1 = narrow ? "TP1" : "TP1";
-         string lTP2 = narrow ? "TP2" : "TP2";
-         string lTP3 = narrow ? "TP3" : "TP3";
-
          double midTP1 = (entry + tp1) / 2.0;
-         Sig_Text(Sig_N(ai,ti,"LBL_TP1_IN"), midT, midTP1, lTP1,
-                  Sig_Dim(h1 ? clrWhite : Sig_LblTP1(), dimPct), fsz, ANCHOR_CENTER);
-
+         Sig_Text(Sig_N(ai,ti,"LBL_TP1_IN"), midT, midTP1, "TP1",
+                  Sig_Dim(h1 ? Sig_ZoneLblColor() : Sig_LblTP1(), dimPct), fsz, ANCHOR_CENTER);
          if(tp2 != 0.0) {
             double midTP2 = (tp1 + tp2) / 2.0;
-            Sig_Text(Sig_N(ai,ti,"LBL_TP2_IN"), midT, midTP2, lTP2,
-                     Sig_Dim(h2 ? clrWhite : Sig_LblTP2(), dimPct), fsz, ANCHOR_CENTER);
+            Sig_Text(Sig_N(ai,ti,"LBL_TP2_IN"), midT, midTP2, "TP2",
+                     Sig_Dim(h2 ? Sig_ZoneLblColor() : Sig_LblTP2(), dimPct), fsz, ANCHOR_CENTER);
          } else { Sig_DelObj(Sig_N(ai,ti,"LBL_TP2_IN")); }
-
          if(tp3 != 0.0) {
             double midTP3 = (tp2 + tp3) / 2.0;
-            Sig_Text(Sig_N(ai,ti,"LBL_TP3_IN"), midT, midTP3, lTP3,
-                     Sig_Dim(h3 ? clrWhite : Sig_LblTP3(), dimPct), fsz, ANCHOR_CENTER);
+            Sig_Text(Sig_N(ai,ti,"LBL_TP3_IN"), midT, midTP3, "TP3",
+                     Sig_Dim(h3 ? Sig_ZoneLblColor() : Sig_LblTP3(), dimPct), fsz, ANCHOR_CENTER);
          } else { Sig_DelObj(Sig_N(ai,ti,"LBL_TP3_IN")); }
       }
 
-      // Price labels on right edge — omit if narrow (grpSize > 1)
-      if(!narrow) {
+      // Price labels on right edge — controlled by InpSigShowPrices
+      if(InpSigShowPrices) {
          Sig_PriceLabel(Sig_N(ai,ti,"LBL_E"),  tR, entry, "E:", Sig_Dim(Sig_LblEntry(),dimPct), fsz);
          Sig_PriceLabel(Sig_N(ai,ti,"LBL_SL"), tR, sl,    "S:", Sig_Dim(Sig_LblSL(),   dimPct), fsz);
          Sig_PriceLabel(Sig_N(ai,ti,"LBL_T1"), tR, tp1,   "1:", Sig_Dim(Sig_LblTP1(),  dimPct), fsz);
@@ -576,19 +671,13 @@ void Sig_DrawZoneV4(SigZone &z)
          if(tp3 != 0.0) Sig_PriceLabel(Sig_N(ai,ti,"LBL_T3"), tR, tp3, "3:", Sig_Dim(Sig_LblTP3(),dimPct), fsz);
          else           Sig_DelObj(Sig_N(ai,ti,"LBL_T3"));
       } else {
-         // Narrow overlapping: show strength abbreviation in SL zone, no right-edge price labels
          Sig_DelObj(Sig_N(ai,ti,"LBL_E")); Sig_DelObj(Sig_N(ai,ti,"LBL_SL"));
          Sig_DelObj(Sig_N(ai,ti,"LBL_T1")); Sig_DelObj(Sig_N(ai,ti,"LBL_T2"));
          Sig_DelObj(Sig_N(ai,ti,"LBL_T3"));
-         // SL zone: "SL [STR] CODE" with strength color
-         string narrowLbl = "SL [" + Sig_ClsStr(z.clsLevel) + "] " + z.code;
-         double midSL     = (entry + sl) / 2.0;
-         Sig_Text(Sig_N(ai,ti,"LBL_ZONE"), midT, midSL, narrowLbl,
-                  Sig_Dim(Sig_ClsColor(z.clsLevel), dimPct), fsz, ANCHOR_CENTER);
       }
    }
 
-   // Delete legacy PREV_* objects (v4.1 remnants)
+   // Delete legacy PREV_* remnants
    Sig_DelObj(Sig_N(ai,ti,"PREV_SL"));
    Sig_DelObj(Sig_N(ai,ti,"PREV_TP"));
    Sig_DelObj(Sig_N(ai,ti,"PREV_LBL"));
@@ -638,24 +727,22 @@ string Sig_BuildAdvice(SigEntry &entries[], int eCount, int &topClsOut)
 
    double topScore = -1; int topIdx = -1;
    double incScore = -1; int incIdx = -1;
-   int    pendBuy = 0, pendSell = 0;
+   int    pendBuy  = 0,  pendSell  = 0;
 
    for(int i = 0; i < eCount; i++) {
       if(entries[i].isPending) {
-         if(entries[i].score > topScore) { topScore = entries[i].score; topIdx = i; }
-         if(entries[i].dir == "BUY") pendBuy++; else pendSell++;
+         if(entries[i].score > topScore) { topScore=entries[i].score; topIdx=i; }
+         if(entries[i].dir=="BUY") pendBuy++; else pendSell++;
       }
-      if(entries[i].isIncoming) {
-         if(entries[i].score > incScore) { incScore = entries[i].score; incIdx = i; }
-      }
+      if(entries[i].isIncoming && entries[i].score > incScore)
+         { incScore=entries[i].score; incIdx=i; }
    }
 
-   // No PENDING — check INCOMING
    if(topIdx < 0) {
       if(incIdx >= 0) {
          SigEntry inc = entries[incIdx];
          topClsOut = inc.clsLevel;
-         return "INCOMING: " + inc.code + " " + inc.dir + " — Approaching. Prepare.";
+         return "INCOMING: "+inc.code+" "+inc.dir+" — Approaching. Prepare.";
       }
       int bounceN = 0, breakN = 0;
       for(int i = 0; i < eCount; i++) {
@@ -668,13 +755,12 @@ string Sig_BuildAdvice(SigEntry &entries[], int eCount, int &topClsOut)
       return "Signals resolved. Monitor for new angles.";
    }
 
-   if(pendBuy > 0 && pendSell > 0)
-      return "BUY + SELL conflict — stay flat.";
+   if(pendBuy > 0 && pendSell > 0) return "BUY + SELL conflict — stay flat.";
 
    SigEntry top = entries[topIdx];
    topClsOut = top.clsLevel;
-   int    cnt = pendBuy + pendSell;
-   string d   = top.dir;
+   int cnt = pendBuy + pendSell;
+   string d = top.dir;
 
    if(top.clsLevel == 4) {
       if(cnt >= 2) return StringFormat("STRONG x%d [%s] — Multiple signals. Enter now.", cnt, d);
@@ -684,13 +770,12 @@ string Sig_BuildAdvice(SigEntry &entries[], int eCount, int &topClsOut)
       if(cnt >= 2) return StringFormat("GOOD x%d [%s] — Acceptable. Enter at market.", cnt, d);
       return "GOOD: "+top.code+" ["+d+"] — Acceptable risk. Enter.";
    }
-   if(top.clsLevel == 2)
-      return "WEAK: "+top.code+" ["+d+"] — Reduce size or avoid.";
+   if(top.clsLevel == 2) return "WEAK: "+top.code+" ["+d+"] — Reduce size or avoid.";
    return "VERY WEAK signal. Do not trade — wait for better setup.";
 }
 
 //══════════════════════════════════════════════════════════════════
-//  Panel — anchored CORNER_LEFT_LOWER
+//  Panel — CORNER_LEFT_LOWER
 //══════════════════════════════════════════════════════════════════
 void Sig_DeletePanel()
 {
@@ -706,7 +791,6 @@ void Sig_DrawPanel(SigEntry &entries[], int eCount)
 {
    if(!InpSigShowPanel) { Sig_DeletePanel(); return; }
 
-   // Count active (PENDING) and coming (INCOMING)
    int activeCnt = 0, comingCnt = 0;
    for(int i = 0; i < eCount; i++) {
       if(entries[i].isPending)  activeCnt++;
@@ -727,38 +811,37 @@ void Sig_DrawPanel(SigEntry &entries[], int eCount)
    int corn = CORNER_LEFT_LOWER;
    int base = totalH + mgn;
 
-   Sig_SRect(Sig_PN("BG"),  PX, base,  PW, totalH,  (color)C'12,15,22', corn);
-   Sig_SRect(Sig_PN("HDR"), PX, base,  PW, headerH, (color)C'18,28,50', corn);
+   Sig_SRect(Sig_PN("BG"),  PX, base, PW, totalH,  Sig_PanelBg(),  corn);
+   Sig_SRect(Sig_PN("HDR"), PX, base, PW, headerH, Sig_PanelHdr(), corn);
 
    string modeStr = "";
    if(g_sigPickHide) modeStr = " [PICK-HIDE]";
    if(g_sigPickShow) modeStr = " [PICK-SHOW]";
    if(g_sigHideAll)  modeStr = " [HIDDEN]";
-   color modeCol = g_sigPickHide ? (color)C'210,140,40' :
-                  (g_sigPickShow ? (color)C'210,210,60'  :
-                  (g_sigHideAll  ? (color)C'200,68,68'   : (color)C'140,185,240'));
 
-   string hdrTxt = StringFormat("AIB SIGNAL v4.2  %d active  %d coming%s",
-                                activeCnt, comingCnt, modeStr);
-   Sig_SLabel(Sig_PN("TITLE"), PX+8, base-7, hdrTxt, modeCol, 9, corn);
+   color modeCol = g_sigPickHide ? Sig_BtnActive() :
+                  (g_sigPickShow ? Sig_Blend(Sig_BtnActive(),(color)C'200,200,0',30) :
+                  (g_sigHideAll  ? Sig_BtnDanger() : Sig_PanelTxt()));
+
+   Sig_SLabel(Sig_PN("TITLE"), PX+8, base-7,
+              StringFormat("AIB SIGNAL v4.3  %d active  %d coming%s",
+                           activeCnt, comingCnt, modeStr),
+              modeCol, 9, corn);
 
    int rowBase = headerH + sepH;
    for(int i = 0; i < dispRows; i++) {
       SigEntry e = entries[i];
-      // Row marker: ">" PENDING, "~" INCOMING, "." historical
-      string mk;
-      if(e.isPending)       mk = ">";
-      else if(e.isIncoming) mk = "~";
-      else                  mk = ".";
-
+      string mk      = e.isPending ? ">" : (e.isIncoming ? "~" : ".");
       string stateTag = e.isPending ? "[P]" : (e.isIncoming ? "[I]" : "   ");
       string rowTxt = StringFormat("%s %-5s Z%s %-9s %s %s %s",
                                    mk, e.code, e.clsL,
                                    Sig_ClsStr(e.clsLevel),
                                    stateTag, e.testName, e.dir);
       color rowCol = Sig_ClsColor(e.clsLevel);
-      if(!e.isPending && !e.isIncoming) rowCol = Sig_Blend(rowCol, clrBlack, 40);
-      else if(e.isIncoming) rowCol = Sig_Blend(rowCol, (color)C'120,120,200', 25);
+      if(!e.isPending && !e.isIncoming)
+         rowCol = Sig_Blend(rowCol, Sig_PanelBg(), 40);
+      else if(e.isIncoming)
+         rowCol = Sig_Blend(rowCol, Sig_LblTP1(), 25);
       Sig_SLabel(Sig_PN("ROW"+IntegerToString(i)),
                  PX+6, base-(rowBase+i*ROW_H), rowTxt, rowCol, 8, corn);
    }
@@ -766,9 +849,8 @@ void Sig_DrawPanel(SigEntry &entries[], int eCount)
    if(eCount > dispRows)
       Sig_SLabel(Sig_PN("MORE"), PX+6, base-(rowBase+dispRows*ROW_H),
                  StringFormat("... +%d more", eCount-dispRows),
-                 (color)C'78,78,78', 7, corn);
-   else
-      Sig_DelObj(Sig_PN("MORE"));
+                 Sig_Blend(Sig_PanelTxt(),Sig_PanelBg(),50), 7, corn);
+   else Sig_DelObj(Sig_PN("MORE"));
    for(int i = dispRows; i < InpSigMaxRows+2; i++) Sig_DelObj(Sig_PN("ROW"+IntegerToString(i)));
 
    int nextRelY = rowBase + MathMax(dispRows,1)*ROW_H + 6;
@@ -777,11 +859,10 @@ void Sig_DrawPanel(SigEntry &entries[], int eCount)
       nextRelY += sepH;
       int    topCls = 0;
       string advice = Sig_BuildAdvice(entries, eCount, topCls);
-      color advBorder = Sig_Blend(Sig_ClsColor(topCls), (color)C'12,16,28', 55);
-      Sig_SRect(Sig_PN("ADVBG"),  PX+4, base-nextRelY, PW-8, ADVICE_H, advBorder, corn);
+      Sig_SRect(Sig_PN("ADVBG"),  PX+4, base-nextRelY, PW-8, ADVICE_H,
+                Sig_AdvBorder(Sig_ClsColor(topCls)), corn);
       Sig_SLabel(Sig_PN("ADVHDR"),PX+8, base-(nextRelY+3), "ADVICE",
-                 (color)C'88,118,165', 7, corn);
-
+                 Sig_Blend(Sig_PanelTxt(),Sig_PanelBg(),40), 7, corn);
       color advTxtCol = Sig_AdviceColor(topCls);
       int maxCh = (PW-22)/6;
       if(StringLen(advice) > maxCh) {
@@ -789,9 +870,9 @@ void Sig_DrawPanel(SigEntry &entries[], int eCount)
          for(int c = maxCh; c > maxCh-18 && c > 0; c--)
             if(StringGetCharacter(advice,c)==' ') { sp=c; break; }
          Sig_SLabel(Sig_PN("ADVL1"), PX+8, base-(nextRelY+14),
-                    StringSubstr(advice,0,sp),   advTxtCol, 8, corn);
+                    StringSubstr(advice,0,sp),  advTxtCol, 8, corn);
          Sig_SLabel(Sig_PN("ADVL2"), PX+8, base-(nextRelY+26),
-                    StringSubstr(advice,sp+1),   (color)C'185,185,185', 8, corn);
+                    StringSubstr(advice,sp+1),  Sig_Blend(advTxtCol,Sig_PanelBg(),35), 8, corn);
       } else {
          Sig_SLabel(Sig_PN("ADVL1"), PX+8, base-(nextRelY+14), advice, advTxtCol, 8, corn);
          Sig_DelObj(Sig_PN("ADVL2"));
@@ -804,17 +885,18 @@ void Sig_DrawPanel(SigEntry &entries[], int eCount)
 
    int btnRelY = nextRelY + sepH;
    int bX = PX + 4;
-   color cN = (color)C'28,44,72';
-   color cA = (color)C'72,44,14';
-   color cD = (color)C'68,16,16';
+   color btnTxt = Sig_BtnText();
 
    Sig_SBtn(Sig_BN("HIDEALL"),  bX,               base-btnRelY, BTN_W,BTN_H,"Hide All",
-            g_sigHideAll  ? cD : cN, clrWhite, corn);
-   Sig_SBtn(Sig_BN("SHOWALL"),  bX+BTN_W+3,       base-btnRelY, BTN_W,BTN_H,"Show All",  cN,clrWhite,corn);
+            g_sigHideAll  ? Sig_BtnDanger() : Sig_BtnNormal(), btnTxt, corn);
+   Sig_SBtn(Sig_BN("SHOWALL"),  bX+BTN_W+3,       base-btnRelY, BTN_W,BTN_H,"Show All",
+            Sig_BtnNormal(), btnTxt, corn);
    Sig_SBtn(Sig_BN("PICKHIDE"), bX+(BTN_W+3)*2,   base-btnRelY, BTN_W,BTN_H,"Hide Zone",
-            g_sigPickHide ? cA : cN, g_sigPickHide ? clrYellow : clrWhite, corn);
+            g_sigPickHide ? Sig_BtnActive() : Sig_BtnNormal(),
+            g_sigPickHide ? Sig_BtnText() : btnTxt, corn);
    Sig_SBtn(Sig_BN("PICKSHOW"), bX+(BTN_W+3)*3,   base-btnRelY, BTN_W,BTN_H,"Pick Ang",
-            g_sigPickShow ? cA : cN, g_sigPickShow ? clrYellow : clrWhite, corn);
+            g_sigPickShow ? Sig_BtnActive() : Sig_BtnNormal(),
+            g_sigPickShow ? Sig_BtnText() : btnTxt, corn);
 }
 
 //══════════════════════════════════════════════════════════════════
@@ -924,12 +1006,27 @@ void Sig_OnCalculate()
       string code  = ComboCode(cls, dir, rat, lu1, prev);
       int    cidx  = ComboFind(code);
 
+      // cidx==-1: combo not in table → skip this angle entirely
+      if(cidx < 0) {
+         for(int ti = 0; ti < MON_NPTS; ti++) Sig_DeleteZone(ai,ti);
+         continue;
+      }
+
+      int clsLvl = Sig_Classify(cidx);
+      if(clsLvl <= 0) {
+         for(int ti = 0; ti < MON_NPTS; ti++) Sig_DeleteZone(ai,ti);
+         continue;
+      }
+
+      // Determine which tests to show (top 2 untouched + all touched)
+      bool showTi[4] = {false, false, false, false};
+      Sig_SelectTests(ai, cidx, showTi);
+
       for(int ti = 0; ti < MON_NPTS; ti++) {
          int react = g_mon[ai].test[ti].react[0];
-         if(react == MON_REACT_NA) { Sig_DeleteZone(ai,ti); continue; }
 
-         int clsLvl = Sig_Classify(cidx);
-         if(clsLvl <= 0) {
+         // Skip if NA or not selected by ranking
+         if(react == MON_REACT_NA || !showTi[ti]) {
             Sig_DeleteZone(ai,ti);
             continue;
          }
@@ -937,17 +1034,13 @@ void Sig_OnCalculate()
          bool isUntouch  = (react == MON_REACT_UNTOUCHED);
          bool isIncoming = false;
 
-         // UNTOUCHED zones: check if old (auto-delete) or incoming
          if(isUntouch) {
-            if(Sig_IsOld(ai)) {
-               Sig_DeleteZone(ai,ti);
-               continue;
-            }
+            if(Sig_IsOld(ai)) { Sig_DeleteZone(ai,ti); continue; }
             isIncoming = Sig_IsIncoming(ai, ti);
          }
 
-         double score     = Sig_Score(cidx, ti);
-         bool   isPreview = isUntouch;   // both PREVIEW and INCOMING are untouched
+         double score  = Sig_Score(cidx, ti);
+         bool isPreview = isUntouch;
 
          double away  = g_mon[ai].test[ti].away;
          double entry = g_mon[ai].test[ti].anchor + g_mon[ai].L * away;
@@ -956,7 +1049,6 @@ void Sig_OnCalculate()
          double pMin  = MathMin(MathMin(entry,sl), tp1);
          double pMax  = MathMax(MathMax(entry,sl), tp1);
 
-         // Base time: for UNTOUCHED use formTime; for touched use touchTime
          datetime bTime = isUntouch ? g_mon[ai].formTime : g_mon[ai].test[ti].touchTime;
          if(!isUntouch && bTime <= 0) { Sig_DeleteZone(ai,ti); continue; }
 
@@ -986,21 +1078,17 @@ void Sig_OnCalculate()
    //── Pass 3: draw ──────────────────────────────────────────────
    for(int i = 0; i < zCount; i++) {
       SigZone z = zones[i];
-      int ai=z.ai, ti=z.ti;
-      if(!Sig_IsVisible(ai,ti)) {
-         Sig_DeleteZone(ai,ti);
-         continue;
-      }
+      if(!Sig_IsVisible(z.ai,z.ti)) { Sig_DeleteZone(z.ai,z.ti); continue; }
       Sig_DrawZoneV4(zones[i]);
    }
 
-   // Sort panel entries: PENDING first, then INCOMING, then historical; within each group by score
+   // Sort: PENDING first → INCOMING → historical; within group by score desc
    for(int i=0; i<eCount-1; i++)
       for(int j=i+1; j<eCount; j++) {
          int pi = entries[i].isPending ? 2 : (entries[i].isIncoming ? 1 : 0);
          int pj = entries[j].isPending ? 2 : (entries[j].isIncoming ? 1 : 0);
-         bool swap = (pi < pj) || (pi == pj && entries[i].score < entries[j].score);
-         if(swap) { SigEntry tmp=entries[i]; entries[i]=entries[j]; entries[j]=tmp; }
+         if(pi < pj || (pi == pj && entries[i].score < entries[j].score))
+            { SigEntry tmp=entries[i]; entries[i]=entries[j]; entries[j]=tmp; }
       }
 
    Sig_DrawPanel(entries, eCount);
