@@ -1,5 +1,15 @@
 //==================================================================
-//  AIB_Signal.mqh  v4.4
+//  AIB_Signal.mqh  v4.5
+//
+//  v4.4 → v4.5 changes:
+//  • PROTECTED is honest now: a setup is "protected" only if TP1 is
+//    confirmed reached BEFORE SL. Same-candle ambiguity (one candle spans
+//    both SL and TP1) is resolved by drilling into M1 to find true order;
+//    if SL came first (or M1 data missing) the setup is a BREAK, not a bounce.
+//  • Unified scenario system: ALL untouched setups draw ONLY to the right of
+//    price (no more at-price INCOMING drawing). Sorted nearest-price first,
+//    capped at InpSigMaxScenarios, with >= InpSigScenarioPips price gap
+//    between them. Selection recomputed once per bar → no tick flicker.
 //
 //  v4.3 → v4.4 additions (cumulative — no features removed):
 //  • New 283-combo table (Confirmed=1, deduped, no ZA class)
@@ -25,7 +35,7 @@
 //==================================================================
 
 //─── Inputs ────────────────────────────────────────────────────────
-input string InpSigSep1           = "─── AIB Signal v4.4 ────";
+input string InpSigSep1           = "─── AIB Signal v4.5 ────";
 input bool   InpSigEnabled        = true;
 
 input string InpSigSep2           = "─── Display ─────────────";
@@ -81,6 +91,11 @@ bool     g_sigHideInit  = false;
 datetime g_sigAlertTs[1024][4];
 datetime g_sigMultiTs[1024];
 bool     g_sigAlertInit = false;
+
+// Scenario assignment cache — recomputed once per bar to prevent flicker.
+// g_scenSlot[ai*MON_NPTS+ti]: -1 = not shown, 1..N = future slot (1=nearest).
+int      g_scenSlot[];
+datetime g_scenBar = 0;
 
 //══════════════════════════════════════════════════════════════════
 //  Color helpers
@@ -845,7 +860,7 @@ void Sig_DrawPanel(SigEntry &entries[], int eCount)
                   (g_sigHideAll  ? Sig_BtnDanger() : Sig_PanelTxt()));
 
    Sig_SLabel(Sig_PN("TITLE"), PX+8, base-7,
-              StringFormat("AIB SIGNAL v4.4  %d active  %d coming%s",
+              StringFormat("AIB SIGNAL v4.5  %d active  %d coming%s",
                            activeCnt, comingCnt, modeStr),
               modeCol, 9, corn);
 
@@ -998,6 +1013,81 @@ void Sig_OnChartEvent(const int id, const long lparam,
 }
 
 //══════════════════════════════════════════════════════════════════
+//  Scenario selection (recomputed once per bar → no tick flicker)
+//
+//  Every UNTOUCHED qualifying setup is a future-scenario candidate and is
+//  drawn ONLY to the RIGHT of current price — nothing is drawn at the price.
+//  Selection rule:
+//   • exclude missed (price already past entry), old, and weak (lvl<=1) setups
+//   • sort NEAREST price-distance first (then stronger tier, then score)
+//   • greedily keep up to InpSigMaxScenarios, skipping any candidate within
+//     InpSigScenarioPips (price) of an already-kept one → clear price gaps
+//   • slot 1 = nearest (leftmost, closest to price), each +1 time-unit gap
+//══════════════════════════════════════════════════════════════════
+void Sig_RecomputeScenarios()
+{
+   int totZ = g_monCount * MON_NPTS;
+   ArrayResize(g_scenSlot, totZ);
+   ArrayInitialize(g_scenSlot, -1);
+   if(totZ <= 0) return;
+
+   double   pipSz = Sig_PipSz();
+   ScenCand cands[]; int cCount = 0; ArrayResize(cands, totZ);
+
+   for(int ai = 0; ai < g_monCount; ai++) {
+      if(!g_mon[ai].valid) continue;
+      if(Sig_IsOld(ai)) continue;
+      string cls  = g_mon[ai].cls;
+      string dir  = (g_mon[ai].dir > 0 ? "BUY" : "SELL");
+      double rat  = g_mon[ai].ratio;
+      double lu1  = (g_mon[ai].u1R > 1e-10 ? g_mon[ai].L / g_mon[ai].u1R * 100.0 : 0.0);
+      string prev = Sig_PrevClsLtr(ai);
+      int    cidx = ComboFind(ComboCode(cls, dir, rat, lu1, prev));
+      int    lvl  = Sig_Classify(cidx);
+      if(cidx < 0 || lvl <= 1) continue;
+
+      for(int ti = 0; ti < MON_NPTS; ti++) {
+         if(g_mon[ai].test[ti].react[0] != MON_REACT_UNTOUCHED) continue;
+         double away  = g_mon[ai].test[ti].away;
+         double entry = g_mon[ai].test[ti].anchor + g_mon[ai].L * away;
+         bool   isBuy = (away < 0);
+         double dist  = isBuy ? (Bid - entry) / pipSz : (entry - Ask) / pipSz;
+         if(dist < 0) continue;   // price already past entry → missed
+         cands[cCount].ai=ai; cands[cCount].ti=ti; cands[cCount].clsLevel=lvl;
+         cands[cCount].score=Sig_Score(cidx,ti); cands[cCount].dist=dist;
+         cCount++;
+      }
+   }
+
+   // Sort: nearest first, then stronger tier, then higher score
+   for(int a = 0; a < cCount-1; a++)
+      for(int b = a+1; b < cCount; b++) {
+         bool sw = (cands[a].dist > cands[b].dist) ||
+                   (cands[a].dist == cands[b].dist && cands[a].clsLevel < cands[b].clsLevel) ||
+                   (cands[a].dist == cands[b].dist && cands[a].clsLevel == cands[b].clsLevel &&
+                    cands[a].score < cands[b].score);
+         if(sw) { ScenCand tmp=cands[a]; cands[a]=cands[b]; cands[b]=tmp; }
+      }
+
+   // Greedy keep nearest-first with >= InpSigScenarioPips price separation
+   double pickEntry[]; int pickN = 0;
+   ArrayResize(pickEntry, MathMax(InpSigMaxScenarios,1));
+   for(int s = 0; s < cCount && pickN < InpSigMaxScenarios; s++) {
+      int    cai   = cands[s].ai, cti = cands[s].ti;
+      double away  = g_mon[cai].test[cti].away;
+      double entry = g_mon[cai].test[cti].anchor + g_mon[cai].L * away;
+      bool   tooClose = false;
+      for(int p = 0; p < pickN; p++)
+         if(MathAbs(entry - pickEntry[p]) / pipSz < (double)InpSigScenarioPips)
+            { tooClose = true; break; }
+      if(tooClose) continue;
+      pickEntry[pickN] = entry;
+      g_scenSlot[cai * MON_NPTS + cti] = pickN + 1;  // 1=nearest
+      pickN++;
+   }
+}
+
+//══════════════════════════════════════════════════════════════════
 //  Sig_OnCalculate — three passes: collect → slots → draw
 //══════════════════════════════════════════════════════════════════
 void Sig_OnCalculate()
@@ -1013,60 +1103,13 @@ void Sig_OnCalculate()
    ArrayResize(zones,   g_monCount * MON_NPTS);
    ArrayResize(entries, g_monCount * MON_NPTS);
 
-   //── Phase 0: categorize all UNTOUCHED zones for scenario system ──
-   // scenSlot[ai*MON_NPTS+ti]: -1=delete(missed/old/weak), 0=INCOMING, 1..N=future slot
+   //── Phase 0: scenario assignment (recompute once per bar → no flicker) ──
    double pipSz = Sig_PipSz();
    int    totZ  = g_monCount * MON_NPTS;
-   int    scenSlot[]; ArrayResize(scenSlot, totZ); ArrayInitialize(scenSlot, -1);
-   ScenCand cands[];  int cCount = 0; ArrayResize(cands, totZ);
-
-   for(int ai0 = 0; ai0 < g_monCount; ai0++) {
-      if(!g_mon[ai0].valid) continue;
-      if(Sig_IsOld(ai0)) continue;
-      string cls0  = g_mon[ai0].cls;
-      string dir0  = (g_mon[ai0].dir > 0 ? "BUY" : "SELL");
-      double rat0  = g_mon[ai0].ratio;
-      double lu10  = (g_mon[ai0].u1R > 1e-10 ? g_mon[ai0].L / g_mon[ai0].u1R * 100.0 : 0.0);
-      string prev0 = Sig_PrevClsLtr(ai0);
-      int    cidx0 = ComboFind(ComboCode(cls0, dir0, rat0, lu10, prev0));
-      int    lvl0  = Sig_Classify(cidx0);
-      if(cidx0 < 0 || lvl0 <= 1) continue;
-
-      for(int ti0 = 0; ti0 < MON_NPTS; ti0++) {
-         if(g_mon[ai0].test[ti0].react[0] != MON_REACT_UNTOUCHED) continue;
-         double away0  = g_mon[ai0].test[ti0].away;
-         double entry0 = g_mon[ai0].test[ti0].anchor + g_mon[ai0].L * away0;
-         bool   isBuy0 = (away0 < 0);
-         // dist > 0 = reachable (price has not yet passed entry on the wrong side)
-         double dist   = isBuy0 ? (Bid - entry0) / pipSz : (entry0 - Ask) / pipSz;
-         if(dist < 0) continue;   // price already past entry → missed → stays -1
-         if(dist < (double)InpSigScenarioPips) {
-            scenSlot[ai0 * MON_NPTS + ti0] = 0;  // INCOMING: within scenario distance
-            continue;
-         }
-         cands[cCount].ai       = ai0;
-         cands[cCount].ti       = ti0;
-         cands[cCount].clsLevel = lvl0;
-         cands[cCount].score    = Sig_Score(cidx0, ti0);
-         cands[cCount].dist     = dist;
-         cCount++;
-      }
+   if(Time[0] != g_scenBar || ArraySize(g_scenSlot) < totZ) {
+      Sig_RecomputeScenarios();
+      g_scenBar = Time[0];
    }
-
-   // Sort candidates: strongest tier first, then score, then nearest
-   for(int a = 0; a < cCount-1; a++)
-      for(int b = a+1; b < cCount; b++) {
-         bool sw = (cands[a].clsLevel < cands[b].clsLevel) ||
-                   (cands[a].clsLevel == cands[b].clsLevel && cands[a].score < cands[b].score) ||
-                   (cands[a].clsLevel == cands[b].clsLevel && cands[a].score == cands[b].score &&
-                    cands[a].dist > cands[b].dist);
-         if(sw) { ScenCand tmp=cands[a]; cands[a]=cands[b]; cands[b]=tmp; }
-      }
-
-   // Assign future slots 1..N to top-InpSigMaxScenarios; rest stay -1 (delete)
-   int assignN = MathMin(cCount, InpSigMaxScenarios);
-   for(int s = 0; s < assignN; s++)
-      scenSlot[cands[s].ai * MON_NPTS + cands[s].ti] = s + 1;
 
    //── Pass 1: collect qualifying zones ──────────────────────────
    for(int ai = 0; ai < g_monCount; ai++) {
@@ -1092,20 +1135,23 @@ void Sig_OnCalculate()
          bool isUntouch = (react == MON_REACT_UNTOUCHED);
          bool isScen    = false;
 
+         int slotIdx = ai * MON_NPTS + ti;
+         int sSlot   = (slotIdx < ArraySize(g_scenSlot)) ? g_scenSlot[slotIdx] : -1;
+
          if(!isTouched) {
-            // UNTOUCHED: use Phase 0 scenSlot result
+            // UNTOUCHED: only selected scenarios (slot >= 1) are drawn, all on the right
             if(cidx < 0 || clsLvl <= 1) { Sig_DeleteZone(ai,ti); continue; }
-            int idx = ai * MON_NPTS + ti;
-            int sSlot = (idx < totZ) ? scenSlot[idx] : -1;
-            if(sSlot < 0) { Sig_DeleteZone(ai,ti); continue; }  // missed or not top-N
-            isScen = (sSlot > 0);
+            if(sSlot < 1) { Sig_DeleteZone(ai,ti); continue; }  // missed / not top-N
+            isScen = true;
          }
 
-         // Determine isIncoming from scenSlot (sSlot==0 = within distance threshold)
+         // isIncoming = nearest-band styling cue (brighter); still drawn on the right
          bool isIncoming = false;
          if(isUntouch) {
-            int idx2 = ai * MON_NPTS + ti;
-            isIncoming = (idx2 < totZ && scenSlot[idx2] == 0);
+            double awayI  = g_mon[ai].test[ti].away;
+            double entryI = g_mon[ai].test[ti].anchor + g_mon[ai].L * awayI;
+            double distI  = (awayI < 0) ? (Bid - entryI) / pipSz : (entryI - Ask) / pipSz;
+            isIncoming = (distI >= 0 && distI <= (double)InpSigIncomingPips);
          }
 
          int    dispLevel = (clsLvl > 0) ? clsLvl : 3;
@@ -1123,15 +1169,11 @@ void Sig_OnCalculate()
          bool   zoneBuy = (away < 0);
 
          // Time placement:
-         // TOUCHED    → historical touchTime (where it happened on chart)
-         // INCOMING   → Time[0] (right at current bar, imminent)
-         // Scenario N → Time[0] + N*2*unitSeconds (strongest=slot1 leftmost, 1 unit gap between)
+         //  TOUCHED    → historical touchTime (its real spot, left of price)
+         //  Scenario N → Time[0] + N*2*unit (slot1 nearest=leftmost, 1-unit gaps)
          datetime bTime;
          if(isUntouch) {
-            int idx3  = ai * MON_NPTS + ti;
-            int sSlot = (idx3 < totZ) ? scenSlot[idx3] : 0;
-            bTime = (sSlot == 0) ? Time[0]
-                                 : (datetime)(Time[0] + (long)sSlot * 2 * g_unitSeconds);
+            bTime = (datetime)(Time[0] + (long)sSlot * 2 * g_unitSeconds);
          } else {
             bTime = g_mon[ai].test[ti].touchTime;
             if(bTime <= 0) { Sig_DeleteZone(ai,ti); continue; }

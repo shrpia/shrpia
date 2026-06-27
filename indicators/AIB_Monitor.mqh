@@ -131,6 +131,35 @@ void Mon_GeoRebuild(int ai)
 }
 
 //══════════════════════════════════════════════════════════════════
+//  Resolve SL-vs-TP1 order inside a single chart candle via M1 drill-down
+//  Used only when ONE candle touches BOTH levels (ambiguous on its own).
+//  Returns: +1 = TP1 reached first (valid BOUNCE)
+//           -1 = SL reached first (BREAK)
+//            0 = undeterminable (no M1 data) → caller treats as BREAK
+//  HARD RULE: a setup is "protected" only if TP1 is confirmed before SL.
+//══════════════════════════════════════════════════════════════════
+int Mon_ResolveOrderM1(datetime barTime, double away, double sl, double tp1)
+{
+   datetime bStart = barTime;
+   datetime bEnd   = barTime + (datetime)((long)Period() * 60 - 1);
+
+   int iLo = iBarShift(Symbol(), PERIOD_M1, bStart, false); // oldest (largest index)
+   int iHi = iBarShift(Symbol(), PERIOD_M1, bEnd,   false); // newest (smallest index)
+   if(iLo < 0 || iHi < 0 || iLo < iHi) return 0;            // no usable M1 data
+
+   for(int b = iLo; b >= iHi; b--) {
+      double mh = iHigh(Symbol(), PERIOD_M1, b);
+      double ml = iLow (Symbol(), PERIOD_M1, b);
+      bool tHit = (away > 0 ? ml <= tp1 : mh >= tp1);
+      bool sHit = (away > 0 ? mh >= sl  : ml <= sl);
+      if(tHit && sHit) return -1;  // both in same M1 bar → still ambiguous → conservative
+      if(sHit)         return -1;  // SL first
+      if(tHit)         return +1;  // TP1 first
+   }
+   return 0;
+}
+
+//══════════════════════════════════════════════════════════════════
 //  Internal: historical scan for one angle (called once on creation)
 //══════════════════════════════════════════════════════════════════
 void Mon_ScanHistory(int ai)
@@ -173,13 +202,19 @@ void Mon_ScanHistory(int ai)
             }
          }
 
-         //── Phase 2: resolve PENDING — TP1 takes priority over SL ──
+         //── Phase 2: resolve PENDING — protected ONLY if TP1 before SL ──
          if(cur == MON_REACT_PENDING)
          {
             bool tp1Hit = (away > 0 ? lo <= tp1 : hi >= tp1);
             bool slHit  = (away > 0 ? hi >= sl   : lo <= sl);
 
-            if(tp1Hit) {
+            // Same candle touched both → resolve true order via M1.
+            // Protected only if M1 confirms TP1 first; otherwise it's a BREAK.
+            bool tp1Wins = tp1Hit;
+            if(tp1Hit && slHit)
+               tp1Wins = (Mon_ResolveOrderM1(iTime(Symbol(),0,b), away, sl, tp1) > 0);
+
+            if(tp1Wins) {
                g_mon[ai].test[ti].tpHit[0] = true;
                g_mon[ai].test[ti].react[0]  = MON_REACT_BOUNCE;
                cur = MON_REACT_BOUNCE;
@@ -323,13 +358,18 @@ void Mon_OnTick()
             }
          }
 
-         //── Resolve PENDING ───────────────────────────────────────
+         //── Resolve PENDING — protected ONLY if TP1 before SL ──────
          if(cur == MON_REACT_PENDING)
          {
             bool tp1Hit = (away > 0 ? lo0 <= tp1 : hi0 >= tp1);
             bool slHit  = (away > 0 ? hi0 >= sl   : lo0 <= sl);
 
-            if(tp1Hit) {
+            // Same candle touched both → resolve true order via M1.
+            bool tp1Wins = tp1Hit;
+            if(tp1Hit && slHit)
+               tp1Wins = (Mon_ResolveOrderM1(t0, away, sl, tp1) > 0);
+
+            if(tp1Wins) {
                g_mon[ai].test[ti].tpHit[0] = true;
                g_mon[ai].test[ti].react[0]  = MON_REACT_BOUNCE;
                cur = MON_REACT_BOUNCE;
