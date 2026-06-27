@@ -35,8 +35,10 @@ input bool   InpSigShowHistory    = true;
 input bool   InpSigFill           = true;
 input bool   InpSigShowPrices     = true;    // show price labels on zone right edge
 
-input string InpSigSep3           = "─── Incoming Zone ───────";
-input int    InpSigIncomingPips   = 20;
+input string InpSigSep3           = "─── Scenarios ───────────";
+input int    InpSigScenarioPips   = 20;    // min pips from current price to show as future scenario
+input int    InpSigMaxScenarios   = 6;     // max scenarios drawn to the right of price
+input int    InpSigIncomingPips   = 20;    // pips threshold for INCOMING state (< this = imminent)
 input int    InpSigIncomingBars   = 1;
 input int    InpSigBreakBars      = 3;
 input int    InpSigBounceBars     = 6;
@@ -221,12 +223,18 @@ double Sig_Score(int cidx, int ti)
 
 //══════════════════════════════════════════════════════════════════
 //  SigZone
+// Lightweight struct used only during Phase 0 sorting of scenario candidates
+struct ScenCand {
+   int    ai, ti, clsLevel;
+   double score, dist;   // dist = pips from current price
+};
+
 //══════════════════════════════════════════════════════════════════
 struct SigZone {
    int      ai, ti, clsLevel;
    double   score;
    string   code, clsL, dir, angleCls;
-   bool     isBuy, isPreview, isIncoming;
+   bool     isBuy, isPreview, isIncoming, isScenario;  // isScenario = future slot
    double   pMin, pMax;
    datetime baseTime;
    int      grpId, grpSlot, grpSize;
@@ -454,6 +462,8 @@ void Sig_ComputeSlots(SigZone &zones[], int n)
 
    for(int i = 0; i < n; i++)
       for(int j = i+1; j < n; j++) {
+         // Scenario zones are pre-positioned — never group them
+         if(zones[i].isScenario || zones[j].isScenario) continue;
          bool priceOvlp = (zones[i].pMin < zones[j].pMax && zones[j].pMin < zones[i].pMax);
          long dt        = MathAbs((long)zones[i].baseTime - (long)zones[j].baseTime);
          bool timeClose = (dt <= (long)(2*g_unitSeconds));
@@ -1003,6 +1013,61 @@ void Sig_OnCalculate()
    ArrayResize(zones,   g_monCount * MON_NPTS);
    ArrayResize(entries, g_monCount * MON_NPTS);
 
+   //── Phase 0: categorize all UNTOUCHED zones for scenario system ──
+   // scenSlot[ai*MON_NPTS+ti]: -1=delete(missed/old/weak), 0=INCOMING, 1..N=future slot
+   double pipSz = Sig_PipSz();
+   int    totZ  = g_monCount * MON_NPTS;
+   int    scenSlot[]; ArrayResize(scenSlot, totZ); ArrayInitialize(scenSlot, -1);
+   ScenCand cands[];  int cCount = 0; ArrayResize(cands, totZ);
+
+   for(int ai0 = 0; ai0 < g_monCount; ai0++) {
+      if(!g_mon[ai0].valid) continue;
+      if(Sig_IsOld(ai0)) continue;
+      string cls0  = g_mon[ai0].cls;
+      string dir0  = (g_mon[ai0].dir > 0 ? "BUY" : "SELL");
+      double rat0  = g_mon[ai0].ratio;
+      double lu10  = (g_mon[ai0].u1R > 1e-10 ? g_mon[ai0].L / g_mon[ai0].u1R * 100.0 : 0.0);
+      string prev0 = Sig_PrevClsLtr(ai0);
+      int    cidx0 = ComboFind(ComboCode(cls0, dir0, rat0, lu10, prev0));
+      int    lvl0  = Sig_Classify(cidx0);
+      if(cidx0 < 0 || lvl0 <= 1) continue;
+
+      for(int ti0 = 0; ti0 < MON_NPTS; ti0++) {
+         if(g_mon[ai0].test[ti0].react[0] != MON_REACT_UNTOUCHED) continue;
+         double away0  = g_mon[ai0].test[ti0].away;
+         double entry0 = g_mon[ai0].test[ti0].anchor + g_mon[ai0].L * away0;
+         bool   isBuy0 = (away0 < 0);
+         // dist > 0 = reachable (price has not yet passed entry on the wrong side)
+         double dist   = isBuy0 ? (Bid - entry0) / pipSz : (entry0 - Ask) / pipSz;
+         if(dist < 0) continue;   // price already past entry → missed → stays -1
+         if(dist < (double)InpSigScenarioPips) {
+            scenSlot[ai0 * MON_NPTS + ti0] = 0;  // INCOMING: within scenario distance
+            continue;
+         }
+         cands[cCount].ai       = ai0;
+         cands[cCount].ti       = ti0;
+         cands[cCount].clsLevel = lvl0;
+         cands[cCount].score    = Sig_Score(cidx0, ti0);
+         cands[cCount].dist     = dist;
+         cCount++;
+      }
+   }
+
+   // Sort candidates: strongest tier first, then score, then nearest
+   for(int a = 0; a < cCount-1; a++)
+      for(int b = a+1; b < cCount; b++) {
+         bool sw = (cands[a].clsLevel < cands[b].clsLevel) ||
+                   (cands[a].clsLevel == cands[b].clsLevel && cands[a].score < cands[b].score) ||
+                   (cands[a].clsLevel == cands[b].clsLevel && cands[a].score == cands[b].score &&
+                    cands[a].dist > cands[b].dist);
+         if(sw) { ScenCand tmp=cands[a]; cands[a]=cands[b]; cands[b]=tmp; }
+      }
+
+   // Assign future slots 1..N to top-InpSigMaxScenarios; rest stay -1 (delete)
+   int assignN = MathMin(cCount, InpSigMaxScenarios);
+   for(int s = 0; s < assignN; s++)
+      scenSlot[cands[s].ai * MON_NPTS + cands[s].ti] = s + 1;
+
    //── Pass 1: collect qualifying zones ──────────────────────────
    for(int ai = 0; ai < g_monCount; ai++) {
       if(!g_mon[ai].valid) continue;
@@ -1015,41 +1080,37 @@ void Sig_OnCalculate()
       string prev  = Sig_PrevClsLtr(ai);
       string code  = ComboCode(cls, dir, rat, lu1, prev);
       int    cidx  = ComboFind(code);
-      int    clsLvl = Sig_Classify(cidx);   // 0 if cidx < 0
-
-      // Build showTi only when combo is valid and tier >= 2 (for untouched selection)
-      bool showTi[4] = {false, false, false, false};
-      if(cidx >= 0 && clsLvl > 1)
-         Sig_SelectTests(ai, cidx, showTi);
+      int    clsLvl = Sig_Classify(cidx);
 
       for(int ti = 0; ti < MON_NPTS; ti++) {
          int react = g_mon[ai].test[ti].react[0];
-
          if(react == MON_REACT_NA) { Sig_DeleteZone(ai,ti); continue; }
 
          bool isTouched = (react == MON_REACT_PENDING ||
                            react == MON_REACT_BOUNCE  ||
                            react == MON_REACT_BREAK);
+         bool isUntouch = (react == MON_REACT_UNTOUCHED);
+         bool isScen    = false;
 
-         // TOUCHED zones (PENDING/BOUNCE/BREAK) are NEVER deleted — user may have
-         // an open trade. Combo table or tier changes must not remove them.
          if(!isTouched) {
-            // Untouched: apply combo / tier / selection / age filters
-            if(cidx < 0 || clsLvl <= 1 || !showTi[ti]) {
-               Sig_DeleteZone(ai,ti);
-               continue;
-            }
-            if(Sig_IsOld(ai)) { Sig_DeleteZone(ai,ti); continue; }
+            // UNTOUCHED: use Phase 0 scenSlot result
+            if(cidx < 0 || clsLvl <= 1) { Sig_DeleteZone(ai,ti); continue; }
+            int idx = ai * MON_NPTS + ti;
+            int sSlot = (idx < totZ) ? scenSlot[idx] : -1;
+            if(sSlot < 0) { Sig_DeleteZone(ai,ti); continue; }  // missed or not top-N
+            isScen = (sSlot > 0);
          }
 
-         bool isUntouch  = (react == MON_REACT_UNTOUCHED);
-         bool isIncoming = isUntouch && Sig_IsIncoming(ai, ti);
+         // Determine isIncoming from scenSlot (sSlot==0 = within distance threshold)
+         bool isIncoming = false;
+         if(isUntouch) {
+            int idx2 = ai * MON_NPTS + ti;
+            isIncoming = (idx2 < totZ && scenSlot[idx2] == 0);
+         }
 
-         // For touched zones whose combo is no longer in the table, use tier 3 (Good)
-         // as display fallback so the zone stays visible with reasonable styling.
          int    dispLevel = (clsLvl > 0) ? clsLvl : 3;
          double score     = (cidx >= 0)  ? Sig_Score(cidx, ti) : 0.0;
-         bool   isPreview = isUntouch;
+         bool   isPreview = isUntouch && !isIncoming;
 
          double away  = g_mon[ai].test[ti].away;
          double entry = g_mon[ai].test[ti].anchor + g_mon[ai].L * away;
@@ -1058,17 +1119,28 @@ void Sig_OnCalculate()
          double pMin  = MathMin(MathMin(entry,sl), tp1);
          double pMax  = MathMax(MathMax(entry,sl), tp1);
 
-         // Trade direction per zone: away<0 → BUY (SL below), away>0 → SELL (SL above)
          string zoneDir = (away < 0) ? "BUY" : "SELL";
          bool   zoneBuy = (away < 0);
 
-         datetime bTime = isUntouch ? g_mon[ai].formTime : g_mon[ai].test[ti].touchTime;
-         if(!isUntouch && bTime <= 0) { Sig_DeleteZone(ai,ti); continue; }
+         // Time placement:
+         // TOUCHED    → historical touchTime (where it happened on chart)
+         // INCOMING   → Time[0] (right at current bar, imminent)
+         // Scenario N → Time[0] + N*2*unitSeconds (strongest=slot1 leftmost, 1 unit gap between)
+         datetime bTime;
+         if(isUntouch) {
+            int idx3  = ai * MON_NPTS + ti;
+            int sSlot = (idx3 < totZ) ? scenSlot[idx3] : 0;
+            bTime = (sSlot == 0) ? Time[0]
+                                 : (datetime)(Time[0] + (long)sSlot * 2 * g_unitSeconds);
+         } else {
+            bTime = g_mon[ai].test[ti].touchTime;
+            if(bTime <= 0) { Sig_DeleteZone(ai,ti); continue; }
+         }
 
          SigZone z;
          z.ai=ai; z.ti=ti; z.clsLevel=dispLevel; z.score=score;
          z.code=code; z.clsL=clsL; z.dir=zoneDir; z.angleCls=cls; z.isBuy=zoneBuy;
-         z.isPreview=isPreview; z.isIncoming=isIncoming;
+         z.isPreview=isPreview; z.isIncoming=isIncoming; z.isScenario=isScen;
          z.pMin=pMin; z.pMax=pMax; z.baseTime=bTime;
          z.grpId=0; z.grpSlot=0; z.grpSize=1;
          z.slotTL=bTime; z.slotTR=bTime+(datetime)g_unitSeconds;
@@ -1087,6 +1159,16 @@ void Sig_OnCalculate()
 
    //── Pass 2: resolve time slots ────────────────────────────────
    if(zCount > 0) Sig_ComputeSlots(zones, zCount);
+
+   // Scenario zones are pre-positioned: override Sig_ComputeSlots result
+   // Each occupies exactly 1 unit width; spacing = 1 unit gap between them
+   for(int i = 0; i < zCount; i++) {
+      if(!zones[i].isScenario) continue;
+      zones[i].slotTL  = zones[i].baseTime;
+      zones[i].slotTR  = zones[i].baseTime + (datetime)g_unitSeconds;
+      zones[i].grpSlot = 0;
+      zones[i].grpSize = 1;
+   }
 
    //── Pass 3: draw ──────────────────────────────────────────────
    for(int i = 0; i < zCount; i++) {
