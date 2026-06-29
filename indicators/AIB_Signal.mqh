@@ -1,5 +1,12 @@
 //==================================================================
-//  AIB_Signal.mqh  v4.5
+//  AIB_Signal.mqh  v4.6
+//
+//  v4.5 → v4.6 changes:
+//  • Near-confirmed (provisional) angles now get a class and are monitored:
+//    a candidate within InpNearConfirmPct of U2's range from its confirming
+//    close / 161 extension is classified with the class it WOULD become.
+//    Shown with a leading "≈" marker on zone labels and panel rows; the
+//    combo-table lookup still uses the raw (un-marked) code.
 //
 //  v4.4 → v4.5 changes:
 //  • PROTECTED is honest now: a setup is "protected" only if TP1 is
@@ -35,7 +42,7 @@
 //==================================================================
 
 //─── Inputs ────────────────────────────────────────────────────────
-input string InpSigSep1           = "─── AIB Signal v4.5 ────";
+input string InpSigSep1           = "─── AIB Signal v4.6 ────";
 input bool   InpSigEnabled        = true;
 
 input string InpSigSep2           = "─── Display ─────────────";
@@ -860,7 +867,7 @@ void Sig_DrawPanel(SigEntry &entries[], int eCount)
                   (g_sigHideAll  ? Sig_BtnDanger() : Sig_PanelTxt()));
 
    Sig_SLabel(Sig_PN("TITLE"), PX+8, base-7,
-              StringFormat("AIB SIGNAL v4.5  %d active  %d coming%s",
+              StringFormat("AIB SIGNAL v4.6  %d active  %d coming%s",
                            activeCnt, comingCnt, modeStr),
               modeCol, 9, corn);
 
@@ -1122,8 +1129,10 @@ void Sig_OnCalculate()
       double lu1   = (g_mon[ai].u1R > 1e-10 ? g_mon[ai].L / g_mon[ai].u1R * 100.0 : 0.0);
       string prev  = Sig_PrevClsLtr(ai);
       string code  = ComboCode(cls, dir, rat, lu1, prev);
-      int    cidx  = ComboFind(code);
+      int    cidx  = ComboFind(code);           // lookup uses the RAW code
       int    clsLvl = Sig_Classify(cidx);
+      bool   angNear  = g_mon[ai].nearConfirmed;
+      string dispCode = angNear ? "≈"+code : code;  // ≈ marks provisional, display only
 
       for(int ti = 0; ti < MON_NPTS; ti++) {
          int react = g_mon[ai].test[ti].react[0];
@@ -1181,7 +1190,7 @@ void Sig_OnCalculate()
 
          SigZone z;
          z.ai=ai; z.ti=ti; z.clsLevel=dispLevel; z.score=score;
-         z.code=code; z.clsL=clsL; z.dir=zoneDir; z.angleCls=cls; z.isBuy=zoneBuy;
+         z.code=dispCode; z.clsL=clsL; z.dir=zoneDir; z.angleCls=cls; z.isBuy=zoneBuy;
          z.isPreview=isPreview; z.isIncoming=isIncoming; z.isScenario=isScen;
          z.pMin=pMin; z.pMax=pMax; z.baseTime=bTime;
          z.grpId=0; z.grpSlot=0; z.grpSize=1;
@@ -1190,7 +1199,7 @@ void Sig_OnCalculate()
 
          SigEntry e;
          e.ai=ai; e.ti=ti; e.clsLevel=dispLevel; e.score=score;
-         e.code=code; e.clsL=clsL; e.testName=Sig_TestName(ti); e.dir=zoneDir;
+         e.code=dispCode; e.clsL=clsL; e.testName=Sig_TestName(ti); e.dir=zoneDir;
          e.isPending  = (react == MON_REACT_PENDING);
          e.isIncoming = isIncoming;
          entries[eCount++]=e;

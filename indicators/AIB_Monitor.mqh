@@ -48,6 +48,7 @@ struct MonAngle {
    int      dir;         // +1=BUY, -1=SELL
    string   cls;         // "ZB".."ZH"
    bool     confirmed;
+   bool     nearConfirmed; // provisional (≈) — close/161 within InpNearConfirmPct
    double   u1H, u1L;   // U1 unit high/low
    double   u2H, u2L;   // U2 unit high/low
    double   u1R, u2R;   // U1/U2 ranges
@@ -250,7 +251,7 @@ void Mon_ScanHistory(int ai)
 //══════════════════════════════════════════════════════════════════
 void Mon_OnAngleSaved(const AngleResult &r)
 {
-   if(!r.valid || !r.confirmed) return;
+   if(!r.valid || (!r.confirmed && !r.nearConfirmed)) return;
    if(r.classText == "" || r.dirState == 0) return;
 
    double u1R = r.u1High - r.u1Low;
@@ -291,7 +292,8 @@ void Mon_OnAngleSaved(const AngleResult &r)
    g_mon[ai].formTime = (r.u1End > 0 ? r.u1End : r.u1Start);
    g_mon[ai].dir      = (r.dirState > 0 ? +1 : -1);
    g_mon[ai].cls      = (r.classText != "" ? r.classText : r.angleName);
-   g_mon[ai].confirmed= r.confirmed;
+   g_mon[ai].confirmed    = r.confirmed;
+   g_mon[ai].nearConfirmed= r.nearConfirmed;
    g_mon[ai].u1H = r.u1High;  g_mon[ai].u1L = r.u1Low;
    g_mon[ai].u2H = r.u2High;  g_mon[ai].u2L = r.u2Low;
    g_mon[ai].u1R = u1R;       g_mon[ai].u2R = u2R;

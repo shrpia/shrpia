@@ -74,6 +74,11 @@ input bool   InpShowUnconfirmedAngles = true;      // Render unconfirmed/candida
 input bool   InpShowAngleVerticalLegs = true;    // Draw vertical legs for angle results
 input bool   InpShowVerticalLegsForUnconfirmed = true; // Draw vertical legs for unconfirmed angles
 
+// Near-confirmed (provisional) angles: classify candidates that are only a
+// short price distance away from a confirming close / 161 extension.
+input bool   InpEnableNearConfirm  = true;   // give a provisional (≈) class to near-confirmed angles
+input double InpNearConfirmPct     = 5.0;    // "near" threshold as % of U2 range (R)
+
 // Appearance (directional)
 // Positive move (BUY / upward impulse): unit lines = Yellow, angle lines = White (defaults)
 // Negative move (SELL / downward impulse): unit lines = White, angle lines = Yellow (defaults)
@@ -514,6 +519,7 @@ struct AngleResult
 
   bool      confirmed;
   bool      unconfirmed;
+  bool      nearConfirmed;   // provisional: candidate within InpNearConfirmPct of confirming
 
   bool      candidateBuy;
   bool      candidateSell;
@@ -2117,6 +2123,71 @@ string SupervisorDecideAngle(const SupervisorFacts &f)
   return("");
 }
 
+// Provisional class for a candidate that is NOT yet confirmed but is within
+// InpNearConfirmPct of U2's range (R) from the single missing PRICE event:
+//   • ALPHA: the confirming close beyond the reference edge (close.state 0 → ±1)
+//   • BETA : the 161 / -61 extension that BETA classes require
+// Fills that one fact hypothetically, re-decides, and returns the class ("" if
+// still nothing). Retest-pending (an event, not a distance) is intentionally
+// excluded — it can never become "near" by price alone.
+string SupervisorDecideAngleNear(const SupervisorFacts &f, UnitInfo &refU, UnitInfo &formU)
+{
+  if(!InpEnableNearConfirm) return("");
+  double R = refU.hi - refU.lo;
+  if(R <= 0.0) return("");
+  double tol  = MathMax(0, InpTouchTolerancePoints) * Point + Point*0.2;
+  double dist = (MathMax(0.0, InpNearConfirmPct) / 100.0) * R;
+  if(dist <= 0.0) return("");
+
+  SupervisorFacts g = f;   // mutable copy
+
+  if(f.dir.state == 1)
+  {
+    if(f.range.state == 1)        // ALPHA — close-pending (0 → 1)
+    {
+      if(f.ext.reached161) return("");     // already over-extended → voids ALPHA
+      if(f.close.state != 0) return("");   // wrong-way / already decided close
+      double gap = (refU.hi + tol) - formU.lastClose;
+      if(gap <= 0.0 || gap > dist) return("");
+      g.close.state = 1;
+    }
+    else if(f.range.state == 2)   // BETA — extension-pending (needs 161)
+    {
+      if(f.ext.reached161) return("");
+      if(f.close.state == -1) return("");  // closed wrong way
+      double target161 = refU.lo + 1.618 * R;
+      double gap = target161 - formU.hi;
+      if(gap <= 0.0 || gap > dist) return("");
+      g.ext.reached161 = true;
+    }
+    else return("");
+  }
+  else if(f.dir.state == -1)
+  {
+    if(f.range.state == 1)        // ALPHA — close-pending (0 → -1)
+    {
+      if(f.ext.reachedNeg61) return("");
+      if(f.close.state != 0) return("");
+      double gap = formU.lastClose - (refU.lo - tol);
+      if(gap <= 0.0 || gap > dist) return("");
+      g.close.state = -1;
+    }
+    else if(f.range.state == 2)   // BETA — extension-pending (needs -61)
+    {
+      if(f.ext.reachedNeg61) return("");
+      if(f.close.state == 1) return("");
+      double targetN61 = refU.lo - 0.618 * R;
+      double gap = formU.lo - targetN61;
+      if(gap <= 0.0 || gap > dist) return("");
+      g.ext.reachedNeg61 = true;
+    }
+    else return("");
+  }
+  else return("");
+
+  return(SupervisorDecideAngle(g));
+}
+
 int BuildUnitsSCCMW(UnitInfo &U[], int maxUnits, datetime tFrom, datetime tTo)
 {
   ArrayResize(U, 0);
@@ -3237,12 +3308,19 @@ bool ProcessPairSequentially(UnitInfo &refU, UnitInfo &formU)
   if(!hasConfirmed && !hasCandidate)
     return(false);
 
+  // Near-confirmed: a still-candidate angle that is only a short price distance
+  // from confirming gets a PROVISIONAL class so it can be classified/monitored.
+  string provCls = "";
+  if(!hasConfirmed && hasCandidate)
+    provCls = SupervisorDecideAngleNear(sf, refU, formU);
+  bool isNearConfirmed = (!hasConfirmed && provCls != "");
+
   AngleResult ar;
   ar.valid       = true;
-  ar.angleName   = cls;
-  if(cls != "") ar.classText = cls;
-  else if(hasCandidate) ar.classText = "";
-  else ar.classText = "";
+  ar.angleName   = (cls != "" ? cls : provCls);
+  if(cls != "")            ar.classText = cls;
+  else if(isNearConfirmed) ar.classText = provCls;
+  else                     ar.classText = "";
   ar.dirState    = sf.dir.state;
   ar.u1Id        = formU.id;
   ar.u2Id        = refU.id;
@@ -3256,8 +3334,9 @@ bool ProcessPairSequentially(UnitInfo &refU, UnitInfo &formU)
   ar.u2Low       = refU.lo;
   ar.candidateBuy  = candBuy;
   ar.candidateSell = candSell;
-  ar.confirmed   = IsAngleConfirmedModern(sf, cls);
-  ar.unconfirmed = (!ar.confirmed && hasCandidate);
+  ar.confirmed     = IsAngleConfirmedModern(sf, cls);
+  ar.nearConfirmed = isNearConfirmed;
+  ar.unconfirmed   = (!ar.confirmed && hasCandidate);
   ar.correctionPct   = CalcCorrectionPercent(refU, formU, sf.dir);
   ar.correctionValue = ar.correctionPct;
   ar.u1LegColor = clrNONE;
@@ -3267,6 +3346,11 @@ bool ProcessPairSequentially(UnitInfo &refU, UnitInfo &formU)
   {
     if(ar.dirState == 1) ar.angleDisplayText = "Confirmed angle \"BUY\"";
     else ar.angleDisplayText = "Confirmed angle \"SELL\"";
+  }
+  else if(ar.nearConfirmed)
+  {
+    if(ar.dirState == 1) ar.angleDisplayText = "Near-confirmed angle ≈ \"BUY\"";
+    else ar.angleDisplayText = "Near-confirmed angle ≈ \"SELL\"";
   }
   else if(ar.unconfirmed)
   {
@@ -3441,11 +3525,12 @@ string MakeCorrTextName(const AngleResult &ar)
 
 string SerializeAngleMeta(const AngleResult &ar)
 {
-  return(StringFormat("ANGDATA|%d|%s|%d|%d|%d|%d|%d|%.10f|%d|%.10f|%d|%d|%.10f|%.10f|%.10f|%.10f",
+  return(StringFormat("ANGDATA|%d|%s|%d|%d|%d|%d|%d|%.10f|%d|%.10f|%d|%d|%.10f|%.10f|%.10f|%.10f|%d",
     ar.dirState, ar.classText, (ar.confirmed?1:0), (ar.unconfirmed?1:0),
     (ar.candidateBuy?1:0), (ar.candidateSell?1:0),
     (int)ar.drawT1, ar.drawP1, (int)ar.drawT2, ar.drawP2,
-    (int)ar.u1Start, (int)ar.u2Start, ar.u1High, ar.u1Low, ar.u2High, ar.u2Low));
+    (int)ar.u1Start, (int)ar.u2Start, ar.u1High, ar.u1Low, ar.u2High, ar.u2Low,
+    (ar.nearConfirmed?1:0)));
 }
 
 bool ParseAngleMeta(const string meta, AngleResult &ar)
@@ -3475,7 +3560,10 @@ bool ParseAngleMeta(const string meta, AngleResult &ar)
   ar.u2Low = StringToDouble(parts[16]);
   ar.u1Id = (int)ar.u1Start;
   ar.u2Id = (int)ar.u2Start;
-  ar.angleDisplayText = ar.confirmed ? (ar.dirState==1 ? "Confirmed angle \"BUY\"" : "Confirmed angle \"SELL\"") : (ar.unconfirmed ? (ar.dirState==1 ? "Unconfirmed angle \"BUY\"" : "Unconfirmed angle \"SELL\"") : "");
+  ar.nearConfirmed = (n >= 18 && StringToInteger(parts[17]) != 0);
+  ar.angleDisplayText = ar.confirmed ? (ar.dirState==1 ? "Confirmed angle \"BUY\"" : "Confirmed angle \"SELL\"")
+                       : (ar.nearConfirmed ? (ar.dirState==1 ? "Near-confirmed angle ≈ \"BUY\"" : "Near-confirmed angle ≈ \"SELL\"")
+                       : (ar.unconfirmed ? (ar.dirState==1 ? "Unconfirmed angle \"BUY\"" : "Unconfirmed angle \"SELL\"") : ""));
   ar.correctionValue = 0.0;
   ar.correctionPct = 0.0;
   return(true);
