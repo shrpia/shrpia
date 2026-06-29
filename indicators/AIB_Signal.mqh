@@ -1,5 +1,12 @@
 //==================================================================
-//  AIB_Signal.mqh  v4.6
+//  AIB_Signal.mqh  v4.7
+//
+//  v4.6 → v4.7 changes:
+//  • Approximate classification for combos the dataset never observed:
+//    if the exact 5-char code is missing, fall back to the nearest row
+//    (relax PREV, then LSIZE) and use its tier, marked with a leading "~".
+//    Stops angles vanishing just because their precise combo is unsampled.
+//    Codes with no CLASS+DIR+RATIO match at all (e.g. ZA) stay unclassified.
 //
 //  v4.5 → v4.6 changes:
 //  • Near-confirmed (provisional) angles now get a class and are monitored:
@@ -42,7 +49,7 @@
 //==================================================================
 
 //─── Inputs ────────────────────────────────────────────────────────
-input string InpSigSep1           = "─── AIB Signal v4.6 ────";
+input string InpSigSep1           = "─── AIB Signal v4.7 ────";
 input bool   InpSigEnabled        = true;
 
 input string InpSigSep2           = "─── Display ─────────────";
@@ -867,7 +874,7 @@ void Sig_DrawPanel(SigEntry &entries[], int eCount)
                   (g_sigHideAll  ? Sig_BtnDanger() : Sig_PanelTxt()));
 
    Sig_SLabel(Sig_PN("TITLE"), PX+8, base-7,
-              StringFormat("AIB SIGNAL v4.6  %d active  %d coming%s",
+              StringFormat("AIB SIGNAL v4.7  %d active  %d coming%s",
                            activeCnt, comingCnt, modeStr),
               modeCol, 9, corn);
 
@@ -1049,7 +1056,8 @@ void Sig_RecomputeScenarios()
       double rat  = g_mon[ai].ratio;
       double lu1  = (g_mon[ai].u1R > 1e-10 ? g_mon[ai].L / g_mon[ai].u1R * 100.0 : 0.0);
       string prev = Sig_PrevClsLtr(ai);
-      int    cidx = ComboFind(ComboCode(cls, dir, rat, lu1, prev));
+      int    approxLvl = 0;
+      int    cidx = ComboFindApprox(ComboCode(cls, dir, rat, lu1, prev), approxLvl);
       int    lvl  = Sig_Classify(cidx);
       if(cidx < 0 || lvl <= 1) continue;
 
@@ -1129,10 +1137,15 @@ void Sig_OnCalculate()
       double lu1   = (g_mon[ai].u1R > 1e-10 ? g_mon[ai].L / g_mon[ai].u1R * 100.0 : 0.0);
       string prev  = Sig_PrevClsLtr(ai);
       string code  = ComboCode(cls, dir, rat, lu1, prev);
-      int    cidx  = ComboFind(code);           // lookup uses the RAW code
+      int    approxLvl = 0;
+      int    cidx  = ComboFindApprox(code, approxLvl); // exact, else nearest combo
       int    clsLvl = Sig_Classify(cidx);
       bool   angNear  = g_mon[ai].nearConfirmed;
-      string dispCode = angNear ? "≈"+code : code;  // ≈ marks provisional, display only
+      // Markers (display only — combo lookup already used the raw code):
+      //   ~ = approximate tier (exact combo not in dataset), ≈ = provisional angle
+      string dispCode = code;
+      if(approxLvl > 0) dispCode = "~" + dispCode;
+      if(angNear)       dispCode = "≈" + dispCode;
 
       for(int ti = 0; ti < MON_NPTS; ti++) {
          int react = g_mon[ai].test[ti].react[0];

@@ -4045,6 +4045,39 @@ int ComboFind(string code)
    return -1;
 }
 
+// Approximate lookup for codes the dataset never observed.
+//   exact            → approxLevel 0
+//   relax PREV       → match CLASS+DIR+RATIO+LSIZE (first 4 chars), approxLevel 1
+//   relax LSIZE+PREV → match CLASS+DIR+RATIO        (first 3 chars), approxLevel 2
+// When relaxing, the best-sampled row (highest n_ang) is chosen as the
+// representative. Returns -1 if no row even shares CLASS+DIR+RATIO (e.g. ZA).
+int ComboFindApprox(string code, int &approxLevel)
+{
+   if(!g_combos_init) ComboTable_Init();
+   approxLevel = 0;
+
+   for(int i = 0; i < COMBO_COUNT; i++)
+      if(g_combos[i].code == code) return i;
+
+   if(StringLen(code) < 5) return -1;
+
+   string p4 = StringSubstr(code, 0, 4);
+   int best = -1, bestN = -1;
+   for(int i = 0; i < COMBO_COUNT; i++)
+      if(StringSubstr(g_combos[i].code, 0, 4) == p4 && g_combos[i].n_ang > bestN)
+         { bestN = g_combos[i].n_ang; best = i; }
+   if(best >= 0) { approxLevel = 1; return best; }
+
+   string p3 = StringSubstr(code, 0, 3);
+   best = -1; bestN = -1;
+   for(int i = 0; i < COMBO_COUNT; i++)
+      if(StringSubstr(g_combos[i].code, 0, 3) == p3 && g_combos[i].n_ang > bestN)
+         { bestN = g_combos[i].n_ang; best = i; }
+   if(best >= 0) { approxLevel = 2; return best; }
+
+   return -1;
+}
+
 // Test name → array index
 int ComboTestIdx(string tp)
 {
