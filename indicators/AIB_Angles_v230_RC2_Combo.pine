@@ -1,0 +1,2967 @@
+//@version=6
+indicator("AIB Angles ABCDE — Ultra Runtime v2.30 RC2", shorttitle="AIB ABCDE v2.30 RC2", overlay=true, scale=scale.none, behind_chart=false, format=format.price, max_lines_count=500, max_labels_count=500, max_boxes_count=500, max_bars_back=5000, calc_bars_count=4000, dynamic_requests=true)
+// v2.30 RC2: calc_bars_count values are explicitly kept as simple int for request.* compatibility.
+
+// ═══════════════════════════════════════════════════════════════
+//  INPUTS
+// ═══════════════════════════════════════════════════════════════
+
+grpCore = "═══ Core Settings ═══"
+i_unitTF      = input.timeframe("D", "Unit Timeframe", group=grpCore, tooltip="Each bar on this timeframe is treated as one unit.")
+i_unitsToScan = input.int(60, "Units to scan (calculation)", minval=4, maxval=200, group=grpCore)
+i_touchTolPts = input.int(2, "Touch tolerance (points)", minval=0, group=grpCore)
+
+grpUnitPreset = "═══ Unit Selection / 6H / 8H ═══"
+i_unitSelectionMode = input.string("Auto Standard", "Unit Selection Mode", options=["Auto Standard", "Manual"], group=grpUnitPreset)
+i_unitTFMode = input.string("Use Unit Timeframe", "Unit Timeframe Mode", options=["Use Unit Timeframe", "6 Hours", "8 Hours"], group=grpUnitPreset)
+i_virtualHigherUnitBars = input.int(2, "Highest-TF virtual-unit bars", minval=2, maxval=6, group=grpUnitPreset, tooltip="When Pine has no strictly higher supported timeframe (for example 12M, 52W or 365D), Auto Standard groups this many chart bars into one virtual unit. Default 2.")
+
+grpFilter88 = "═══ Filter 88 ═══"
+i_enableFilter88 = input.bool(true, "Enable Filter 88", group=grpFilter88)
+i_showFailedFilter88 = input.bool(false, "Show angles that fail Filter 88", group=grpFilter88)
+
+grpDraw = "═══ Angle Drawing ═══"
+i_showConfirmed   = input.bool(true, "Show confirmed angles", group=grpDraw)
+i_showUnconfirmed = input.bool(true, "Show unconfirmed/candidate angles", group=grpDraw)
+i_showUnitLegs    = input.bool(true, "Show unit vertical legs", group=grpDraw)
+i_showClassText   = input.bool(true, "Show classification (ZA/ZB/ZC/ZD/ZE)", group=grpDraw)
+i_showCorrText    = input.bool(false, "Show correction %", group=grpDraw)
+i_showAngleText   = input.bool(false, "Show BUY/SELL text", group=grpDraw)
+i_angleHistoryDraw = input.int(55, "Maximum visible historical angles", minval=5, maxval=120, group=grpDraw, tooltip="Visual limit only. Calculations keep their configured depth.")
+
+grpStyle = "═══ Angle Style ═══"
+i_classColorABC = input.color(color.rgb(190, 198, 204), "ZA / ZB / ZC text color", group=grpStyle)
+i_classColorDE  = input.color(color.rgb(104, 151, 166), "ZD / ZE text color", group=grpStyle)
+i_corrColor     = input.color(color.rgb(160, 123, 78), "Correction text color", group=grpStyle)
+i_legWidth   = input.int(2, "Vertical line width", minval=1, maxval=4, group=grpStyle)
+i_angleWidth = input.int(2, "Diagonal line width", minval=1, maxval=4, group=grpStyle)
+i_useOriginalBrightAngleColors = input.bool(false, "Use original bright yellow / white angle colors", group=grpStyle, tooltip="OFF uses a muted gold and soft gray to reduce eye strain. Calculations are unchanged.")
+i_softAngleGold  = input.color(color.rgb(178, 151, 73), "Muted angle gold", group=grpStyle)
+i_softAngleLight = input.color(color.rgb(198, 204, 208), "Muted angle light", group=grpStyle)
+
+grpPerf = "═══ Performance / Safety ═══"
+i_performancePreset = input.string("Ultra Light", "Performance preset", options=["Ultra Light", "Balanced", "Research", "Custom"], group=grpPerf)
+i_autoSafeMode = input.bool(true, "Automatic safe mode", group=grpPerf, tooltip="Reduces historical drawings first; never disables angle/test calculations.")
+i_showPerformanceWarning = input.bool(true, "Show safety/performance status", group=grpPerf)
+i_autoSizeMTFRequests = input.bool(true, "Auto-size MTF request history", group=grpPerf, tooltip="ON requests only the estimated source bars needed for the configured unit depth. OFF uses the full Custom requested source bars value for maximum historical coverage.")
+i_dashboardRefreshBars = input.int(3, "Dashboard refresh every N bars", minval=1, maxval=20, group=grpPerf, tooltip="Visual refresh only. Ultra Light uses this interval to reduce table work; calculations remain bar-by-bar.")
+
+grpFibo = "═══ Fibonacci Units Grid ═══"
+i_showFiboGrid       = input.bool(true, "Show Fibonacci Units Grid", group=grpFibo)
+i_showFiboRatioLines = input.bool(true, "Show ratio lines", group=grpFibo)
+i_showFiboRatioLabels = input.bool(true, "Show ratio labels", group=grpFibo)
+i_fiboUnitsBack       = input.int(6, "Visible closed units", minval=1, maxval=20, group=grpFibo, tooltip="Visual depth only. Ultra Light default is 6.")
+i_fiboLabelUnits      = input.int(2, "Newest units with ratio labels", minval=0, maxval=6, group=grpFibo)
+i_showUnitNumbers     = input.bool(true, "Show unit numbers", group=grpFibo)
+i_showWeekStartMarker = input.bool(true, "Highlight week-start boundary", group=grpFibo)
+i_showUnit0Separator     = input.bool(true, "Show U1/U0 real boundary", group=grpFibo)
+i_showProjectedSeparator = input.bool(true, "Show projected next-unit boundary", group=grpFibo)
+i_projSepColor        = input.color(color.new(color.gray, 55), "Projected boundary color", group=grpFibo)
+i_fiboLabelSize       = input.string("Tiny", "Ratio label size", options=["Tiny", "Small"], group=grpFibo)
+
+grpFiboColor = "═══ Fibonacci Grid — Colors / Styles ═══"
+i_fibo_0100_color = input.color(#476E82, "0.0 / 100.0", group=grpFiboColor, inline="l0")
+i_fibo_0100_style = input.string("Solid", "Style", options=["Solid", "Dashed", "Dotted"], group=grpFiboColor, inline="l0")
+i_fibo_0100_width = input.int(2, "Width", minval=1, maxval=4, group=grpFiboColor, inline="l0")
+i_fibo_236_color  = input.color(#73677B, "23.6 / 76.4", group=grpFiboColor, inline="l1")
+i_fibo_236_style  = input.string("Dashed", "Style", options=["Solid", "Dashed", "Dotted"], group=grpFiboColor, inline="l1")
+i_fibo_236_width  = input.int(1, "Width", minval=1, maxval=4, group=grpFiboColor, inline="l1")
+i_fibo_382_color  = input.color(#806C4B, "38.2 / 61.8 / 138.2 / -38.2", group=grpFiboColor, inline="l2")
+i_fibo_382_style  = input.string("Dotted", "Style", options=["Solid", "Dashed", "Dotted"], group=grpFiboColor, inline="l2")
+i_fibo_382_width  = input.int(1, "Width", minval=1, maxval=4, group=grpFiboColor, inline="l2")
+i_fibo_50_color   = input.color(#496F69, "50.0", group=grpFiboColor, inline="l3")
+i_fibo_50_style   = input.string("Solid", "Style", options=["Solid", "Dashed", "Dotted"], group=grpFiboColor, inline="l3")
+i_fibo_50_width   = input.int(1, "Width", minval=1, maxval=4, group=grpFiboColor, inline="l3")
+i_fibo_118_color  = input.color(#4F7565, "11.8 / 88.0 / 111.8 / -11.8", group=grpFiboColor, inline="l4")
+i_fibo_118_style  = input.string("Dotted", "Style", options=["Solid", "Dashed", "Dotted"], group=grpFiboColor, inline="l4")
+i_fibo_118_width  = input.int(1, "Width", minval=1, maxval=4, group=grpFiboColor, inline="l4")
+i_fibo_123_color  = input.color(#73677B, "123.6 / -23.6", group=grpFiboColor, inline="l5")
+i_fibo_123_style  = input.string("Solid", "Style", options=["Solid", "Dashed", "Dotted"], group=grpFiboColor, inline="l5")
+i_fibo_123_width  = input.int(2, "Width", minval=1, maxval=4, group=grpFiboColor, inline="l5")
+i_weekMarkerColor = input.color(#73677B, "Week-start marker", group=grpFiboColor)
+i_sepColor        = input.color(color.new(color.gray, 82), "Normal separator", group=grpFiboColor)
+i_unitNumberColor = input.color(color.new(color.rgb(190, 198, 204), 42), "Unit number text", group=grpFiboColor)
+
+grpFiboPick = "═══ Fibonacci Grid — Ratios to Show ═══"
+i_fgShow0    = input.bool(true, "0.0",   group=grpFiboPick, inline="fg1")
+i_fgShow118  = input.bool(true, "11.8",  group=grpFiboPick, inline="fg1")
+i_fgShow236  = input.bool(true, "23.6",  group=grpFiboPick, inline="fg1")
+i_fgShow382  = input.bool(true, "38.2",  group=grpFiboPick, inline="fg2")
+i_fgShow50   = input.bool(true, "50.0",  group=grpFiboPick, inline="fg2")
+i_fgShow618  = input.bool(true, "61.8",  group=grpFiboPick, inline="fg2")
+i_fgShow764  = input.bool(true, "76.4",  group=grpFiboPick, inline="fg3")
+i_fgShow88   = input.bool(true, "88.0",  group=grpFiboPick, inline="fg3")
+i_fgShow100  = input.bool(true, "100.0", group=grpFiboPick, inline="fg3")
+i_fgShow1118 = input.bool(true, "111.8", group=grpFiboPick, inline="fg4")
+i_fgShow1236 = input.bool(true, "123.6", group=grpFiboPick, inline="fg4")
+i_fgShow1382 = input.bool(true, "138.2", group=grpFiboPick, inline="fg4")
+i_fgShowN118 = input.bool(true, "-11.8", group=grpFiboPick, inline="fg5")
+i_fgShowN236 = input.bool(true, "-23.6", group=grpFiboPick, inline="fg5")
+i_fgShowN382 = input.bool(true, "-38.2", group=grpFiboPick, inline="fg5")
+
+grpEye = "═══ AIB Eye Comfort Theme ═══"
+i_enableEyeComfort = input.bool(true, "Enable Eye Comfort theme", group=grpEye)
+i_themePreset = input.string("Soft Dark", "Theme", options=["Soft Dark", "Soft Light", "Neutral", "High Visibility", "Custom"], group=grpEye)
+i_applyBackground = input.bool(true, "Apply background tint", group=grpEye)
+i_applyCandleColors = input.bool(true, "Apply candle colors", group=grpEye)
+i_customBackground = input.color(color.rgb(17, 23, 29), "Custom background", group=grpEye)
+i_customBullCandle = input.color(color.rgb(63, 135, 121), "Custom bullish candle", group=grpEye)
+i_customBearCandle = input.color(color.rgb(156, 88, 92), "Custom bearish candle", group=grpEye)
+i_otherTFDim = input.int(12, "Additional transparency for other TFs", minval=0, maxval=35, group=grpEye)
+i_nearZoneATR = input.float(0.60, "Near-zone distance (ATR)", minval=0.05, maxval=5.0, step=0.05, group=grpEye)
+i_currentTFEmphasis = input.bool(true, "Emphasize current timeframe", group=grpEye)
+
+// ═══════════════════════════════════════════════════════════════
+//  MTF TEST ZONES
+// ═══════════════════════════════════════════════════════════════
+
+grpMTF = "═══ MTF — General ═══"
+i_enableMTFZones          = input.bool(true, "Enable MTF test zones", group=grpMTF)
+i_mtfShowZones            = input.bool(true, "Show test-zone rectangles", group=grpMTF)
+i_mtfConfirmedOnly        = input.bool(true, "Confirmed angles only", group=grpMTF)
+i_mtfDisplayMode          = input.string("Current + higher", "Display mode", options=["Current only", "Current + higher", "Current + lower", "All enabled", "Custom per slot"], group=grpMTF)
+i_mtfAllowLowerTF         = input.bool(false, "Allow lower-timeframe sources", group=grpMTF)
+i_mtfLowerTFMaxRatio      = input.int(24, "Maximum chart/source ratio for lower TF", minval=2, maxval=240, group=grpMTF)
+i_mtfCalcBars             = input.int(6000, "Custom requested source bars", minval=1000, maxval=50000, step=500, group=grpMTF)
+i_mtfMaxTrackedZones      = input.int(260, "Custom maximum tracked zones", minval=40, maxval=800, group=grpMTF)
+i_mtfMaxVisibleZones      = input.int(55, "Custom maximum visible zone boxes", minval=10, maxval=180, group=grpMTF)
+i_mtfKeepBrokenZones      = input.bool(true, "Allow historical zones", group=grpMTF)
+i_mtfShowStatus           = input.bool(true, "Show test status", group=grpMTF)
+i_mtfIncludeChartTF       = input.bool(true, "Always calculate the current chart timeframe", group=grpMTF, tooltip="Ensures the four tests are available on any supported chart timeframe, even when none of the five MTF slots matches the chart.")
+i_mtfChartTFColor         = input.color(color.rgb(116, 132, 142), "Current-TF frame color", group=grpMTF)
+i_mtfChartTFConfluence    = input.bool(true, "Include current TF in confluence", group=grpMTF)
+
+grpLife = "═══ Zone Lifecycle / History ═══"
+i_failedZoneMode = input.string("Ghost", "Failed / unresolved zones", options=["Hide", "Ghost", "Full"], group=grpLife)
+i_completedZoneMode = input.string("Ghost", "Completed TP zones after break", options=["Hide", "Ghost", "Full"], group=grpLife)
+i_ghostTransparency = input.int(96, "Ghost transparency", minval=88, maxval=100, group=grpLife)
+i_maxGhostZones = input.int(12, "Custom maximum Ghost zones", minval=0, maxval=80, group=grpLife)
+i_keepTP3ValidZones = input.bool(true, "Keep TP3 zone extending until later break", group=grpLife)
+
+grpMTFStyle = "═══ MTF — Zone Style ═══"
+i_mtfSupportColor         = input.color(color.rgb(35, 83, 73), "Custom support-zone fill", group=grpMTFStyle)
+i_mtfResistanceColor      = input.color(color.rgb(103, 63, 67), "Custom resistance-zone fill", group=grpMTFStyle)
+i_mtfZoneTransparency     = input.int(92, "Untouched-zone transparency", minval=50, maxval=98, group=grpMTFStyle)
+i_mtfActiveTransparency   = input.int(85, "Touched/active transparency", minval=50, maxval=96, group=grpMTFStyle)
+i_mtfBorderWidth          = input.int(1, "Zone border width", minval=1, maxval=4, group=grpMTFStyle)
+i_mtfTextColor            = input.color(color.rgb(190, 198, 204), "Custom zone text color", group=grpMTFStyle)
+i_mtfTextSize             = input.string("Normal", "On-chart label size", options=["Tiny", "Small", "Normal", "Large"], group=grpMTFStyle, tooltip="Controls zone labels, lot readout, stop-loss text and projection TP/SL numbers.")
+i_mtfLabelMode            = input.string("Minimal", "Zone label mode", options=["Full", "Compact", "Minimal"], group=grpMTFStyle)
+i_mtfShowZoneText         = input.bool(true, "Label only active zones near price", group=grpMTFStyle, tooltip="Keeps a class label on the zones price is interacting with, and hides text on all other rectangles so labels never overlap.")
+
+grpZoneAux = "═══ Zone Lot / Stop-Loss (near price) ═══"
+i_showLotInZone   = input.bool(true, "Show lot size inside zone (right)", group=grpZoneAux, tooltip="When price approaches an active zone, the risk-based lot appears near its right edge for a fast decision. Needs Risk sizing enabled.")
+i_zoneLotText     = input.color(color.rgb(230, 224, 205), "Lot text color", group=grpZoneAux)
+i_zoneLotBg       = input.color(color.rgb(26, 32, 44), "Lot background", group=grpZoneAux)
+i_showZoneSL      = input.bool(true, "Show dashed stop-loss line", group=grpZoneAux, tooltip="Sell zones: dashed SL above the zone. Buy zones: below. The spread is added to the zone boundary.")
+i_spreadPoints    = input.int(0, "Spread (points) added to SL", minval=0, maxval=100000, group=grpZoneAux, tooltip="Pine cannot read the live broker spread, so enter the pair's typical spread in points. It is added beyond the zone boundary.")
+i_zoneSLColor     = input.color(color.rgb(181, 84, 78), "Stop-loss line color", group=grpZoneAux)
+i_zoneSLText      = input.color(color.rgb(214, 158, 152), "Stop-loss text color", group=grpZoneAux)
+
+grpZoneFib = "═══ Key Fib Ratios inside Zones ═══"
+i_showZoneFibLevels = input.bool(true, "Highlight key fib ratios that land inside a zone", group=grpZoneFib, tooltip="For every test zone, the extended fib ratios (…±23.6, ±76.4, ±123.6 … ±623.6) of its reference range are drawn where they fall inside the rectangle.")
+i_zoneFibMode = input.string("Only inside test zones", "When to draw the ratios", options=["Only inside test zones", "Always (whole reference range)"], group=grpZoneFib, tooltip="'Only inside test zones' draws a ratio only where it falls inside a test rectangle. 'Always' draws every enabled ratio of each zone's reference range regardless of the rectangle boundary.")
+i_zoneFibColor      = input.color(color.rgb(176, 132, 255), "Fib level color", group=grpZoneFib)
+i_zoneFibWidth      = input.int(2, "Fib level line width", minval=1, maxval=5, group=grpZoneFib)
+i_zoneFibMaxLevels  = input.int(30, "Max fib highlights", minval=4, maxval=80, group=grpZoneFib, tooltip="Upper bound on how many in-zone fib lines are drawn at once, to stay light.")
+
+grpZoneFibPick = "═══ Which Fib Ratios to Draw ═══"
+i_fibP236 = input.bool(true, "+23.60",  group=grpZoneFibPick, inline="r236")
+i_fibN236 = input.bool(true, "-23.60",  group=grpZoneFibPick, inline="r236")
+i_fibP764 = input.bool(true, "+76.40",  group=grpZoneFibPick, inline="r764")
+i_fibN764 = input.bool(true, "-76.40",  group=grpZoneFibPick, inline="r764")
+i_fibP1236 = input.bool(true, "+123.60", group=grpZoneFibPick, inline="r1236")
+i_fibN1236 = input.bool(true, "-123.60", group=grpZoneFibPick, inline="r1236")
+i_fibP1764 = input.bool(true, "+176.40", group=grpZoneFibPick, inline="r1764")
+i_fibN1764 = input.bool(true, "-176.40", group=grpZoneFibPick, inline="r1764")
+i_fibP2236 = input.bool(true, "+223.60", group=grpZoneFibPick, inline="r2236")
+i_fibN2236 = input.bool(true, "-223.60", group=grpZoneFibPick, inline="r2236")
+i_fibP2764 = input.bool(true, "+276.40", group=grpZoneFibPick, inline="r2764")
+i_fibN2764 = input.bool(true, "-276.40", group=grpZoneFibPick, inline="r2764")
+i_fibP3236 = input.bool(true, "+323.60", group=grpZoneFibPick, inline="r3236")
+i_fibN3236 = input.bool(true, "-323.60", group=grpZoneFibPick, inline="r3236")
+i_fibP3764 = input.bool(true, "+376.40", group=grpZoneFibPick, inline="r3764")
+i_fibN3764 = input.bool(true, "-376.40", group=grpZoneFibPick, inline="r3764")
+i_fibP4236 = input.bool(true, "+423.60", group=grpZoneFibPick, inline="r4236")
+i_fibN4236 = input.bool(true, "-423.60", group=grpZoneFibPick, inline="r4236")
+i_fibP4764 = input.bool(true, "+476.40", group=grpZoneFibPick, inline="r4764")
+i_fibN4764 = input.bool(true, "-476.40", group=grpZoneFibPick, inline="r4764")
+i_fibP5236 = input.bool(true, "+523.60", group=grpZoneFibPick, inline="r5236")
+i_fibN5236 = input.bool(true, "-523.60", group=grpZoneFibPick, inline="r5236")
+i_fibP5764 = input.bool(true, "+576.40", group=grpZoneFibPick, inline="r5764")
+i_fibN5764 = input.bool(true, "-576.40", group=grpZoneFibPick, inline="r5764")
+i_fibP6236 = input.bool(true, "+623.60", group=grpZoneFibPick, inline="r6236")
+i_fibN6236 = input.bool(true, "-623.60", group=grpZoneFibPick, inline="r6236")
+
+grpMTFOverlap = "═══ MTF — Confluence ═══"
+i_mtfShowConfluence       = input.bool(true, "Highlight overlapping zones", group=grpMTFOverlap)
+i_mtfCrossTFOnly          = input.bool(false, "Cross-timeframe overlaps only", group=grpMTFOverlap)
+i_mtfMaxConfluenceBoxes   = input.int(16, "Custom maximum confluence boxes", minval=0, maxval=80, group=grpMTFOverlap)
+i_mtfOverlapScanLimit     = input.int(45, "Active zones checked per new zone", minval=8, maxval=120, group=grpMTFOverlap)
+i_mtfKeepClosedConfluence = input.bool(false, "Keep closed confluences as Ghost", group=grpMTFOverlap)
+i_mtfConfluenceColor      = input.color(color.rgb(206, 170, 84), "Confluence fill", group=grpMTFOverlap)
+i_mtfConfluenceActiveTransp = input.int(72, "Confluence fill transparency", minval=40, maxval=95, group=grpMTFOverlap, tooltip="Softens the golden intersection glow so it no longer masks the candles underneath.")
+i_mtfConfluenceBorder     = input.color(color.rgb(224, 186, 104), "Confluence border", group=grpMTFOverlap)
+i_mtfConfluenceText       = input.color(color.rgb(201, 205, 209), "Confluence text", group=grpMTFOverlap)
+i_mtfConfluenceWidth      = input.int(1, "Confluence border width", minval=1, maxval=4, group=grpMTFOverlap)
+
+grpCombo = "═══ Combo Filter (283) ═══"
+i_enableComboFilter = input.bool(false, "Enable 283-combo filter", group=grpCombo, tooltip="When ON, zones whose 5-char combo is in the 283 validated combos show ✓ (green text); zones outside the table show ✗ (red text). Every zone still draws.")
+
+grpDash = "═══ Active Zones Dashboard ═══"
+i_showDashboard = input.bool(true, "Show active zones dashboard", group=grpDash)
+i_dashboardRows = input.int(6, "Rows", minval=3, maxval=10, group=grpDash)
+i_dashboardShowDistance = input.bool(true, "Show distance", group=grpDash)
+
+grpProjection = "═══ Expected Scenario Path ═══"
+i_projectionMode = input.string("Nearest active zone", "Projection", options=["Off", "Nearest active zone", "Nearest current-TF zone", "Strongest confluence"], group=grpProjection)
+i_projectionBarsPerLeg = input.int(8, "Bars per TP leg", minval=2, maxval=30, group=grpProjection)
+i_projectionWidth = input.int(2, "Line width", minval=1, maxval=4, group=grpProjection)
+i_projectionTransparency = input.int(30, "Line transparency", minval=0, maxval=90, group=grpProjection)
+i_projectionShowTPLabels = input.bool(true, "Show Entry / SL / TP prices on projection path", group=grpProjection, tooltip="Prices are shown only on the single projected scenario path, never inside zone rectangles.")
+i_projectionShowSLLabel = input.bool(true, "Show SL price beside projection path", group=grpProjection)
+i_projectionLabelOffset = input.int(3, "TP/SL label offset (bars to the right)", minval=0, maxval=20, group=grpProjection, tooltip="Moves the Entry/TP/SL numbers to the right of the projection line so they do not sit on top of it.")
+
+grpRisk = "═══ Risk Management / Position Size ═══"
+i_enableRiskSizing = input.bool(true, "Enable risk sizing", group=grpRisk)
+i_riskAmount = input.float(100.0, "Accepted loss per trade", minval=0.0, step=1.0, group=grpRisk, tooltip="Amount in the selected account currency.")
+i_riskAccountCurrency = input.string("USD", "Account currency", options=["USD", "EUR", "GBP", "JPY", "CHF", "AUD", "CAD", "NZD"], group=grpRisk)
+i_riskSizingMode = input.string("Auto by symbol", "Sizing mode", options=["Auto by symbol", "Forex standard lots", "Symbol contracts / units", "Manual tick value"], group=grpRisk, tooltip="Auto uses standard lots for Forex and syminfo.pointvalue for futures, stocks, crypto and CFDs. Use Manual when your broker contract differs from TradingView metadata.")
+i_forexContractSize = input.float(100000.0, "Forex units per 1.00 lot", minval=1.0, step=1000.0, group=grpRisk)
+i_forexLotStep = input.float(0.01, "Forex lot step", minval=0.0001, step=0.01, group=grpRisk)
+i_symbolQtyStepOverride = input.float(0.0, "Contract/unit step override (0 = syminfo.mincontract)", minval=0.0, step=0.0001, group=grpRisk)
+i_manualTickSize = input.float(0.0, "Manual tick size (0 = syminfo.mintick)", minval=0.0, step=0.000001, group=grpRisk)
+i_manualTickValue = input.float(1.0, "Manual value per tick for 1 lot/contract", minval=0.0, step=0.01, group=grpRisk, tooltip="Enter this value in the selected account currency.")
+i_manualSizeStep = input.float(0.01, "Manual lot/contract step", minval=0.0001, step=0.01, group=grpRisk)
+i_manualCurrencyRate = input.float(1.0, "Fallback quote-to-account conversion", minval=0.000001, step=0.0001, group=grpRisk, tooltip="Used only when TradingView cannot resolve the currency conversion automatically.")
+i_maxRecommendedSize = input.float(0.0, "Maximum recommended size (0 = no cap)", minval=0.0, step=0.01, group=grpRisk)
+i_showRiskInZoneText = input.bool(false, "Show risk size inside zone text", group=grpRisk)
+i_showRiskInDashboard = input.bool(true, "Show SL distance and size in dashboard", group=grpRisk)
+
+grpReport = "═══ Reports / Excel Export Stream ═══"
+i_reportHistoricalLog = input.bool(false, "Generate historical JSON rows in Pine Logs", group=grpReport, tooltip="Personal scripts only. Toggle ON, reopen Pine Logs, then save/copy the rows for the companion Excel builder.")
+i_reportRealtimeAlerts = input.bool(false, "Send finalized tests/confluences through alert()", group=grpReport, tooltip="Create one TradingView alert using: Any alert() function call. Use a webhook to collect the JSON stream.")
+i_reportIncludeConfluences = input.bool(true, "Include confluence records", group=grpReport)
+i_reportIncludeOpenSnapshots = input.bool(true, "Include open/untouched tests at report end", group=grpReport, tooltip="Adds one final snapshot row for tests that are still WAITING or ACTIVE at the end of the selected history.")
+i_reportStartTime = input.time(timestamp("01 Jan 2020 00:00 +0000"), "Historical report start", group=grpReport)
+i_reportEndTime   = input.time(timestamp("31 Dec 2099 23:59 +0000"), "Historical report end", group=grpReport)
+
+// Source slots.
+grpMTF1 = "═══ MTF Source 1 ═══"
+i_mtf1Enabled = input.bool(true, "Enable source 1", group=grpMTF1)
+i_mtf1TF = input.timeframe("15", "Source timeframe", group=grpMTF1)
+i_mtf1Color = input.color(color.rgb(160, 123, 78), "Frame color", group=grpMTF1)
+i_mtf1CustomCharts = input.string("5,15,30,60,240,D", "Show on chart TFs (custom mode)", group=grpMTF1)
+i_mtf1Confluence = input.bool(true, "Include in confluence", group=grpMTF1)
+
+grpMTF2 = "═══ MTF Source 2 ═══"
+i_mtf2Enabled = input.bool(true, "Enable source 2", group=grpMTF2)
+i_mtf2TF = input.timeframe("30", "Source timeframe", group=grpMTF2)
+i_mtf2Color = input.color(color.rgb(67, 126, 140), "Frame color", group=grpMTF2)
+i_mtf2CustomCharts = input.string("5,15,30,60,240,D", "Show on chart TFs (custom mode)", group=grpMTF2)
+i_mtf2Confluence = input.bool(true, "Include in confluence", group=grpMTF2)
+
+grpMTF3 = "═══ MTF Source 3 ═══"
+i_mtf3Enabled = input.bool(true, "Enable source 3", group=grpMTF3)
+i_mtf3TF = input.timeframe("60", "Source timeframe", group=grpMTF3)
+i_mtf3Color = input.color(color.rgb(70, 104, 151), "Frame color", group=grpMTF3)
+i_mtf3CustomCharts = input.string("5,15,30,60,240,D", "Show on chart TFs (custom mode)", group=grpMTF3)
+i_mtf3Confluence = input.bool(true, "Include in confluence", group=grpMTF3)
+
+grpMTF4 = "═══ MTF Source 4 ═══"
+i_mtf4Enabled = input.bool(true, "Enable source 4", group=grpMTF4)
+i_mtf4TF = input.timeframe("240", "Source timeframe", group=grpMTF4)
+i_mtf4Color = input.color(color.rgb(105, 85, 137), "Frame color", group=grpMTF4)
+i_mtf4CustomCharts = input.string("5,15,30,60,240,D", "Show on chart TFs (custom mode)", group=grpMTF4)
+i_mtf4Confluence = input.bool(true, "Include in confluence", group=grpMTF4)
+
+grpMTF5 = "═══ MTF Source 5 ═══"
+i_mtf5Enabled = input.bool(false, "Enable source 5", group=grpMTF5)
+i_mtf5TF = input.timeframe("D", "Source timeframe", group=grpMTF5)
+i_mtf5Color = input.color(color.rgb(145, 124, 72), "Frame color", group=grpMTF5)
+i_mtf5CustomCharts = input.string("15,30,60,240,D,W", "Show on chart TFs (custom mode)", group=grpMTF5)
+i_mtf5Confluence = input.bool(true, "Include in confluence", group=grpMTF5)
+
+// Angle-line color identities are preserved (gold/light), but the default palette is muted.
+// Enable the input above to restore the original bright yellow/white appearance.
+color AIB_ANGLE_GOLD  = i_useOriginalBrightAngleColors ? color.yellow : i_softAngleGold
+color AIB_ANGLE_LIGHT = i_useOriginalBrightAngleColors ? color.white  : i_softAngleLight
+color BUY_VERTICAL_COLOR  = AIB_ANGLE_GOLD
+color BUY_DIAGONAL_COLOR  = AIB_ANGLE_LIGHT
+color SELL_VERTICAL_COLOR = AIB_ANGLE_LIGHT
+color SELL_DIAGONAL_COLOR = AIB_ANGLE_GOLD
+
+// Use the exact exchange-qualified chart symbol for cross-timeframe requests.
+// This preserves broker suffixes and vendor-specific Forex symbols (including JPY feeds).
+// Invalid optional MTF feeds are ignored later instead of stopping the full indicator.
+string AIB_REQUEST_TICKER = syminfo.tickerid
+
+// Invisible price anchor: keeps the script tied to the chart's native price
+// domain. The plot is fully transparent and does not change calculations.
+plot(close, title="AIB Price Scale Anchor", color=color.new(color.white, 100), linewidth=1, editable=false, force_overlay=true)
+
+// ═══════════════════════════════════════════════════════════════
+//  TYPES
+// ═══════════════════════════════════════════════════════════════
+
+type UnitInfo
+    float hi
+    float lo
+    int   hiBar
+    int   loBar
+    int   hiTime
+    int   loTime
+    float lastClose
+    int   startBar
+    int   endBar
+    int   startTime
+    int   endTime
+    float level23
+    float level38
+    float level61
+    float level76
+    float levelNeg118
+    float level118
+    float level11
+    float level50
+    float level88
+    float level123
+    float level138
+    bool  valid
+
+type AngleResult
+    bool   valid
+    bool   confirmed
+    bool   unconfirmed
+    bool   filter88Passed
+    string classText
+    int    dirState
+    float  u1High
+    float  u1Low
+    float  u2High
+    float  u2Low
+    int    u1StartBar
+    int    u2StartBar
+    int    u1StartTime
+    int    u2StartTime
+    float  correctionPct
+    int    drawBar1
+    int    drawTime1
+    float  drawP1
+    int    drawBar2
+    int    drawTime2
+    float  drawP2
+
+type PairEvents
+    int  breakUpBar
+    int  breakDownBar
+    bool retestUp
+    bool retestDown
+
+
+// ═══════════════════════════════════════════════════════════════
+//  MTF ULTRA LIGHT — TYPES
+// ═══════════════════════════════════════════════════════════════
+
+type MTFUnit
+    float hi
+    float lo
+    int   hiTime
+    int   loTime
+    float lastClose
+    int   startTime
+    int   endTime
+    bool  filterBull
+    bool  filterBear
+    bool  valid
+
+type MTFZone
+    string id
+    string angleKey
+    string sourceTF
+    string classText
+    string testName
+    int    angleDir
+    int    bounceDir
+    float  entry
+    float  stop
+    float  tp1
+    float  tp2
+    float  tp3
+    float  u1High
+    float  u1Low
+    float  u2High
+    float  u2Low
+    float  lengthL
+    float  zoneB
+    int    startTime
+    int    endTime
+    int    startBar
+    int    endBar
+    int    touchTime
+    int    tp1Time
+    int    tp2Time
+    int    tp3Time
+    int    stopTime
+    bool   active
+    bool   touched
+    bool   broken
+    bool   testFinal
+    bool   reportedFinal
+    bool   validityCloseReported
+    bool   confirmed
+    bool   filterPassed
+    int    highestTP
+    bool   orderUnresolved
+    bool   visible
+    bool   includeConfluence
+    bool   sourceIsLower
+    bool   sourceIsCurrent
+    int    sameTFConfluences
+    int    crossTFConfluences
+    int    maxConfluenceMultiplicity
+    int    sameTFAtTouch
+    int    crossTFAtTouch
+    int    multiplicityAtTouch
+    color  frameColor
+    box    drawing
+    int    visualState
+    label  lotLabel
+    line   slLine
+    label  slLabel
+    string comboCode
+    bool   comboFound
+
+type MTFConfluence
+    string key
+    string zoneAId
+    string zoneBId
+    int    zoneAIndex
+    int    zoneBIndex
+    string displayText
+    string sourceTFA
+    string sourceTFB
+    string classA
+    string classB
+    string testA
+    string testB
+    int    startTime
+    int    endTime
+    int    startBar
+    int    endBar
+    float  top
+    float  bottom
+    bool   sameTF
+    bool   active
+    box    drawing
+    int    visualState
+
+// ═══════════════════════════════════════════════════════════════
+//  MTF LIGHT — SOURCE-TIMEFRAME ANGLE EVENT ENGINE
+// ═══════════════════════════════════════════════════════════════
+
+// Universal resolver used in both the chart context and every requested source
+// context. The project's approved mappings stay unchanged on the principal chart
+// timeframes. Every additional standard time-based timeframe receives a valid,
+// strictly higher calendar/minute unit. The only Pine boundary is 12M; that chart
+// is handled by a virtual multi-bar unit instead of returning an invalid lower TF.
+f_autoUnitTFGeneric() =>
+    float sec = timeframe.in_seconds(timeframe.period)
+    string selectedTF = i_unitTF
+
+    if timeframe.isticks or timeframe.isseconds
+        // Seconds/ticks use one-hour units. The user requested minute-and-up
+        // compatibility, but this fallback keeps the resolver valid below M1 too.
+        selectedTF := "60"
+    else if timeframe.isintraday and not na(sec)
+        int mins = math.max(1, int(math.round(sec / 60.0)))
+        // Protected legacy mappings.
+        selectedTF := mins == 1   ? "60"  :
+                      mins == 5   ? "180" :
+                      mins == 15  ? "360" :
+                      mins == 30  ? "720" :
+                      mins == 60  ? "1D"  :
+                      mins == 240 ? "1W"  :
+                      mins < 60   ? str.tostring(math.min(1440, math.max(mins + 1, mins * 24))) :
+                      mins < 240  ? str.tostring(math.min(1440, mins * 12)) :
+                      mins < 720  ? "1W" :
+                      "1M"
+    else if timeframe.isdaily
+        int d = math.max(1, timeframe.multiplier)
+        selectedTF := d == 1 ? "1M" : str.tostring(math.min(12, d)) + "M"
+    else if timeframe.isweekly
+        int w = math.max(1, timeframe.multiplier)
+        selectedTF := str.tostring(math.min(12, math.max(6, w * 6))) + "M"
+    else if timeframe.ismonthly
+        int m = math.max(1, timeframe.multiplier)
+        selectedTF := m < 12 ? "12M" : "12M"
+
+    selectedTF
+
+// Pine has finite maximum multipliers (12M, 52W and 365D). Whenever Auto
+// Standard cannot select a strictly higher native timeframe, group chart bars
+// into a virtual higher unit. Manual mode remains strict and never substitutes.
+f_useVirtualHigherUnit(string selectedUnitTF) =>
+    float sourceSec = timeframe.in_seconds(timeframe.period)
+    float unitSec = timeframe.in_seconds(selectedUnitTF)
+    i_unitSelectionMode == "Auto Standard" and not na(sourceSec) and not na(unitSec) and unitSec <= sourceSec
+
+f_mtfAutoUnitTF() =>
+    f_autoUnitTFGeneric()
+
+f_mtfEffectiveUnitTF() =>
+    string manualTF = i_unitTFMode == "6 Hours" ? "360" : i_unitTFMode == "8 Hours" ? "480" : i_unitTF
+    i_unitSelectionMode == "Auto Standard" ? f_mtfAutoUnitTF() : manualTF
+
+f_mtfClassCodeToText(int code) =>
+    code == 1 ? "ZA" : code == 2 ? "ZB" : code == 3 ? "ZC" : code == 4 ? "ZD" : code == 5 ? "ZE" : ""
+
+f_mtfClassifyCode(int dir, int orderState, int closeState, bool retestUp, bool retestDown) =>
+    int code = 0
+    if orderState == 2
+        if dir == 1
+            code := not retestUp ? 1 : closeState == 1 ? 2 : 3
+        else if dir == -1
+            code := not retestDown ? 1 : closeState == -1 ? 2 : 3
+    else if orderState == 1
+        if dir == 1
+            code := closeState == 1 ? 4 : 5
+        else if dir == -1
+            code := closeState == -1 ? 4 : 5
+    code
+
+f_mtfConfirmed(int classCode, int dir, int closeState, bool retest) =>
+    bool directionClose = (dir == 1 and closeState == 1) or (dir == -1 and closeState == -1)
+    bool result = false
+    if classCode == 1
+        result := not retest and directionClose
+    else if classCode == 2
+        result := retest and directionClose
+    else if classCode == 3
+        result := retest and closeState == 0
+    else if classCode == 4
+        result := directionClose
+    else if classCode == 5
+        result := closeState == 0
+    result
+
+// Returns one immutable angle event on the first source bar after U1 closes.
+// The engine is stateful inside each request context and therefore does not
+// rescan completed history on every bar.
+f_mtfSourceEvent() =>
+    string unitTF = f_mtfEffectiveUnitTF()
+    float sourceSecondsRaw = timeframe.in_seconds(timeframe.period)
+    float sourceSeconds = timeframe.isticks and na(sourceSecondsRaw) ? 0.0 : sourceSecondsRaw
+    float unitSeconds = timeframe.in_seconds(unitTF)
+    bool virtualHigherUnit = f_useVirtualHigherUnit(unitTF)
+    bool validUnitTF = not na(sourceSeconds) and not na(unitSeconds) and unitSeconds > sourceSeconds
+    int unitKey = virtualHigherUnit ? int(math.floor(bar_index / i_virtualHigherUnitBars)) : validUnitTF ? time(unitTF) : na
+
+    var int curUnitKey = na
+    var bool curCompleteFromStart = false
+    var float curHi = na
+    var float curLo = na
+    var int curHiTime = na
+    var int curLoTime = na
+    var float curClose = na
+    var int curStartTime = na
+
+    // Exact Filter 88 suffix tracker.
+    // Whenever a new unit extreme appears, the final "second extreme" can move
+    // to the current bar, so all earlier post-extreme samples become invalid.
+    // Resetting here and accumulating only subsequent bars is mathematically
+    // equivalent to rescanning the full unit after it closes, without storing
+    // three arrays for every source request context.
+    var float maxHighAfterLatestExtreme = na
+    var float minLowAfterLatestExtreme = na
+
+    var MTFUnit lastClosed = MTFUnit.new()
+    var MTFUnit prevClosed = MTFUnit.new()
+
+    var bool pairRefValid = false
+    var float pairRefHi = na
+    var float pairRefLo = na
+    var int pairBreakUpTime = na
+    var int pairBreakDownTime = na
+    var bool pairRetestUp = false
+    var bool pairRetestDown = false
+
+    int eventTime = na
+    int classCode = 0
+    int eventDir = 0
+    bool eventConfirmed = false
+    bool eventFilterPassed = false
+    float eventU1High = na
+    float eventU1Low = na
+    float eventU2High = na
+    float eventU2Low = na
+    float eventDrawP1 = na
+    float eventDrawP2 = na
+
+    if validUnitTF and not na(unitKey)
+        bool firstInitialization = na(curUnitKey)
+        bool newUnit = not firstInitialization and unitKey != curUnitKey
+
+        if firstInitialization
+            curUnitKey := unitKey
+            curCompleteFromStart := virtualHigherUnit ? bar_index % i_virtualHigherUnitBars == 0 : time == unitKey
+            curHi := high
+            curLo := low
+            curHiTime := time
+            curLoTime := time
+            curClose := close
+            curStartTime := time
+            maxHighAfterLatestExtreme := na
+            minLowAfterLatestExtreme := na
+
+        else if newUnit
+            MTFUnit closed = MTFUnit.new()
+            closed.hi := curHi
+            closed.lo := curLo
+            closed.hiTime := curHiTime
+            closed.loTime := curLoTime
+            closed.lastClose := curClose
+            closed.startTime := curStartTime
+            closed.endTime := time
+            closed.filterBull := false
+            closed.filterBear := false
+            closed.valid := curCompleteFromStart and not na(curHi) and not na(curLo) and curHi > curLo
+
+            if closed.valid and closed.hiTime != closed.loTime
+                float unitRange = closed.hi - closed.lo
+                float bullishLevel = closed.lo + 0.882 * unitRange
+                float bearishLevel = closed.lo + 0.118 * unitRange
+                closed.filterBull := not na(maxHighAfterLatestExtreme) and maxHighAfterLatestExtreme > bullishLevel
+                closed.filterBear := not na(minLowAfterLatestExtreme) and minLowAfterLatestExtreme < bearishLevel
+
+            prevClosed := lastClosed
+            lastClosed := closed
+
+            if prevClosed.valid and lastClosed.valid and prevClosed.hi > prevClosed.lo
+                float tolerance = syminfo.mintick * i_touchTolPts + syminfo.mintick * 0.2
+                bool bull = lastClosed.hi > prevClosed.hi + tolerance and lastClosed.lo > prevClosed.lo + tolerance
+                bool bear = lastClosed.hi < prevClosed.hi - tolerance and lastClosed.lo < prevClosed.lo - tolerance
+                int dir = bull ? 1 : bear ? -1 : 0
+
+                if dir != 0
+                    float refRange = prevClosed.hi - prevClosed.lo
+                    float level38 = prevClosed.lo + 0.382 * refRange
+                    float level76 = prevClosed.lo + 0.764 * refRange
+                    float level23 = prevClosed.lo + 0.236 * refRange
+                    float level61 = prevClosed.lo + 0.618 * refRange
+                    float level118 = prevClosed.lo + 1.118 * refRange
+                    float levelNeg118 = prevClosed.lo - 0.118 * refRange
+
+                    bool extensionFilter = dir == 1 ? lastClosed.hi >= level118 - tolerance : lastClosed.lo <= levelNeg118 + tolerance
+                    bool mainRange = dir == 1 ? (lastClosed.lo >= level38 - tolerance and lastClosed.lo <= level76 + tolerance) : (lastClosed.hi > level23 + tolerance and lastClosed.hi <= level61 + tolerance)
+
+                    if extensionFilter and mainRange
+                        int closeState = lastClosed.lastClose > prevClosed.hi + tolerance ? 1 : lastClosed.lastClose < prevClosed.lo - tolerance ? -1 : 0
+                        int orderState = 0
+                        if dir == 1 and not na(pairBreakUpTime) and not na(lastClosed.loTime)
+                            orderState := pairBreakUpTime < lastClosed.loTime ? 1 : lastClosed.loTime < pairBreakUpTime ? 2 : 0
+                        else if dir == -1 and not na(pairBreakDownTime) and not na(lastClosed.hiTime)
+                            orderState := pairBreakDownTime < lastClosed.hiTime ? 1 : lastClosed.hiTime < pairBreakDownTime ? 2 : 0
+
+                        if orderState == 1 or orderState == 2
+                            int cls = f_mtfClassifyCode(dir, orderState, closeState, pairRetestUp, pairRetestDown)
+                            if cls >= 1 and cls <= 5
+                                bool retest = dir == 1 ? pairRetestUp : pairRetestDown
+                                eventTime := time
+                                classCode := cls
+                                eventDir := dir
+                                eventConfirmed := f_mtfConfirmed(cls, dir, closeState, retest)
+                                eventFilterPassed := dir == 1 ? prevClosed.filterBull : prevClosed.filterBear
+                                eventU1High := lastClosed.hi
+                                eventU1Low := lastClosed.lo
+                                eventU2High := prevClosed.hi
+                                eventU2Low := prevClosed.lo
+                                eventDrawP1 := dir == 1 ? prevClosed.hi : prevClosed.lo
+                                eventDrawP2 := dir == 1 ? lastClosed.lo : lastClosed.hi
+
+            curUnitKey := unitKey
+            curCompleteFromStart := true
+            curHi := high
+            curLo := low
+            curHiTime := time
+            curLoTime := time
+            curClose := close
+            curStartTime := time
+            maxHighAfterLatestExtreme := na
+            minLowAfterLatestExtreme := na
+
+            pairRefValid := lastClosed.valid
+            pairRefHi := lastClosed.hi
+            pairRefLo := lastClosed.lo
+            pairBreakUpTime := na
+            pairBreakDownTime := na
+            pairRetestUp := false
+            pairRetestDown := false
+
+        else
+            bool madeNewHigh = high > curHi
+            bool madeNewLow = low < curLo
+            if madeNewHigh
+                curHi := high
+                curHiTime := time
+            if madeNewLow
+                curLo := low
+                curLoTime := time
+            curClose := close
+
+            if madeNewHigh or madeNewLow
+                maxHighAfterLatestExtreme := na
+                minLowAfterLatestExtreme := na
+            else
+                maxHighAfterLatestExtreme := na(maxHighAfterLatestExtreme) ? high : math.max(maxHighAfterLatestExtreme, high)
+                minLowAfterLatestExtreme := na(minLowAfterLatestExtreme) ? low : math.min(minLowAfterLatestExtreme, low)
+
+        if pairRefValid
+            if na(pairBreakUpTime) and high > pairRefHi + syminfo.mintick * 0.2
+                pairBreakUpTime := time
+            else if not na(pairBreakUpTime) and time > pairBreakUpTime and low <= pairRefHi + syminfo.mintick * i_touchTolPts
+                pairRetestUp := true
+
+            if na(pairBreakDownTime) and low < pairRefLo - syminfo.mintick * 0.2
+                pairBreakDownTime := time
+            else if not na(pairBreakDownTime) and time > pairBreakDownTime and high >= pairRefLo - syminfo.mintick * i_touchTolPts
+                pairRetestDown := true
+
+    [eventTime, classCode, eventDir, eventConfirmed, eventFilterPassed, eventU1High, eventU1Low, eventU2High, eventU2Low, eventDrawP1, eventDrawP2]
+
+// ═══════════════════════════════════════════════════════════════
+//  MTF ULTRA LIGHT — DISPLAY / STATE / REPORT HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+f_canonicalTF(string tf) =>
+    string t = str.upper(str.replace_all(tf, " ", ""))
+    t := t == "D" or t == "D1" ? "1D" : t == "W" or t == "W1" ? "1W" : t == "M" or t == "MN" or t == "MN1" ? "1M" : t
+    if str.length(t) > 1
+        string first = str.substring(t, 0, 1)
+        if first == "H"
+            float hours = str.tonumber(str.substring(t, 1, str.length(t)))
+            t := not na(hours) ? str.tostring(int(hours * 60)) : t
+        else if first == "M" and t != "1M"
+            float minutes = str.tonumber(str.substring(t, 1, str.length(t)))
+            t := not na(minutes) ? str.tostring(int(minutes)) : t
+        else if first == "D"
+            t := str.substring(t, 1, str.length(t)) + "D"
+        else if first == "W"
+            t := str.substring(t, 1, str.length(t)) + "W"
+    t
+
+f_mtfPrettyTF(string tf) =>
+    float sec = timeframe.in_seconds(tf)
+    string result = f_canonicalTF(tf)
+    if not na(sec)
+        if sec < 60
+            result := "S" + str.tostring(int(sec))
+        else if sec < 3600
+            result := "M" + str.tostring(int(sec / 60))
+        else if sec < 86400 and int(sec) % 3600 == 0
+            result := "H" + str.tostring(int(sec / 3600))
+        else if sec < 604800 and int(sec) % 86400 == 0
+            result := "D" + str.tostring(int(sec / 86400))
+        else if sec < 2628000 and int(sec) % 604800 == 0
+            result := "W" + str.tostring(int(sec / 604800))
+        else if sec >= 2628000
+            result := "M" + str.tostring(math.max(1, int(math.round(sec / 2628000.0))))
+    result
+
+f_mtfCustomContains(string listText, string chartTF) =>
+    string clean = str.replace_all(str.upper(listText), " ", "")
+    string target = f_canonicalTF(chartTF)
+    bool found = clean == "*" or clean == "ALL"
+    string[] parts = str.split(clean, ",")
+    if not found and array.size(parts) > 0
+        for i = 0 to array.size(parts) - 1
+            if f_canonicalTF(array.get(parts, i)) == target
+                found := true
+    found
+
+f_mtfDisplayAllowed(string sourceTF, string customCharts) =>
+    float srcSec = timeframe.in_seconds(sourceTF)
+    float chartSecRaw = timeframe.in_seconds(timeframe.period)
+    float chartSec = timeframe.isticks and na(chartSecRaw) ? 0.0 : chartSecRaw
+    bool sameTF = not na(srcSec) and not na(chartSec) and srcSec == chartSec
+    bool allowed = false
+    if i_mtfDisplayMode == "Current only"
+        allowed := sameTF
+    else if i_mtfDisplayMode == "Current + higher"
+        allowed := not na(srcSec) and not na(chartSec) and srcSec >= chartSec
+    else if i_mtfDisplayMode == "Current + lower"
+        allowed := not na(srcSec) and not na(chartSec) and srcSec <= chartSec
+    else if i_mtfDisplayMode == "All enabled"
+        allowed := true
+    else
+        allowed := f_mtfCustomContains(customCharts, timeframe.period)
+    allowed
+
+f_mtfCanRequest(string sourceTF) =>
+    float srcSec = timeframe.in_seconds(sourceTF)
+    float chartSecRaw = timeframe.in_seconds(timeframe.period)
+    float chartSec = timeframe.isticks and na(chartSecRaw) ? 0.0 : chartSecRaw
+    bool valid = not na(srcSec) and not na(chartSec)
+    bool lower = valid and srcSec < chartSec
+    float ratio = lower ? chartSec / math.max(srcSec, 1) : 1.0
+    valid and (not lower or (i_mtfAllowLowerTF and ratio <= i_mtfLowerTFMaxRatio))
+
+f_perfCalcBarsCap() =>
+    simple int cap = i_performancePreset == "Ultra Light" ? math.min(i_mtfCalcBars, 2500) : i_performancePreset == "Balanced" ? math.min(i_mtfCalcBars, 5000) : i_performancePreset == "Research" ? math.min(i_mtfCalcBars, 12000) : i_mtfCalcBars
+    cap
+
+// Estimates how many source bars are required to reconstruct the configured unit depth.
+// The ratios intentionally overestimate calendar units so no angle/test formula is shortened.
+f_estimatedBarsPerUnit(simple string sourceTF) =>
+    simple float srcSec = timeframe.in_seconds(sourceTF)
+    simple int ratio = 60
+    if not na(srcSec)
+        ratio := srcSec <= 60 ? 60 :
+                 srcSec <= 300 ? 36 :
+                 srcSec <= 1800 ? 24 :
+                 srcSec <= 3600 ? 24 :
+                 srcSec <= 14400 ? 42 :
+                 srcSec < 86400 ? 62 :
+                 srcSec < 604800 ? 32 :
+                 srcSec < 2629800 ? 27 : 12
+    ratio
+
+f_perfCalcBarsForTF(simple string sourceTF) =>
+    simple int cap = f_perfCalcBarsCap()
+    simple int unitsNeeded = math.max(8, i_unitsToScan + 8)
+    simple int barsPerUnit = f_estimatedBarsPerUnit(sourceTF)
+    simple int estimated = unitsNeeded * barsPerUnit + 64
+    simple int result = i_autoSizeMTFRequests ? math.max(500, math.min(cap, estimated)) : cap
+    result
+
+f_dashboardRefreshInterval() =>
+    i_performancePreset == "Ultra Light" ? math.max(3, i_dashboardRefreshBars) : i_performancePreset == "Balanced" ? math.max(2, i_dashboardRefreshBars) : i_dashboardRefreshBars
+
+f_perfTrackedZones() =>
+    i_performancePreset == "Ultra Light" ? math.min(i_mtfMaxTrackedZones, 240) : i_performancePreset == "Balanced" ? math.min(i_mtfMaxTrackedZones, 400) : i_performancePreset == "Research" ? math.min(i_mtfMaxTrackedZones, 650) : i_mtfMaxTrackedZones
+
+f_perfVisibleZones() =>
+    i_performancePreset == "Ultra Light" ? math.min(i_mtfMaxVisibleZones, 45) : i_performancePreset == "Balanced" ? math.min(i_mtfMaxVisibleZones, 75) : i_performancePreset == "Research" ? math.min(i_mtfMaxVisibleZones, 100) : i_mtfMaxVisibleZones
+
+f_perfGhostZones() =>
+    i_performancePreset == "Ultra Light" ? math.min(i_maxGhostZones, 10) : i_performancePreset == "Balanced" ? math.min(i_maxGhostZones, 20) : i_performancePreset == "Research" ? math.min(i_maxGhostZones, 35) : i_maxGhostZones
+
+f_perfConfluences() =>
+    i_performancePreset == "Ultra Light" ? math.min(i_mtfMaxConfluenceBoxes, 12) : i_performancePreset == "Balanced" ? math.min(i_mtfMaxConfluenceBoxes, 20) : i_performancePreset == "Research" ? math.min(i_mtfMaxConfluenceBoxes, 32) : i_mtfMaxConfluenceBoxes
+
+f_perfFiboUnits() =>
+    i_performancePreset == "Ultra Light" ? math.min(i_fiboUnitsBack, 6) : i_performancePreset == "Balanced" ? math.min(i_fiboUnitsBack, 10) : i_performancePreset == "Research" ? math.min(i_fiboUnitsBack, 15) : i_fiboUnitsBack
+
+f_themeBackground() =>
+    i_themePreset == "Soft Light" ? color.rgb(233, 235, 238) : i_themePreset == "High Visibility" ? color.rgb(7, 11, 20) : i_themePreset == "Neutral" ? color(na) : i_themePreset == "Custom" ? i_customBackground : color.rgb(14, 21, 36)
+
+f_themeBullCandle() =>
+    i_themePreset == "Soft Light" ? color.rgb(52, 108, 158) : i_themePreset == "High Visibility" ? color.rgb(108, 168, 214) : i_themePreset == "Custom" ? i_customBullCandle : color.rgb(94, 154, 201)
+
+f_themeBearCandle() =>
+    i_themePreset == "Soft Light" ? color.rgb(168, 124, 68) : i_themePreset == "High Visibility" ? color.rgb(214, 168, 104) : i_themePreset == "Custom" ? i_customBearCandle : color.rgb(199, 154, 90)
+
+f_themeSupport() =>
+    not i_enableEyeComfort ? i_mtfSupportColor : i_themePreset == "Soft Light" ? color.rgb(52, 108, 158) : i_themePreset == "High Visibility" ? color.rgb(94, 154, 201) : i_themePreset == "Custom" ? i_mtfSupportColor : color.rgb(88, 146, 194)
+
+f_themeResistance() =>
+    not i_enableEyeComfort ? i_mtfResistanceColor : i_themePreset == "Soft Light" ? color.rgb(168, 124, 68) : i_themePreset == "High Visibility" ? color.rgb(199, 154, 90) : i_themePreset == "Custom" ? i_mtfResistanceColor : color.rgb(193, 148, 82)
+
+f_themeText() =>
+    not i_enableEyeComfort ? i_mtfTextColor : i_themePreset == "Soft Light" ? color.rgb(49, 58, 65) : i_themePreset == "Custom" ? i_mtfTextColor : color.rgb(190, 198, 204)
+
+color aibResolvedBackground = f_themeBackground()
+color aibResolvedBull = f_themeBullCandle()
+color aibResolvedBear = f_themeBearCandle()
+float aibATR14 = ta.atr(14)
+bgcolor(i_enableEyeComfort and i_applyBackground and i_themePreset != "Neutral" ? aibResolvedBackground : na)
+barcolor(i_enableEyeComfort and i_applyCandleColors ? (close >= open ? aibResolvedBull : aibResolvedBear) : na)
+
+// Currency conversion is isolated from the angle engine. For Forex pairs where
+// the account currency equals the pair's base currency (e.g., USDJPY with a USD
+// account), quote-currency risk is converted directly through the chart price.
+// This avoids an unnecessary external currency request on the most common JPY case.
+string aibBaseCurrency = syminfo.basecurrency
+string aibQuoteCurrency = syminfo.currency
+bool aibForexSymbol = syminfo.type == "forex"
+bool aibAccountIsQuote = str.length(aibQuoteCurrency) > 0 and aibQuoteCurrency == i_riskAccountCurrency
+bool aibAccountIsBase = aibForexSymbol and str.length(aibBaseCurrency) > 0 and aibBaseCurrency == i_riskAccountCurrency
+bool aibNeedsCrossCurrencyRequest = i_enableRiskSizing and str.length(aibQuoteCurrency) > 0 and not aibAccountIsQuote and not aibAccountIsBase
+float aibRequestedCurrencyRate = na
+if aibNeedsCrossCurrencyRequest
+    aibRequestedCurrencyRate := request.currency_rate(aibQuoteCurrency, i_riskAccountCurrency, true)
+float aibSafePriceForConversion = math.max(math.abs(close), math.max(syminfo.mintick, 1e-12))
+float aibQuoteToAccountRate = aibAccountIsQuote ? 1.0 : aibAccountIsBase ? 1.0 / aibSafePriceForConversion : not na(aibRequestedCurrencyRate) and aibRequestedCurrencyRate > 0 ? aibRequestedCurrencyRate : i_manualCurrencyRate
+bool aibCurrencyRateAutomatic = aibAccountIsQuote or aibAccountIsBase or (not na(aibRequestedCurrencyRate) and aibRequestedCurrencyRate > 0)
+
+f_roundDownToStep(float value, float step) =>
+    float safeStep = step > 0 ? step : 1.0
+    value > 0 ? math.floor(value / safeStep + 1e-10) * safeStep : 0.0
+
+f_pipSize() =>
+    bool isForex = syminfo.type == "forex"
+    bool isJPYQuote = syminfo.currency == "JPY"
+    float canonicalPip = isJPYQuote ? 0.01 : 0.0001
+    isForex ? math.max(canonicalPip, syminfo.mintick) : syminfo.mintick
+
+f_symbolQuantityLabel() =>
+    syminfo.type == "stock" ? "shares" : syminfo.type == "futures" ? "contracts" : syminfo.type == "crypto" ? "units" : syminfo.type == "forex" ? "units" : "qty"
+
+// Returns: recommended size, stop distance in pips/ticks, unit label,
+// distance label and validity flag. It never changes trade/angle logic.
+f_riskMetrics(MTFZone z) =>
+    float stopDistance = math.abs(z.entry - z.stop)
+    float pipSize = math.max(f_pipSize(), syminfo.mintick)
+    bool forexDistance = syminfo.type == "forex"
+    float distanceUnits = stopDistance / (forexDistance ? pipSize : math.max(syminfo.mintick, 1e-12))
+    string distanceLabel = forexDistance ? "pips" : "ticks"
+    bool forexLots = i_riskSizingMode == "Forex standard lots" or (i_riskSizingMode == "Auto by symbol" and syminfo.type == "forex")
+    bool manualMode = i_riskSizingMode == "Manual tick value"
+    float rawSize = na
+    float step = 1.0
+    string sizeLabel = "qty"
+    bool valid = i_enableRiskSizing and i_riskAmount > 0 and stopDistance > 0
+    if valid
+        if manualMode
+            float tickSize = i_manualTickSize > 0 ? i_manualTickSize : syminfo.mintick
+            float ticks = stopDistance / math.max(tickSize, 1e-12)
+            float lossPerSize = ticks * i_manualTickValue
+            rawSize := lossPerSize > 0 ? i_riskAmount / lossPerSize : na
+            step := i_manualSizeStep
+            sizeLabel := "lot/contract"
+        else if forexLots
+            float lossPerLotQuote = stopDistance * i_forexContractSize
+            float entryForConversion = math.max(math.abs(z.entry), math.max(syminfo.mintick, 1e-12))
+            float zoneQuoteToAccountRate = aibAccountIsQuote ? 1.0 : aibAccountIsBase ? 1.0 / entryForConversion : aibQuoteToAccountRate
+            float lossPerLotAccount = lossPerLotQuote * zoneQuoteToAccountRate
+            rawSize := lossPerLotAccount > 0 ? i_riskAmount / lossPerLotAccount : na
+            step := i_forexLotStep
+            sizeLabel := "lot"
+        else
+            float pointValue = syminfo.pointvalue
+            float lossPerUnitQuote = stopDistance * pointValue
+            float lossPerUnitAccount = lossPerUnitQuote * aibQuoteToAccountRate
+            rawSize := not na(pointValue) and pointValue > 0 and lossPerUnitAccount > 0 ? i_riskAmount / lossPerUnitAccount : na
+            step := i_symbolQtyStepOverride > 0 ? i_symbolQtyStepOverride : math.max(nz(syminfo.mincontract, 1.0), 1e-8)
+            sizeLabel := f_symbolQuantityLabel()
+    float recommended = not na(rawSize) ? f_roundDownToStep(rawSize, step) : na
+    if not na(recommended) and i_maxRecommendedSize > 0
+        recommended := math.min(recommended, i_maxRecommendedSize)
+        recommended := f_roundDownToStep(recommended, step)
+    valid := valid and not na(recommended) and recommended > 0
+    [recommended, distanceUnits, sizeLabel, distanceLabel, valid]
+
+f_priceText(float value) => na(value) ? "—" : str.tostring(math.round_to_mintick(value), format.mintick)
+f_sizeText(float value) => na(value) ? "N/A" : str.tostring(value, "#.########")
+
+f_mtfZoneTop(MTFZone z) => math.max(z.entry, z.stop)
+f_mtfZoneBottom(MTFZone z) => math.min(z.entry, z.stop)
+
+f_mtfStateCode(MTFZone z) =>
+    int state = 0
+    if z.orderUnresolved
+        state := 6
+    else if z.broken and z.highestTP == 0
+        state := 2
+    else if z.highestTP == 1
+        state := 3
+    else if z.highestTP == 2
+        state := 4
+    else if z.highestTP >= 3
+        state := 5
+    else if z.touched
+        state := 1
+    state
+
+f_mtfZoneStatus(MTFZone z) =>
+    string status = "WAITING"
+    if z.orderUnresolved
+        status := z.highestTP > 0 ? "TP" + str.tostring(z.highestTP) + " + ORDER?" : "ORDER?"
+    else if z.broken and z.highestTP == 0
+        status := "FAILED"
+    else if z.highestTP > 0
+        status := "TP" + str.tostring(z.highestTP)
+    else if z.touched
+        status := "ACTIVE"
+    status
+
+f_mtfFinalResult(MTFZone z) =>
+    z.orderUnresolved ? "ORDER_UNRESOLVED" : z.highestTP >= 3 ? "TP3" : z.highestTP == 2 ? "TP2" : z.highestTP == 1 ? "TP1" : z.broken ? "FAILED" : z.touched ? "ACTIVE" : "UNTOUCHED"
+
+f_mtfTextSize() => i_mtfTextSize == "Large" ? size.large : i_mtfTextSize == "Normal" ? size.normal : i_mtfTextSize == "Small" ? size.small : size.tiny
+
+
+// ─── 283-Combo lookup (angle-level classification) ──────────────────────────
+// Each code is 5 chars: CLASS_CHAR + DIR + RATIO + L_SIZE + PREV.
+// Pipe-delimited so str.contains("|CODE|") is position-safe.
+string AIB_COMBO_CODES = "|BB4SF|BB4SB|FB4SB|BB4SO|BB2MB|BB4SE|BB2SF|BB3SO|BB3SF|EB1LF|BB2SB|BB3SB|DB4SO|EB2MF|EB1LB|DB2SB|BB2MF|BB4SG|FB4SG|BB4SD|EB2MB|FB4SE|DB2SO|BB3SE|BB2SO|FB4SO|EB2MO|FB4SD|BB4SC|EB2LB|EB2LF|BB3SC|BB3SG|DB4SD|BB3SD|DB3SF|BB2MO|EB2ME|BB2MD|DB2MB|FB4SF|DB4SF|DB4SB|EB1MF|DB2MO|EB1LO|HB4SB|FB4MB|DB4SE|FB4SC|EB2LO|CB1LF|BB2SG|DB2MF|DB3SB|DB3SE|BB2MG|HB4SD|CB2MB|DB3SD|FB4ME|DB2SF|FB4MO|CB1LB|BB2SD|EB2MG|HB4SF|CB2ME|CB2MG|EB1MO|FB4MF|EB1MB|EB2MD|DB4SG|EB1LE|HB4SG|BB2ME|EB1LD|BB3SH|DB3SG|CB2LG|BB1MF|BB4SH|DB2SD|DB2ME|BB2SE|DB3SO|BB3MF|CB2MF|HB4SO|DB1MF|HB4SE|CB1LO|CB2MO|EB2SF|DB2SH|DB3SH|BB1MB|FB4MC|EB2LG|CB1MF|CB2LB|EB2LE|BB3MO|DB1MB|FB4MG|HB4SH|DB2MD|DB2SE|EB2LD|DB4SC|EB2SO|BB3MG|CB2LF|BB2MC|DB2MG|DB2SG|BB2MH|CB2SO|EB1LH|CB1LD|EB1LC|EB2SE|EB1LG|FB4MD|FB4SH|BB3ME|CB1MB|CB2LO|EB2SB|EB3SO|BB3MD|OB4MD|HB4SC|BB2LO|BB3MB|EB2MC|BB2SC|EB2MH|OB4MO|CB2LE|BB2LB|CB2MD|CB1LE|DB2LF|FB4MH|EB2LH|BB1LB|BS4SB|BS4SE|BS4SF|BS3SO|BS4SO|BS3SF|BS3SB|ES2MF|FS4SB|BS4SG|BS2MB|BS2MF|FS4SE|FS4SO|ES2MB|DS4SO|DS4SB|BS4SD|BS2SF|DS3SB|DS4SE|ES2MO|BS3SG|ES1LF|FS4MB|BS3SD|ES1LB|DS2SB|FS4SG|BS2SB|DS4SF|ES1MF|BS3SE|ES2MD|CS2MO|DS2SF|HS4SB|FS4SC|FS4SF|CS1LF|DS4SD|HS4SO|HS4SE|BS4SC|ES2ME|FS4MO|BS2MO|ES2LB|ES2LF|ES2LO|DS2MB|ES2MG|CS2MF|BS4SH|DS2MF|DS3SD|FS4SD|DS3SF|ES1LO|BS2MD|CS2MB|ES2LE|BS2MG|DS2MO|CS1LB|DS2ME|CS1MB|DS3SO|DS4SG|FS4ME|BS2SO|CS2LF|ES1MB|FS4MG|BS2SD|DS1MF|FS4MF|BS1MF|BS2SE|ES2SF|BS3MB|CS2MG|HS4SG|BS3SC|ES1LE|HS4SF|FS4MD|BS2MC|BS3SH|DS2SE|DS3SE|BS1MB|BS2ME|DS2SO|CS2LB|BS3MO|DS2SD|ES2SO|BS2SG|DS4SH|HS4SD|CS2LO|FS4SH|OS4SO|BS2MH|ES1MO|BS3MF|CS2MD|BS3MG|ES2LD|ES2LG|FS4MC|CS2ME|ES2MC|ES2MH|BS2SC|HS4SC|CS2LG|DS4SC|ES3MD|ES1LH|OS4ME|BS3ME|HS4SH|OS4MO|ES1LG|CS1LD|CS1LO|ES1MD|CS1LG|HS4MD|ES3SB|GS4MO|ES1LC|CS2LE|"
+
+f_comboExists(string code) =>
+    str.length(code) == 5 and str.contains(AIB_COMBO_CODES, "|" + code + "|")
+
+// Minimal label: class + direction arrow, plus a single state glyph. No prices,
+// no timeframe/test words. Verbose detail belongs in the dashboard, not the chart.
+f_mtfZoneText(MTFZone z) =>
+    string arrow = z.angleDir == 1 ? " ▲" : " ▼"
+    string glyph = z.highestTP > 0 ? " ✓" : z.orderUnresolved ? " ?" : (z.broken and z.highestTP == 0) ? " ✕" : ""
+    string tf = f_mtfPrettyTF(z.sourceTF)
+    string comboMarker = i_enableComboFilter ? (z.comboFound ? "✓" : "✗") : ""
+    string cls = i_enableComboFilter ? comboMarker + z.classText : z.classText
+    string body = i_mtfLabelMode == "Full" ? tf + " | " + cls + " | " + z.testName : i_mtfLabelMode == "Compact" ? tf + " | " + cls : tf + " " + cls
+    body + arrow + glyph
+
+f_zoneNearPrice(MTFZone z, float atrValue) =>
+    float top = f_mtfZoneTop(z)
+    float bottom = f_mtfZoneBottom(z)
+    float dist = close > top ? close - top : close < bottom ? bottom - close : 0.0
+    dist <= math.max(syminfo.mintick, atrValue * i_nearZoneATR)
+
+f_zoneSameChartTF(MTFZone z) =>
+    z.sourceIsCurrent
+
+// Anti-overlap gate: only the zones that matter right now carry a label —
+// active zones that price is currently interacting with, or the chart-TF zone.
+// Every other zone stays a silent colored rectangle, so labels never stack.
+f_zoneShowText(MTFZone z, bool nearPrice) =>
+    i_mtfShowZoneText and z.active and (nearPrice or f_zoneSameChartTF(z))
+
+f_zoneIsFailed(MTFZone z) => z.orderUnresolved or (z.broken and z.highestTP == 0)
+f_zoneIsCompleted(MTFZone z) => z.testFinal and not f_zoneIsFailed(z)
+
+f_zoneHistoricalMode(MTFZone z) =>
+    f_zoneIsFailed(z) ? i_failedZoneMode : i_completedZoneMode
+
+f_zoneShouldDisplay(MTFZone z) =>
+    bool result = i_mtfShowZones and z.visible
+    if result and not z.active
+        string mode = f_zoneHistoricalMode(z)
+        result := i_mtfKeepBrokenZones and mode != "Hide"
+    result
+
+f_zoneIsGhost(MTFZone z) =>
+    not z.active and f_zoneHistoricalMode(z) == "Ghost"
+
+f_zoneVisualCode(MTFZone z, bool nearPrice) =>
+    int code = f_mtfStateCode(z) * 100
+    code += z.active ? 10 : 20
+    code += f_zoneSameChartTF(z) ? 1 : 2
+    code += nearPrice ? 1000 : 0
+    code
+
+f_zoneFillColor(MTFZone z) => z.bounceDir == 1 ? f_themeSupport() : f_themeResistance()
+
+f_zoneTransparency(MTFZone z, bool nearPrice) =>
+    int tr = z.touched ? i_mtfActiveTransparency : i_mtfZoneTransparency
+    if f_zoneIsGhost(z)
+        tr := i_ghostTransparency
+    else if not z.active and f_zoneHistoricalMode(z) == "Full"
+        tr := math.min(94, tr + 7)
+    if not f_zoneSameChartTF(z)
+        tr := math.min(99, tr + i_otherTFDim)
+    if nearPrice and z.active
+        tr := math.max(45, tr - 5)
+    tr
+
+f_zoneBorderColor(MTFZone z) =>
+    color c = z.frameColor
+    if f_zoneIsGhost(z)
+        c := color.rgb(135, 101, 105)
+    else if not f_zoneSameChartTF(z)
+        c := color.new(c, math.min(80, i_otherTFDim * 2))
+    c
+
+f_jsonEscape(string s) =>
+    string x = str.replace_all(s, "\\", "\\\\")
+    str.replace_all(x, "\"", "\\\"")
+
+f_jsonNum(float v) => na(v) ? "null" : str.tostring(v, format.mintick)
+f_jsonInt(int v) => na(v) ? "null" : str.tostring(v)
+
+f_mtfZoneJson(MTFZone z) =>
+    string dir = z.angleDir == 1 ? "BUY" : "SELL"
+    string json = "{\"record_type\":\"TEST\",\"schema\":\"AIB_REPORT_V1\""
+    json += ",\"symbol\":\"" + f_jsonEscape(syminfo.tickerid) + "\""
+    json += ",\"source_tf\":\"" + f_jsonEscape(z.sourceTF) + "\""
+    json += ",\"angle_id\":\"" + f_jsonEscape(z.angleKey) + "\""
+    json += ",\"zone_id\":\"" + f_jsonEscape(z.id) + "\""
+    json += ",\"class\":\"" + z.classText + "\",\"direction\":\"" + dir + "\",\"test\":\"" + z.testName + "\""
+    json += ",\"confirmed\":" + str.tostring(z.confirmed) + ",\"filter88_passed\":" + str.tostring(z.filterPassed)
+    json += ",\"entry\":" + f_jsonNum(z.entry) + ",\"stop\":" + f_jsonNum(z.stop)
+    json += ",\"tp1\":" + f_jsonNum(z.tp1) + ",\"tp2\":" + f_jsonNum(z.tp2) + ",\"tp3\":" + f_jsonNum(z.tp3)
+    json += ",\"u1_high\":" + f_jsonNum(z.u1High) + ",\"u1_low\":" + f_jsonNum(z.u1Low)
+    json += ",\"u2_high\":" + f_jsonNum(z.u2High) + ",\"u2_low\":" + f_jsonNum(z.u2Low)
+    json += ",\"length_l\":" + f_jsonNum(z.lengthL) + ",\"zone_b\":" + f_jsonNum(z.zoneB)
+    json += ",\"start_time\":" + f_jsonInt(z.startTime) + ",\"touch_time\":" + f_jsonInt(z.touchTime)
+    json += ",\"tp1_time\":" + f_jsonInt(z.tp1Time) + ",\"tp2_time\":" + f_jsonInt(z.tp2Time) + ",\"tp3_time\":" + f_jsonInt(z.tp3Time)
+    json += ",\"stop_time\":" + f_jsonInt(z.stopTime) + ",\"end_time\":" + f_jsonInt(z.endTime)
+    json += ",\"result\":\"" + f_mtfFinalResult(z) + "\""
+    json += ",\"zone_validity\":\"" + (z.broken ? "BROKEN" : "VALID") + "\""
+    [riskSize, stopUnits, riskUnit, stopUnitName, riskValid] = f_riskMetrics(z)
+    json += ",\"risk_amount\":" + str.tostring(i_riskAmount) + ",\"risk_currency\":\"" + i_riskAccountCurrency + "\""
+    json += ",\"stop_distance_units\":" + (na(stopUnits) ? "null" : str.tostring(stopUnits)) + ",\"stop_distance_label\":\"" + stopUnitName + "\""
+    json += ",\"recommended_size\":" + (riskValid ? str.tostring(riskSize) : "null") + ",\"size_unit\":\"" + riskUnit + "\""
+    json += ",\"quote_to_account_rate\":" + str.tostring(aibQuoteToAccountRate) + ",\"currency_rate_auto\":" + str.tostring(aibCurrencyRateAutomatic)
+    json += ",\"same_tf_confluences\":" + str.tostring(z.sameTFConfluences)
+    json += ",\"cross_tf_confluences\":" + str.tostring(z.crossTFConfluences)
+    json += ",\"max_multiplicity\":" + str.tostring(z.maxConfluenceMultiplicity)
+    json += ",\"same_tf_at_touch\":" + str.tostring(z.sameTFAtTouch)
+    json += ",\"cross_tf_at_touch\":" + str.tostring(z.crossTFAtTouch)
+    json += ",\"multiplicity_at_touch\":" + str.tostring(z.multiplicityAtTouch) + "}"
+    json
+
+f_mtfZoneSnapshotJson(MTFZone z) =>
+    string json = f_mtfZoneJson(z)
+    str.replace_all(json, "\"record_type\":\"TEST\"", "\"record_type\":\"TEST_SNAPSHOT\"")
+
+f_mtfZoneCloseJson(MTFZone z) =>
+    string json = "{\"record_type\":\"ZONE_CLOSE\",\"schema\":\"AIB_REPORT_V1\""
+    json += ",\"symbol\":\"" + f_jsonEscape(syminfo.tickerid) + "\""
+    json += ",\"zone_id\":\"" + f_jsonEscape(z.id) + "\",\"angle_id\":\"" + f_jsonEscape(z.angleKey) + "\""
+    json += ",\"source_tf\":\"" + z.sourceTF + "\",\"class\":\"" + z.classText + "\",\"test\":\"" + z.testName + "\""
+    json += ",\"result\":\"" + f_mtfFinalResult(z) + "\",\"stop_time\":" + f_jsonInt(z.stopTime) + ",\"end_time\":" + f_jsonInt(z.endTime) + "}"
+    json
+
+f_mtfConfluenceJson(MTFConfluence c) =>
+    string json = "{\"record_type\":\"CONFLUENCE\",\"schema\":\"AIB_REPORT_V1\""
+    json += ",\"symbol\":\"" + f_jsonEscape(syminfo.tickerid) + "\""
+    json += ",\"confluence_id\":\"" + f_jsonEscape(c.key) + "\""
+    json += ",\"zone_a_id\":\"" + f_jsonEscape(c.zoneAId) + "\",\"zone_b_id\":\"" + f_jsonEscape(c.zoneBId) + "\""
+    json += ",\"same_tf\":" + str.tostring(c.sameTF) + ",\"confluence_type\":\"" + (c.sameTF ? "SAME_TF" : "CROSS_TF") + "\""
+    json += ",\"source_tf_a\":\"" + c.sourceTFA + "\",\"class_a\":\"" + c.classA + "\",\"test_a\":\"" + c.testA + "\""
+    json += ",\"source_tf_b\":\"" + c.sourceTFB + "\",\"class_b\":\"" + c.classB + "\",\"test_b\":\"" + c.testB + "\""
+    json += ",\"start_time\":" + f_jsonInt(c.startTime) + ",\"end_time\":" + f_jsonInt(c.endTime)
+    json += ",\"top\":" + f_jsonNum(c.top) + ",\"bottom\":" + f_jsonNum(c.bottom) + "}"
+    json
+
+f_reportInRange(int eventTime) => eventTime >= i_reportStartTime and eventTime <= i_reportEndTime
+
+f_mtfCountZoneBoxes(MTFZone[] zones) =>
+    int count = 0
+    if array.size(zones) > 0
+        for i = 0 to array.size(zones) - 1
+            MTFZone z = array.get(zones, i)
+            if not na(z.drawing)
+                count += 1
+    count
+
+f_mtfCountConfluenceBoxes(MTFConfluence[] confs) =>
+    int count = 0
+    if array.size(confs) > 0
+        for i = 0 to array.size(confs) - 1
+            MTFConfluence c = array.get(confs, i)
+            if not na(c.drawing)
+                count += 1
+    count
+
+f_mtfDeleteZoneAux(MTFZone z) =>
+    if not na(z.lotLabel)
+        label.delete(z.lotLabel)
+        z.lotLabel := na
+    if not na(z.slLine)
+        line.delete(z.slLine)
+        z.slLine := na
+    if not na(z.slLabel)
+        label.delete(z.slLabel)
+        z.slLabel := na
+    z
+
+// Lot readout (right edge) and dashed stop-loss line, shown only while price is
+// interacting with an active zone. Sell zones place the SL above, buy zones below,
+// with the configured spread added beyond the zone boundary.
+f_mtfSyncZoneAux(MTFZone z, bool nearPrice) =>
+    int leftBar = na(z.startBar) ? bar_index : z.startBar
+    int rightBar = math.max(leftBar + 1, na(z.endBar) ? bar_index : z.endBar)
+    bool show = z.active and nearPrice and f_zoneShouldDisplay(z)
+
+    string lotTxt = ""
+    if show and i_showLotInZone and i_enableRiskSizing
+        [recSize, du, sizeLabel, dl, rv] = f_riskMetrics(z)
+        lotTxt := rv ? f_sizeText(recSize) + " " + sizeLabel : ""
+    if lotTxt != ""
+        float midY = (f_mtfZoneTop(z) + f_mtfZoneBottom(z)) / 2.0
+        if na(z.lotLabel)
+            z.lotLabel := label.new(rightBar, midY, lotTxt, xloc=xloc.bar_index, style=label.style_label_right, color=color.new(i_zoneLotBg, 12), textcolor=i_zoneLotText, size=f_mtfTextSize(), force_overlay=true)
+        else
+            label.set_xy(z.lotLabel, rightBar, midY)
+            label.set_text(z.lotLabel, lotTxt)
+            label.set_size(z.lotLabel, f_mtfTextSize())
+    else if not na(z.lotLabel)
+        label.delete(z.lotLabel)
+        z.lotLabel := na
+
+    if show and i_showZoneSL
+        float spreadOffset = i_spreadPoints * syminfo.mintick
+        bool sellZone = z.bounceDir == -1
+        float slPrice = sellZone ? f_mtfZoneTop(z) + spreadOffset : f_mtfZoneBottom(z) - spreadOffset
+        if na(z.slLine)
+            z.slLine := line.new(leftBar, slPrice, rightBar, slPrice, xloc=xloc.bar_index, color=i_zoneSLColor, width=1, style=line.style_dashed, force_overlay=true)
+        else
+            line.set_xy1(z.slLine, leftBar, slPrice)
+            line.set_xy2(z.slLine, rightBar, slPrice)
+            line.set_color(z.slLine, i_zoneSLColor)
+        string slTxt = "SL " + f_priceText(slPrice)
+        if na(z.slLabel)
+            z.slLabel := label.new(rightBar, slPrice, slTxt, xloc=xloc.bar_index, style=sellZone ? label.style_label_down : label.style_label_up, color=color.new(i_zoneSLColor, 30), textcolor=i_zoneSLText, size=f_mtfTextSize(), force_overlay=true)
+        else
+            label.set_xy(z.slLabel, rightBar, slPrice)
+            label.set_text(z.slLabel, slTxt)
+            label.set_style(z.slLabel, sellZone ? label.style_label_down : label.style_label_up)
+            label.set_size(z.slLabel, f_mtfTextSize())
+    else
+        if not na(z.slLine)
+            line.delete(z.slLine)
+            z.slLine := na
+        if not na(z.slLabel)
+            label.delete(z.slLabel)
+            z.slLabel := na
+    z
+
+f_mtfApplyZoneBox(MTFZone z, bool nearPrice) =>
+    color fill = color.new(f_zoneFillColor(z), f_zoneTransparency(z, nearPrice))
+    color border = f_zoneBorderColor(z)
+    string zoneText = f_zoneShowText(z, nearPrice) ? f_mtfZoneText(z) : ""
+    int borderWidth = i_mtfBorderWidth + (nearPrice and z.active ? 1 : 0)
+    if i_currentTFEmphasis and f_zoneSameChartTF(z)
+        borderWidth += 1
+    borderWidth := math.min(4, borderWidth)
+    string borderStyle = f_zoneSameChartTF(z) ? line.style_solid : line.style_dashed
+    int leftBar = na(z.startBar) ? bar_index : z.startBar
+    int rightBar = math.max(leftBar + 1, na(z.endBar) ? bar_index : z.endBar)
+    color zoneTextColor = i_enableComboFilter ? (z.comboFound ? color.rgb(100, 220, 130) : color.rgb(220, 100, 100)) : f_themeText()
+    if na(z.drawing)
+        z.drawing := box.new(left=leftBar, top=f_mtfZoneTop(z), right=rightBar, bottom=f_mtfZoneBottom(z), xloc=xloc.bar_index, border_color=border, border_width=borderWidth, border_style=borderStyle, bgcolor=fill, text=zoneText, text_color=zoneTextColor, text_size=f_mtfTextSize(), text_halign=text.align_left, text_valign=text.align_top, force_overlay=true)
+    else
+        box.set_lefttop(z.drawing, leftBar, f_mtfZoneTop(z))
+        box.set_rightbottom(z.drawing, rightBar, f_mtfZoneBottom(z))
+        box.set_border_color(z.drawing, border)
+        box.set_border_width(z.drawing, borderWidth)
+        box.set_border_style(z.drawing, borderStyle)
+        box.set_bgcolor(z.drawing, fill)
+        box.set_text(z.drawing, zoneText)
+        box.set_text_color(z.drawing, zoneTextColor)
+    f_mtfSyncZoneAux(z, nearPrice)
+    z.visualState := f_zoneVisualCode(z, nearPrice)
+    z
+
+f_mtfAddZone(MTFZone[] zones, int[] activeIndices, string angleKey, string sourceTF, string classText, int angleDir, string testName, int bounceDir, float entry, float stop, float tp1, float tp2, float tp3, int startTime, bool visible, bool includeConfluence, color frameColor, bool eventConfirmed, bool eventFilterPassed, float u1High, float u1Low, float u2High, float u2Low, float L, float B, string prevClassChar) =>
+    MTFZone z = MTFZone.new()
+    z.id := angleKey + "|" + testName
+    z.angleKey := angleKey
+    z.sourceTF := sourceTF
+    z.classText := classText
+    z.testName := testName
+    z.angleDir := angleDir
+    z.bounceDir := bounceDir
+    z.entry := entry
+    z.stop := stop
+    z.tp1 := tp1
+    z.tp2 := tp2
+    z.tp3 := tp3
+    z.u1High := u1High
+    z.u1Low := u1Low
+    z.u2High := u2High
+    z.u2Low := u2Low
+    z.lengthL := L
+    z.zoneB := B
+    z.startTime := startTime
+    z.endTime := startTime
+    // Store the chart bar on which this source-timeframe event first becomes
+    // available. Rendering uses these chart-bar anchors, while timestamps stay
+    // unchanged for reports and chronological logic.
+    z.startBar := bar_index
+    z.endBar := bar_index
+    z.touchTime := na
+    z.tp1Time := na
+    z.tp2Time := na
+    z.tp3Time := na
+    z.stopTime := na
+    z.active := true
+    z.touched := false
+    z.broken := false
+    z.testFinal := false
+    z.reportedFinal := false
+    z.validityCloseReported := false
+    z.confirmed := eventConfirmed
+    z.filterPassed := eventFilterPassed
+    z.highestTP := 0
+    z.orderUnresolved := false
+    z.visible := visible
+    z.includeConfluence := includeConfluence
+    float sourceSeconds = timeframe.in_seconds(sourceTF)
+    float chartSecondsRaw = timeframe.in_seconds(timeframe.period)
+    float chartSeconds = timeframe.isticks and na(chartSecondsRaw) ? 0.0 : chartSecondsRaw
+    z.sourceIsLower := not na(sourceSeconds) and not na(chartSeconds) and sourceSeconds < chartSeconds
+    z.sourceIsCurrent := (not na(sourceSeconds) and not na(chartSeconds) and sourceSeconds == chartSeconds) or f_canonicalTF(sourceTF) == f_canonicalTF(timeframe.period)
+    z.sameTFConfluences := 0
+    z.crossTFConfluences := 0
+    z.maxConfluenceMultiplicity := 1
+    z.sameTFAtTouch := 0
+    z.crossTFAtTouch := 0
+    z.multiplicityAtTouch := 1
+    z.frameColor := frameColor
+    z.drawing := na
+    z.visualState := -1
+    z.lotLabel := na
+    z.slLine := na
+    z.slLabel := na
+    // Compute 5-char combo code for this zone's angle
+    string _clsChar   = str.substring(classText, 1, 2)
+    string _dirChar   = angleDir == 1 ? "B" : "S"
+    float  _u2span    = math.abs(u2High - u2Low)
+    float  _corrPct   = _u2span > 0 ? (angleDir == 1 ? (u1Low - u2Low) / _u2span * 100.0 : (u2High - u1High) / _u2span * 100.0) : 0.0
+    string _ratioChar = _corrPct < 60.0 ? "1" : _corrPct < 100.0 ? "2" : _corrPct < 140.0 ? "3" : "4"
+    float  _u1span    = math.abs(u1High - u1Low)
+    float  _lu1       = _u1span > 0 ? L / _u1span * 100.0 : 0.0
+    string _lsChar    = _lu1 <= 46.2687 ? "S" : _lu1 <= 70.9266 ? "M" : "L"
+    z.comboCode  := _clsChar + _dirChar + _ratioChar + _lsChar + prevClassChar
+    z.comboFound := f_comboExists(z.comboCode)
+    int newIndex = array.size(zones)
+    array.push(zones, z)
+    array.push(activeIndices, newIndex)
+
+f_mtfIngestEvent(MTFZone[] zones, int[] activeIndices, map<string, bool> seenAngles, map<string, string> prevClassPerTF, string sourceTF, color frameColor, bool visible, bool includeConfluence, int eventTime, int classCode, int eventDir, bool eventConfirmed, bool eventFilterPassed, float u1High, float u1Low, float u2High, float u2Low, float drawP1, float drawP2) =>
+    bool validEvent = not na(eventTime) and classCode >= 1 and classCode <= 5 and (not i_mtfConfirmedOnly or eventConfirmed)
+    bool filterEligible = not i_enableFilter88 or eventFilterPassed or i_showFailedFilter88
+    int added = 0
+    if validEvent and filterEligible
+        string classText = f_mtfClassCodeToText(classCode)
+        string angleKey = syminfo.tickerid + "|" + sourceTF + "|" + str.tostring(eventTime) + "|" + classText + "|" + str.tostring(eventDir)
+        if not map.contains(seenAngles, angleKey)
+            map.put(seenAngles, angleKey, true)
+            string prevChar = map.contains(prevClassPerTF, sourceTF) ? map.get(prevClassPerTF, sourceTF) : "X"
+            float L = math.abs(drawP1 - drawP2)
+            float B = 0.236 * math.abs(u2High - u2Low)
+            if L > 0 and B > 0
+                if eventDir == 1
+                    f_mtfAddZone(zones, activeIndices, angleKey, sourceTF, classText, eventDir, "U1X1", -1, u1High + L, u1High + L + B, u1High - L, drawP2 - L, u2Low - L, eventTime, visible, includeConfluence, frameColor, eventConfirmed, eventFilterPassed, u1High, u1Low, u2High, u2Low, L, B, prevChar)
+                    f_mtfAddZone(zones, activeIndices, angleKey, sourceTF, classText, eventDir, "U2X1",  1, u2Low - L, u2Low - L - B, u2Low + L, drawP1 + L, u1High + L, eventTime, visible, includeConfluence, frameColor, eventConfirmed, eventFilterPassed, u1High, u1Low, u2High, u2Low, L, B, prevChar)
+                    f_mtfAddZone(zones, activeIndices, angleKey, sourceTF, classText, eventDir, "BZLX1", -1, drawP1 + L, drawP1 + L + B, drawP2 - L, u2Low - L, na, eventTime, visible, includeConfluence, frameColor, eventConfirmed, eventFilterPassed, u1High, u1Low, u2High, u2Low, L, B, prevChar)
+                    f_mtfAddZone(zones, activeIndices, angleKey, sourceTF, classText, eventDir, "BZRX1",  1, drawP2 - L, drawP2 - L - B, drawP1 + L, u2High + L, na, eventTime, visible, includeConfluence, frameColor, eventConfirmed, eventFilterPassed, u1High, u1Low, u2High, u2Low, L, B, prevChar)
+                else if eventDir == -1
+                    f_mtfAddZone(zones, activeIndices, angleKey, sourceTF, classText, eventDir, "U1X1",  1, u1Low - L, u1Low - L - B, u1Low + L, drawP2 + L, u2High + L, eventTime, visible, includeConfluence, frameColor, eventConfirmed, eventFilterPassed, u1High, u1Low, u2High, u2Low, L, B, prevChar)
+                    f_mtfAddZone(zones, activeIndices, angleKey, sourceTF, classText, eventDir, "U2X1", -1, u2High + L, u2High + L + B, u2High - L, drawP1 - L, u1Low - L, eventTime, visible, includeConfluence, frameColor, eventConfirmed, eventFilterPassed, u1High, u1Low, u2High, u2Low, L, B, prevChar)
+                    f_mtfAddZone(zones, activeIndices, angleKey, sourceTF, classText, eventDir, "SZLX1",  1, drawP1 - L, drawP1 - L - B, drawP2 + L, u2High + L, na, eventTime, visible, includeConfluence, frameColor, eventConfirmed, eventFilterPassed, u1High, u1Low, u2High, u2Low, L, B, prevChar)
+                    f_mtfAddZone(zones, activeIndices, angleKey, sourceTF, classText, eventDir, "SZRX1", -1, drawP2 + L, drawP2 + L + B, drawP1 - L, u2Low - L, na, eventTime, visible, includeConfluence, frameColor, eventConfirmed, eventFilterPassed, u1High, u1Low, u2High, u2Low, L, B, prevChar)
+                added := 4
+                map.put(prevClassPerTF, sourceTF, str.substring(classText, 1, 2))
+    added
+
+f_mtfAdjustReferencesAfterZoneRemoval(int[] activeIndices, MTFConfluence[] confs, int removedIndex) =>
+    int p = array.size(activeIndices) - 1
+    while p >= 0
+        int idx = array.get(activeIndices, p)
+        if idx == removedIndex
+            array.remove(activeIndices, p)
+        else if idx > removedIndex
+            array.set(activeIndices, p, idx - 1)
+        p -= 1
+    if array.size(confs) > 0
+        for i = 0 to array.size(confs) - 1
+            MTFConfluence c = array.get(confs, i)
+            if c.zoneAIndex == removedIndex or c.zoneBIndex == removedIndex
+                c.zoneAIndex := -1
+                c.zoneBIndex := -1
+                c.active := false
+                if not na(c.drawing)
+                    box.delete(c.drawing)
+                    c.drawing := na
+            else
+                if c.zoneAIndex > removedIndex
+                    c.zoneAIndex -= 1
+                if c.zoneBIndex > removedIndex
+                    c.zoneBIndex -= 1
+            array.set(confs, i, c)
+
+f_mtfPruneZones(MTFZone[] zones, int[] activeIndices, MTFConfluence[] confs) =>
+    int maxTracked = f_perfTrackedZones()
+    while array.size(zones) > maxTracked
+        int candidate = -1
+        int oldestTime = 2147483647
+        for i = 0 to array.size(zones) - 1
+            MTFZone z = array.get(zones, i)
+            if not z.active and z.startTime < oldestTime
+                oldestTime := z.startTime
+                candidate := i
+        if candidate < 0
+            candidate := 0
+        MTFZone removed = array.remove(zones, candidate)
+        if not na(removed.drawing)
+            box.delete(removed.drawing)
+        f_mtfAdjustReferencesAfterZoneRemoval(activeIndices, confs, candidate)
+
+f_mtfUpdateActiveZones(MTFZone[] zones, int[] activeIndices) =>
+    bool stateChanged = false
+    string eventObjects = ""
+    int p = array.size(activeIndices) - 1
+    while p >= 0
+        int zoneIndex = array.get(activeIndices, p)
+        if zoneIndex < 0 or zoneIndex >= array.size(zones)
+            array.remove(activeIndices, p)
+        else
+            MTFZone z = array.get(zones, zoneIndex)
+            int oldState = f_mtfStateCode(z)
+            bool oldActive = z.active
+            bool oldTestFinal = z.testFinal
+            bool lowerSourceCreationBar = z.sourceIsLower and z.startTime > time and z.startTime < time_close
+            if z.active and time_close >= z.startTime and not lowerSourceCreationBar
+                bool entryHit = z.bounceDir == 1 ? low <= z.entry : high >= z.entry
+                if not z.touched and entryHit
+                    z.touched := true
+                    z.touchTime := time_close
+                    z.sameTFAtTouch := z.sameTFConfluences
+                    z.crossTFAtTouch := z.crossTFConfluences
+                    z.multiplicityAtTouch := z.maxConfluenceMultiplicity
+                if z.touched and not z.testFinal
+                    bool stopHit = z.bounceDir == 1 ? low < z.stop : high > z.stop
+                    int barHighestTP = 0
+                    if not na(z.tp1) and (z.bounceDir == 1 ? high >= z.tp1 : low <= z.tp1)
+                        barHighestTP := 1
+                    if not na(z.tp2) and (z.bounceDir == 1 ? high >= z.tp2 : low <= z.tp2)
+                        barHighestTP := 2
+                    if not na(z.tp3) and (z.bounceDir == 1 ? high >= z.tp3 : low <= z.tp3)
+                        barHighestTP := 3
+                    if stopHit and barHighestTP > z.highestTP
+                        z.orderUnresolved := true
+                        z.broken := true
+                        z.active := false
+                        z.testFinal := true
+                        z.stopTime := time_close
+                        z.endTime := time_close
+                        z.endBar := bar_index
+                    else
+                        if barHighestTP >= 1 and z.highestTP < 1
+                            z.tp1Time := time_close
+                        if barHighestTP >= 2 and z.highestTP < 2
+                            z.tp2Time := time_close
+                        if barHighestTP >= 3 and z.highestTP < 3
+                            z.tp3Time := time_close
+                        z.highestTP := math.max(z.highestTP, barHighestTP)
+                        if z.highestTP >= 3
+                            z.testFinal := true
+                            if not i_keepTP3ValidZones
+                                z.active := false
+                                z.endTime := time_close
+                                z.endBar := bar_index
+                        if stopHit and z.highestTP < 3
+                            z.broken := true
+                            z.active := false
+                            z.testFinal := true
+                            z.stopTime := time_close
+                            z.endTime := time_close
+                            z.endBar := bar_index
+                else if z.testFinal and z.active
+                    bool laterBreak = z.bounceDir == 1 ? low < z.stop : high > z.stop
+                    if laterBreak
+                        z.broken := true
+                        z.active := false
+                        z.stopTime := time_close
+                        z.endTime := time_close
+                        z.endBar := bar_index
+                if z.active
+                    z.endTime := time_close
+                    z.endBar := bar_index
+            bool becameFinal = not oldTestFinal and z.testFinal
+            if becameFinal and not z.reportedFinal
+                if i_reportHistoricalLog or i_reportRealtimeAlerts
+                    string obj = f_mtfZoneJson(z)
+                    if i_reportHistoricalLog and barstate.isconfirmed and f_reportInRange(z.startTime)
+                        log.info("AIB_REPORT_JSON|" + obj)
+                    if i_reportRealtimeAlerts and barstate.isrealtime
+                        eventObjects += (str.length(eventObjects) > 0 ? "," : "") + obj
+                z.reportedFinal := true
+            bool validityClosedAfterTP3 = oldActive and not z.active and oldTestFinal and z.highestTP >= 3 and not z.validityCloseReported
+            if validityClosedAfterTP3
+                if i_reportHistoricalLog or i_reportRealtimeAlerts
+                    string closeObj = f_mtfZoneCloseJson(z)
+                    if i_reportHistoricalLog and barstate.isconfirmed and f_reportInRange(z.startTime)
+                        log.info("AIB_ZONE_CLOSE_JSON|" + closeObj)
+                    if i_reportRealtimeAlerts and barstate.isrealtime
+                        eventObjects += (str.length(eventObjects) > 0 ? "," : "") + closeObj
+                z.validityCloseReported := true
+            int newState = f_mtfStateCode(z)
+            if newState != oldState or z.active != oldActive or becameFinal
+                stateChanged := true
+            array.set(zones, zoneIndex, z)
+            if not z.active
+                array.remove(activeIndices, p)
+        p -= 1
+    [stateChanged, eventObjects]
+
+f_mtfRecycleOldestZoneBox(MTFZone[] zones, bool ghostOnly) =>
+    int candidate = -1
+    int oldestTime = 2147483647
+    if array.size(zones) > 0
+        for i = 0 to array.size(zones) - 1
+            MTFZone z = array.get(zones, i)
+            bool eligible = not na(z.drawing) and (not ghostOnly or f_zoneIsGhost(z))
+            if eligible and z.startTime < oldestTime
+                oldestTime := z.startTime
+                candidate := i
+    if candidate >= 0
+        MTFZone old = array.get(zones, candidate)
+        box.delete(old.drawing)
+        old.drawing := na
+        old := f_mtfDeleteZoneAux(old)
+        old.visualState := -1
+        array.set(zones, candidate, old)
+    candidate >= 0
+
+f_mtfSyncZoneDrawings(MTFZone[] zones, int[] activeIndices, bool fullSync, float atrValue) =>
+    int visibleCap = f_perfVisibleZones()
+    if fullSync
+        int activeRecords = 0
+        if array.size(activeIndices) > 0
+            for p = 0 to array.size(activeIndices) - 1
+                int idx = array.get(activeIndices, p)
+                if idx >= 0 and idx < array.size(zones)
+                    MTFZone za = array.get(zones, idx)
+                    if za.visible
+                        activeRecords += 1
+        bool safePressure = i_autoSafeMode and activeRecords >= visibleCap
+        int ghostCap = safePressure ? 0 : math.min(f_perfGhostZones(), visibleCap)
+        if array.size(zones) > 0
+            int ghostCount = 0
+            int totalCount = 0
+            for i = 0 to array.size(zones) - 1
+                MTFZone z = array.get(zones, i)
+                bool should = f_zoneShouldDisplay(z)
+                if not should and not na(z.drawing)
+                    box.delete(z.drawing)
+                    z.drawing := na
+                    z := f_mtfDeleteZoneAux(z)
+                    z.visualState := -1
+                    array.set(zones, i, z)
+                else if should and not na(z.drawing)
+                    totalCount += 1
+                    if f_zoneIsGhost(z)
+                        ghostCount += 1
+            while ghostCount > ghostCap
+                bool removed = f_mtfRecycleOldestZoneBox(zones, true)
+                if not removed
+                    ghostCount := ghostCap
+                else
+                    ghostCount -= 1
+                    totalCount -= 1
+            while totalCount > visibleCap
+                bool removed = f_mtfRecycleOldestZoneBox(zones, false)
+                if not removed
+                    totalCount := visibleCap
+                else
+                    totalCount -= 1
+            int i = array.size(zones) - 1
+            while i >= 0 and totalCount < visibleCap
+                MTFZone z = array.get(zones, i)
+                bool ghost = f_zoneIsGhost(z)
+                bool should = f_zoneShouldDisplay(z) and na(z.drawing) and (not ghost or ghostCount < ghostCap)
+                if should
+                    z := f_mtfApplyZoneBox(z, f_zoneNearPrice(z, atrValue))
+                    array.set(zones, i, z)
+                    totalCount += 1
+                    if ghost
+                        ghostCount += 1
+                i -= 1
+            // Full synchronization can touch all allocated boxes because it runs only on events.
+            for j = 0 to array.size(zones) - 1
+                MTFZone z = array.get(zones, j)
+                if not na(z.drawing)
+                    bool nearPrice = f_zoneNearPrice(z, atrValue)
+                    if z.active
+                        box.set_right(z.drawing, math.max(z.startBar + 1, z.endBar))
+                    z := f_mtfApplyZoneBox(z, nearPrice)
+                    array.set(zones, j, z)
+    else if array.size(activeIndices) > 0
+        // Ordinary bars update only active boxes. Historical/Ghost objects are immutable.
+        for p = 0 to array.size(activeIndices) - 1
+            int idx = array.get(activeIndices, p)
+            if idx >= 0 and idx < array.size(zones)
+                MTFZone z = array.get(zones, idx)
+                if not na(z.drawing)
+                    bool nearPrice = f_zoneNearPrice(z, atrValue)
+                    int newVisual = f_zoneVisualCode(z, nearPrice)
+                    box.set_right(z.drawing, math.max(z.startBar + 1, z.endBar))
+                    if newVisual != z.visualState
+                        z := f_mtfApplyZoneBox(z, nearPrice)
+                        array.set(zones, idx, z)
+                    else if z.active
+                        z := f_mtfSyncZoneAux(z, nearPrice)
+                        array.set(zones, idx, z)
+
+f_mtfCreateConfluencesForNewZones(MTFZone[] zones, int[] activeIndices, MTFConfluence[] confs, int firstNewIndex) =>
+    string eventObjects = ""
+    if i_mtfShowConfluence and f_perfConfluences() > 0 and firstNewIndex >= 0 and firstNewIndex < array.size(zones)
+        for newIndex = firstNewIndex to array.size(zones) - 1
+            MTFZone zn = array.get(zones, newIndex)
+            int overlapsForNew = 0
+            if zn.visible and zn.includeConfluence and zn.active
+                int p = array.size(activeIndices) - 1
+                int scanned = 0
+                while p >= 0 and scanned < i_mtfOverlapScanLimit
+                    int oldIndex = array.get(activeIndices, p)
+                    if oldIndex >= 0 and oldIndex < newIndex
+                        MTFZone zo = array.get(zones, oldIndex)
+                        bool crossTFAllowed = not i_mtfCrossTFOnly or zo.sourceTF != zn.sourceTF
+                        if zo.visible and zo.includeConfluence and zo.active and crossTFAllowed
+                            float topI = math.min(f_mtfZoneTop(zo), f_mtfZoneTop(zn))
+                            float bottomI = math.max(f_mtfZoneBottom(zo), f_mtfZoneBottom(zn))
+                            if topI > bottomI
+                                bool same = zo.sourceTF == zn.sourceTF
+                                overlapsForNew += 1
+                                if same
+                                    zo.sameTFConfluences += 1
+                                    zn.sameTFConfluences += 1
+                                else
+                                    zo.crossTFConfluences += 1
+                                    zn.crossTFConfluences += 1
+                                zo.maxConfluenceMultiplicity := math.max(zo.maxConfluenceMultiplicity, 1 + zo.sameTFConfluences + zo.crossTFConfluences)
+                                zn.maxConfluenceMultiplicity := math.max(zn.maxConfluenceMultiplicity, 1 + zn.sameTFConfluences + zn.crossTFConfluences)
+                                array.set(zones, oldIndex, zo)
+                                MTFConfluence c = MTFConfluence.new()
+                                c.key := zo.id + "||" + zn.id
+                                c.zoneAId := zo.id
+                                c.zoneBId := zn.id
+                                c.zoneAIndex := oldIndex
+                                c.zoneBIndex := newIndex
+                                c.sourceTFA := zo.sourceTF
+                                c.sourceTFB := zn.sourceTF
+                                c.classA := zo.classText
+                                c.classB := zn.classText
+                                c.testA := zo.testName
+                                c.testB := zn.testName
+                                c.sameTF := same
+                                c.displayText := "CONFLUENCE ×2\n" + f_mtfPrettyTF(zo.sourceTF) + " | " + zo.classText + " | " + zo.testName + "\n" + f_mtfPrettyTF(zn.sourceTF) + " | " + zn.classText + " | " + zn.testName
+                                c.startTime := math.max(zo.startTime, zn.startTime)
+                                c.endTime := time_close
+                                c.startBar := math.max(zo.startBar, zn.startBar)
+                                c.endBar := bar_index
+                                c.top := topI
+                                c.bottom := bottomI
+                                c.active := true
+                                c.drawing := na
+                                c.visualState := -1
+                                array.push(confs, c)
+                                if i_reportIncludeConfluences and (i_reportHistoricalLog or i_reportRealtimeAlerts)
+                                    string obj = f_mtfConfluenceJson(c)
+                                    if i_reportHistoricalLog and barstate.isconfirmed and f_reportInRange(c.startTime)
+                                        log.info("AIB_CONFLUENCE_JSON|" + obj)
+                                    if i_reportRealtimeAlerts and barstate.isrealtime
+                                        eventObjects += (str.length(eventObjects) > 0 ? "," : "") + obj
+                        scanned += 1
+                    p -= 1
+                array.set(zones, newIndex, zn)
+    eventObjects
+
+f_mtfPruneConfluences(MTFConfluence[] confs) =>
+    int maxRecords = math.max(60, f_perfConfluences() * 5)
+    while array.size(confs) > maxRecords
+        MTFConfluence removed = array.shift(confs)
+        if not na(removed.drawing)
+            box.delete(removed.drawing)
+
+f_mtfRefreshConfluenceStates(MTFZone[] zones, MTFConfluence[] confs) =>
+    bool changed = false
+    if array.size(confs) > 0
+        for i = 0 to array.size(confs) - 1
+            MTFConfluence c = array.get(confs, i)
+            bool oldActive = c.active
+            bool validRefs = c.zoneAIndex >= 0 and c.zoneBIndex >= 0 and c.zoneAIndex < array.size(zones) and c.zoneBIndex < array.size(zones)
+            if validRefs
+                MTFZone za = array.get(zones, c.zoneAIndex)
+                MTFZone zb = array.get(zones, c.zoneBIndex)
+                c.endTime := math.min(za.endTime, zb.endTime)
+                c.endBar := math.min(za.endBar, zb.endBar)
+                c.active := za.active and zb.active
+            else
+                c.active := false
+            if c.active != oldActive
+                changed := true
+            array.set(confs, i, c)
+    changed
+
+f_mtfRecycleOldestConfluenceBox(MTFConfluence[] confs) =>
+    int candidate = -1
+    int oldestTime = 2147483647
+    if array.size(confs) > 0
+        for i = 0 to array.size(confs) - 1
+            MTFConfluence c = array.get(confs, i)
+            if not na(c.drawing) and c.startTime < oldestTime
+                oldestTime := c.startTime
+                candidate := i
+    if candidate >= 0
+        MTFConfluence old = array.get(confs, candidate)
+        box.delete(old.drawing)
+        old.drawing := na
+        old.visualState := -1
+        array.set(confs, candidate, old)
+    candidate >= 0
+
+f_mtfSyncConfluenceDrawings(MTFConfluence[] confs, bool fullSync) =>
+    int cap = f_perfConfluences()
+    if fullSync and array.size(confs) > 0
+        int count = 0
+        for i = 0 to array.size(confs) - 1
+            MTFConfluence c = array.get(confs, i)
+            bool should = i_mtfShowConfluence and (c.active or i_mtfKeepClosedConfluence)
+            if not should and not na(c.drawing)
+                box.delete(c.drawing)
+                c.drawing := na
+                c.visualState := -1
+                array.set(confs, i, c)
+            else if should and not na(c.drawing)
+                count += 1
+        while count > cap
+            bool removed = f_mtfRecycleOldestConfluenceBox(confs)
+            if removed
+                count -= 1
+            else
+                count := cap
+        int i = array.size(confs) - 1
+        while i >= 0 and count < cap
+            MTFConfluence c = array.get(confs, i)
+            bool should = i_mtfShowConfluence and (c.active or i_mtfKeepClosedConfluence)
+            if should and na(c.drawing)
+                int tr = c.active ? i_mtfConfluenceActiveTransp : i_ghostTransparency
+                c.drawing := box.new(left=c.startBar, top=c.top, right=math.max(c.startBar + 1, c.endBar), bottom=c.bottom, xloc=xloc.bar_index, border_color=i_mtfConfluenceBorder, border_width=i_mtfConfluenceWidth, border_style=line.style_solid, bgcolor=color.new(i_mtfConfluenceColor, tr), text="", text_color=i_mtfConfluenceText, text_size=size.tiny, text_halign=text.align_left, text_valign=text.align_top, force_overlay=true)
+                c.visualState := c.active ? 1 : 0
+                array.set(confs, i, c)
+                count += 1
+            i -= 1
+        for j = 0 to array.size(confs) - 1
+            MTFConfluence c = array.get(confs, j)
+            if not na(c.drawing)
+                box.set_right(c.drawing, math.max(c.startBar + 1, c.endBar))
+                int state = c.active ? 1 : 0
+                box.set_bgcolor(c.drawing, color.new(i_mtfConfluenceColor, c.active ? i_mtfConfluenceActiveTransp : i_ghostTransparency))
+                box.set_border_color(c.drawing, i_mtfConfluenceBorder)
+                c.visualState := state
+                array.set(confs, j, c)
+    else if array.size(confs) > 0
+        // At most the small visible confluence pool is extended on ordinary bars.
+        for j = 0 to array.size(confs) - 1
+            MTFConfluence c = array.get(confs, j)
+            if c.active and not na(c.drawing)
+                box.set_right(c.drawing, bar_index)
+
+// ═══════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+f_tol() =>
+    syminfo.mintick * i_touchTolPts + syminfo.mintick * 0.2
+
+// Strict bar scans used only by Filter 88.
+// No tolerance is added: one real tick above/below the level is enough.
+f_anyHighAbove(int fromBar, int toBar, float level) =>
+    bool result = false
+
+    if fromBar <= toBar
+        int firstLookback = bar_index - fromBar
+        int lastLookback = bar_index - toBar
+
+        if firstLookback >= 0 and lastLookback >= 0
+            for i = firstLookback to lastLookback
+                if not result and i >= 0 and i < 5000
+                    if high[i] > level
+                        result := true
+
+    result
+
+f_anyLowBelow(int fromBar, int toBar, float level) =>
+    bool result = false
+
+    if fromBar <= toBar
+        int firstLookback = bar_index - fromBar
+        int lastLookback = bar_index - toBar
+
+        if firstLookback >= 0 and lastLookback >= 0
+            for i = firstLookback to lastLookback
+                if not result and i >= 0 and i < 5000
+                    if low[i] < level
+                        result := true
+
+    result
+
+f_passesFilter88(UnitInfo refU, int dir) =>
+    bool passed = false
+    float unitRange = refU.hi - refU.lo
+
+    if refU.valid and unitRange > 0
+        // A completed unit stores the first bar of the following unit as endBar.
+        // Filter 88 must remain strictly inside U2.
+        int actualU2EndBar = refU.endBar - 1
+
+        // The filter starts only after whichever final U2 extremum formed second.
+        // If HIGH and LOW belong to the same candle, OHLC data cannot reveal
+        // their intrabar order, so the filter deliberately fails.
+        bool extremumOrderKnown = refU.hiBar != refU.loBar
+        int secondExtremumBar = math.max(refU.hiBar, refU.loBar)
+        int scanStartBar = secondExtremumBar + 1
+        bool hasBarsToScan = scanStartBar <= actualU2EndBar
+
+        if extremumOrderKnown and hasBarsToScan
+            if dir == 1
+                // Bullish Filter 88: a later candle must trade above U2 88.20%.
+                float bullishLevel88_2 = refU.lo + 0.882 * unitRange
+                passed := f_anyHighAbove(scanStartBar, actualU2EndBar, bullishLevel88_2)
+            else if dir == -1
+                // Bearish Filter 88: 88.20% down from the high equals
+                // 11.80% measured upward from the low.
+                float bearishLevel88_2 = refU.lo + 0.118 * unitRange
+                passed := f_anyLowBelow(scanStartBar, actualU2EndBar, bearishLevel88_2)
+
+    passed
+
+// ═══════════════════════════════════════════════════════════════
+//  BUILD UNITS FROM THE SELECTED HIGHER TIMEFRAME
+// ═══════════════════════════════════════════════════════════════
+
+// Auto Standard mapping. This changes only the selected higher timeframe.
+// Unit boundaries are still created by the original request.security() method.
+f_autoUnitTF() =>
+    f_autoUnitTFGeneric()
+
+string manualUnitTF = i_unitTFMode == "6 Hours" ? "360" : i_unitTFMode == "8 Hours" ? "480" : i_unitTF
+string effectiveUnitTF = i_unitSelectionMode == "Auto Standard" ? f_autoUnitTF() : manualUnitTF
+
+// Number of chart bars that make up one full unit on this timeframe/unit
+// combination — used to project unit 0's expected closing boundary before
+// it actually closes. Local boundaries use time()/time_close() directly,
+// removing unnecessary dependence on a separate higher-timeframe symbol feed.
+bool useVirtualHigherUnit = f_useVirtualHigherUnit(effectiveUnitTF)
+float aibChartSeconds = timeframe.in_seconds(timeframe.period)
+float aibUnitSecondsRaw = timeframe.in_seconds(effectiveUnitTF)
+float aibUnitSeconds = useVirtualHigherUnit and not na(aibChartSeconds) ? aibChartSeconds * i_virtualHigherUnitBars : aibUnitSecondsRaw
+int i_barsPerUnit = useVirtualHigherUnit ? i_virtualHigherUnitBars : timeframe.isticks or na(aibChartSeconds) or na(aibUnitSeconds) ? 1 : math.max(1, math.round(aibUnitSeconds / math.max(aibChartSeconds, 1)))
+
+// Universal local unit boundary engine. time(tf) follows the current symbol's
+// sessions and works on all supported instruments without a cross-symbol request.
+int htfT = useVirtualHigherUnit ? int(math.floor(bar_index / i_virtualHigherUnitBars)) : time(effectiveUnitTF)
+int htfCloseT = useVirtualHigherUnit ? time_close : time_close(effectiveUnitTF)
+
+var int[]   unitStartBars = array.new_int(0)
+var int[]   unitStartTimes = array.new_int(0)
+var float[] unitHighs     = array.new_float(0)
+var float[] unitLows      = array.new_float(0)
+var int[]   unitHighBars  = array.new_int(0)
+var int[]   unitLowBars   = array.new_int(0)
+var int[]   unitHighTimes = array.new_int(0)
+var int[]   unitLowTimes  = array.new_int(0)
+var float[] unitCloses    = array.new_float(0)
+var int[]   unitEndBars   = array.new_int(0)
+var int[]   unitEndTimes  = array.new_int(0)
+var bool[]  unitIsWeekStart = array.new_bool(0)
+
+var int prevHTFTime = 0
+
+isNewUnit = htfT != prevHTFTime and not na(htfT)
+
+if isNewUnit
+    prevHTFTime := htfT
+
+    // RC4: use the official higher-timeframe opening timestamp as the
+    // horizontal anchor. The chart bar that detects a new unit can be later
+    // than the true boundary on symbols with sessions or gaps.
+    int unitBoundaryTime = useVirtualHigherUnit ? time : na(htfT) ? time : htfT
+
+    // Finalize the previous unit before opening the new one.
+    if array.size(unitStartBars) > 0
+        array.set(unitEndBars, 0, bar_index)
+        array.set(unitEndTimes, 0, unitBoundaryTime)
+        array.set(unitCloses, 0, close[1])
+
+    // Approximate week-start detection: first unit whose official start is Monday.
+    bool weekStartFlag = dayofweek(unitBoundaryTime) == dayofweek.monday and (na(time[1]) or dayofweek(time[1]) != dayofweek.monday)
+
+    // Newest unit is always stored at index 0.
+    array.unshift(unitStartBars, bar_index)
+    array.unshift(unitStartTimes, unitBoundaryTime)
+    array.unshift(unitHighs, high)
+    array.unshift(unitLows, low)
+    array.unshift(unitHighBars, bar_index)
+    array.unshift(unitLowBars, bar_index)
+    array.unshift(unitHighTimes, time)
+    array.unshift(unitLowTimes, time)
+    array.unshift(unitCloses, close)
+    array.unshift(unitEndBars, bar_index)
+    array.unshift(unitEndTimes, na(htfCloseT) ? time_close : htfCloseT)
+    array.unshift(unitIsWeekStart, weekStartFlag)
+
+    // Keep a small reserve beyond the deeper of the two requested scan depths
+    // (ABCDE angle scan depth vs. the guaranteed Fibonacci grid lookback).
+    int unitsNeeded = math.max(i_unitsToScan, i_fiboUnitsBack + 1)
+    if array.size(unitStartBars) > unitsNeeded + 5
+        array.pop(unitStartBars)
+        array.pop(unitStartTimes)
+        array.pop(unitHighs)
+        array.pop(unitLows)
+        array.pop(unitHighBars)
+        array.pop(unitLowBars)
+        array.pop(unitHighTimes)
+        array.pop(unitLowTimes)
+        array.pop(unitCloses)
+        array.pop(unitEndBars)
+        array.pop(unitEndTimes)
+        array.pop(unitIsWeekStart)
+
+// Update the live unit on every chart bar.
+if array.size(unitStartBars) > 0
+    if high > array.get(unitHighs, 0)
+        array.set(unitHighs, 0, high)
+        array.set(unitHighBars, 0, bar_index)
+        array.set(unitHighTimes, 0, time)
+    if low < array.get(unitLows, 0)
+        array.set(unitLows, 0, low)
+        array.set(unitLowBars, 0, bar_index)
+        array.set(unitLowTimes, 0, time)
+    array.set(unitCloses, 0, close)
+    array.set(unitEndBars, 0, bar_index)
+    array.set(unitEndTimes, 0, na(htfCloseT) ? time_close : htfCloseT)
+
+// ═══════════════════════════════════════════════════════════════
+//  UNIT CONSTRUCTION
+// ═══════════════════════════════════════════════════════════════
+
+f_buildUnit(int idx) =>
+    UnitInfo u = UnitInfo.new()
+    u.valid := false
+
+    if idx >= 0 and idx < array.size(unitStartBars)
+        float h = array.get(unitHighs, idx)
+        float l = array.get(unitLows, idx)
+        float r = h - l
+
+        u.hi := h
+        u.lo := l
+        u.hiBar := array.get(unitHighBars, idx)
+        u.loBar := array.get(unitLowBars, idx)
+        u.hiTime := array.get(unitHighTimes, idx)
+        u.loTime := array.get(unitLowTimes, idx)
+        u.lastClose := array.get(unitCloses, idx)
+        u.startBar := array.get(unitStartBars, idx)
+        u.endBar := array.get(unitEndBars, idx)
+        u.startTime := array.get(unitStartTimes, idx)
+        u.endTime := array.get(unitEndTimes, idx)
+        u.level23 := l + 0.236 * r
+        u.level38 := l + 0.382 * r
+        u.level61 := l + 0.618 * r
+        u.level76 := l + 0.764 * r
+        u.levelNeg118 := l - 0.118 * r
+        u.level118 := l + 1.118 * r
+        u.level11 := l + 0.118 * r
+        u.level50 := l + 0.5 * r
+        u.level88 := l + 0.88 * r
+        u.level123 := l + 1.236 * r
+        u.level138 := l + 1.382 * r
+        u.valid := r > 0
+
+    u
+
+// ═══════════════════════════════════════════════════════════════
+//  BAR EVENT DETECTION REQUIRED BY ZA/ZB/ZC
+// ═══════════════════════════════════════════════════════════════
+
+f_findFirstBreakHigh(int fromBar, int toBar, float level) =>
+    int result = 0
+    int firstBar = math.min(fromBar, toBar)
+    int lastBar = math.max(fromBar, toBar)
+    int firstLookback = bar_index - firstBar
+    int lastLookback = bar_index - lastBar
+    bool found = false
+
+    if firstLookback >= 0 and lastLookback >= 0
+        for i = firstLookback to lastLookback
+            if not found and i >= 0 and i < 5000
+                if high[i] > level + syminfo.mintick * 0.2
+                    result := bar_index - i
+                    found := true
+
+    result
+
+f_findFirstBreakLow(int fromBar, int toBar, float level) =>
+    int result = 0
+    int firstBar = math.min(fromBar, toBar)
+    int lastBar = math.max(fromBar, toBar)
+    int firstLookback = bar_index - firstBar
+    int lastLookback = bar_index - lastBar
+    bool found = false
+
+    if firstLookback >= 0 and lastLookback >= 0
+        for i = firstLookback to lastLookback
+            if not found and i >= 0 and i < 5000
+                if low[i] < level - syminfo.mintick * 0.2
+                    result := bar_index - i
+                    found := true
+
+    result
+
+f_anyRetestAfter(int breakBar, int endBar, float level, bool isSell) =>
+    bool result = false
+    float touchTolerance = syminfo.mintick * i_touchTolPts
+    int firstBar = math.min(breakBar, endBar)
+    int lastBar = math.max(breakBar, endBar)
+    int firstLookback = bar_index - firstBar
+    int lastLookback = bar_index - lastBar
+
+    if firstLookback >= 0 and lastLookback >= 0
+        for i = lastLookback to firstLookback
+            if not result and i >= 0 and i < 5000
+                int currentBar = bar_index - i
+                if currentBar > breakBar
+                    if isSell
+                        if high[i] >= level - touchTolerance
+                            result := true
+                    else
+                        if low[i] <= level + touchTolerance
+                            result := true
+
+    result
+
+f_extractPairEvents(UnitInfo refU, UnitInfo formU) =>
+    PairEvents ev = PairEvents.new()
+
+    ev.breakUpBar := f_findFirstBreakHigh(formU.startBar, formU.endBar, refU.hi)
+    ev.breakDownBar := f_findFirstBreakLow(formU.startBar, formU.endBar, refU.lo)
+    ev.retestUp := false
+    ev.retestDown := false
+
+    if ev.breakUpBar > 0
+        ev.retestUp := f_anyRetestAfter(ev.breakUpBar, formU.endBar, refU.hi, false)
+
+    if ev.breakDownBar > 0
+        ev.retestDown := f_anyRetestAfter(ev.breakDownBar, formU.endBar, refU.lo, true)
+
+    ev
+
+// ═══════════════════════════════════════════════════════════════
+//  ORIGINAL SUPERVISOR CHECKS USED BY ZA/ZB/ZC
+// ═══════════════════════════════════════════════════════════════
+
+f_runDirection(UnitInfo refU, UnitInfo formU) =>
+    float tolerance = f_tol()
+    bool bull = formU.hi > refU.hi + tolerance and formU.lo > refU.lo + tolerance
+    bool bear = formU.hi < refU.hi - tolerance and formU.lo < refU.lo - tolerance
+    bull ? 1 : bear ? -1 : 0
+
+f_runMainRange(UnitInfo refU, UnitInfo formU, int dir) =>
+    float tolerance = f_tol()
+    bool inMainRange = false
+
+    if dir == 1
+        inMainRange := formU.lo >= refU.level38 - tolerance and formU.lo <= refU.level76 + tolerance
+    else if dir == -1
+        inMainRange := formU.hi > refU.level23 + tolerance and formU.hi <= refU.level61 + tolerance
+
+    inMainRange
+
+f_runClose(UnitInfo refU, UnitInfo formU) =>
+    float tolerance = f_tol()
+    int state = 99
+
+    if formU.lastClose > refU.hi + tolerance
+        state := 1
+    else if formU.lastClose < refU.lo - tolerance
+        state := -1
+    else if formU.lastClose >= refU.lo - tolerance and formU.lastClose <= refU.hi + tolerance
+        state := 0
+
+    state
+
+f_runOrder(UnitInfo formU, PairEvents ev, int dir) =>
+    int state = 0
+
+    if dir == 1
+        if ev.breakUpBar > 0 and formU.loBar > 0
+            if ev.breakUpBar < formU.loBar
+                state := 1
+            else if formU.loBar < ev.breakUpBar
+                state := 2
+    else if dir == -1
+        if ev.breakDownBar > 0 and formU.hiBar > 0
+            if ev.breakDownBar < formU.hiBar
+                state := 1
+            else if formU.hiBar < ev.breakDownBar
+                state := 2
+
+    state
+
+// Main-range classifications transferred from the master indicator:
+// orderState 2 -> ZA / ZB / ZC
+// orderState 1 -> ZD / ZE
+f_classifyABCDE(int dir, int orderState, int closeState, PairEvents ev) =>
+    string cls = ""
+
+    if orderState == 2
+        if dir == 1
+            if not ev.retestUp
+                cls := "ZA"
+            else
+                cls := closeState == 1 ? "ZB" : "ZC"
+        else if dir == -1
+            if not ev.retestDown
+                cls := "ZA"
+            else
+                cls := closeState == -1 ? "ZB" : "ZC"
+    else if orderState == 1
+        if dir == 1
+            cls := closeState == 1 ? "ZD" : "ZE"
+        else if dir == -1
+            cls := closeState == -1 ? "ZD" : "ZE"
+
+    cls
+
+f_isConfirmedABCDE(string cls, int dir, int closeState, bool retest) =>
+    bool directionClose = (dir == 1 and closeState == 1) or (dir == -1 and closeState == -1)
+    bool result = false
+
+    if cls == "ZA"
+        result := not retest and directionClose
+    else if cls == "ZB"
+        result := retest and directionClose
+    else if cls == "ZC"
+        result := retest and closeState == 0
+    else if cls == "ZD"
+        result := directionClose
+    else if cls == "ZE"
+        result := closeState == 0
+
+    result
+
+f_calcCorrPct(UnitInfo refU, UnitInfo formU, int dir) =>
+    float span = math.abs(refU.hi - refU.lo)
+    float pct = 0.0
+
+    if span > 0
+        if dir == 1
+            pct := 100.0 * (formU.lo - refU.lo) / span
+        else if dir == -1
+            pct := 100.0 * (refU.hi - formU.hi) / span
+
+    pct
+
+// ═══════════════════════════════════════════════════════════════
+//  FIBONACCI UNITS GRID — PERSISTENT LINE/LABEL POOLS
+// ═══════════════════════════════════════════════════════════════
+
+f_fiboLabelSize() => i_fiboLabelSize == "Tiny" ? size.tiny : size.small
+f_styleFromString(string s) => s == "Dashed" ? line.style_dashed : s == "Dotted" ? line.style_dotted : line.style_solid
+
+f_ensureLinePool(line[] pool, int count) =>
+    while array.size(pool) < count
+        // Chart-local drawings use absolute chart bar indexes. This is the
+        // same coordinate system used by the original working indicator and
+        // keeps angles/Fibonacci/projection locked to the candles while zooming.
+        line ln = line.new(bar_index, close, bar_index, close, xloc=xloc.bar_index, color=color.new(color.rgb(198, 204, 208), 100), force_overlay=true)
+        array.push(pool, ln)
+
+f_ensureLabelPool(label[] pool, int count) =>
+    while array.size(pool) < count
+        label lb = label.new(bar_index, close, "", xloc=xloc.bar_index, style=label.style_none, textcolor=color.new(color.rgb(198, 204, 208), 100), size=size.tiny, force_overlay=true)
+        array.push(pool, lb)
+
+f_hideLinePool(line[] pool) =>
+    if array.size(pool) > 0
+        for i = 0 to array.size(pool) - 1
+            line ln = array.get(pool, i)
+            line.set_extend(ln, extend.none)
+            line.set_xy1(ln, bar_index, close)
+            line.set_xy2(ln, bar_index, close)
+            line.set_color(ln, color.new(color.white, 100))
+
+f_hideLabelPool(label[] pool) =>
+    if array.size(pool) > 0
+        for i = 0 to array.size(pool) - 1
+            label lb = array.get(pool, i)
+            label.set_xy(lb, bar_index, close)
+            label.set_text(lb, "")
+
+f_fiboLevel(UnitInfo u, int idx) =>
+    float r = u.hi - u.lo
+    idx == 0 ? u.lo : idx == 1 ? u.level11 : idx == 2 ? u.level23 : idx == 3 ? u.level38 : idx == 4 ? u.level50 : idx == 5 ? u.level61 : idx == 6 ? u.level76 : idx == 7 ? u.level88 : idx == 8 ? u.hi : idx == 9 ? u.level118 : idx == 10 ? u.level123 : idx == 11 ? u.level138 : idx == 12 ? u.levelNeg118 : idx == 13 ? u.lo - 0.236 * r : u.lo - 0.382 * r
+
+f_fiboText(int idx) =>
+    idx == 0 ? "0.0" : idx == 1 ? "11.8" : idx == 2 ? "23.6" : idx == 3 ? "38.2" : idx == 4 ? "50.0" : idx == 5 ? "61.8" : idx == 6 ? "76.4" : idx == 7 ? "88.0" : idx == 8 ? "100.0" : idx == 9 ? "111.8" : idx == 10 ? "123.6" : idx == 11 ? "138.2" : idx == 12 ? "-11.8" : idx == 13 ? "-23.6" : "-38.2"
+
+f_fiboEnabled(int idx) =>
+    idx == 0 ? i_fgShow0 : idx == 1 ? i_fgShow118 : idx == 2 ? i_fgShow236 : idx == 3 ? i_fgShow382 : idx == 4 ? i_fgShow50 : idx == 5 ? i_fgShow618 : idx == 6 ? i_fgShow764 : idx == 7 ? i_fgShow88 : idx == 8 ? i_fgShow100 : idx == 9 ? i_fgShow1118 : idx == 10 ? i_fgShow1236 : idx == 11 ? i_fgShow1382 : idx == 12 ? i_fgShowN118 : idx == 13 ? i_fgShowN236 : i_fgShowN382
+
+f_fiboColor(int idx) =>
+    idx == 0 or idx == 8 ? i_fibo_0100_color : idx == 2 or idx == 6 ? i_fibo_236_color : idx == 3 or idx == 5 or idx == 11 or idx == 14 ? i_fibo_382_color : idx == 4 ? i_fibo_50_color : idx == 1 or idx == 7 or idx == 9 or idx == 12 ? i_fibo_118_color : i_fibo_123_color
+
+f_fiboStyle(int idx) =>
+    idx == 0 or idx == 8 ? f_styleFromString(i_fibo_0100_style) : idx == 2 or idx == 6 ? f_styleFromString(i_fibo_236_style) : idx == 3 or idx == 5 or idx == 11 or idx == 14 ? f_styleFromString(i_fibo_382_style) : idx == 4 ? f_styleFromString(i_fibo_50_style) : idx == 1 or idx == 7 or idx == 9 or idx == 12 ? f_styleFromString(i_fibo_118_style) : f_styleFromString(i_fibo_123_style)
+
+f_fiboWidth(int idx) =>
+    idx == 0 or idx == 8 ? i_fibo_0100_width : idx == 2 or idx == 6 ? i_fibo_236_width : idx == 3 or idx == 5 or idx == 11 or idx == 14 ? i_fibo_382_width : idx == 4 ? i_fibo_50_width : idx == 1 or idx == 7 or idx == 9 or idx == 12 ? i_fibo_118_width : i_fibo_123_width
+
+f_syncFiboGrid(line[] ratioPool, label[] ratioLabelPool, line[] separatorPool, label[] unitNumberPool, UnitInfo[] units, int nFiboUnits, int visibleUnits) =>
+    int actualUnits = math.min(visibleUnits, math.max(0, nFiboUnits - 1))
+    int ratioCount = actualUnits * 15
+    int labelUnitCount = math.min(actualUnits, i_fiboLabelUnits)
+    f_ensureLinePool(ratioPool, ratioCount)
+    f_ensureLabelPool(ratioLabelPool, labelUnitCount * 15)
+    f_ensureLinePool(separatorPool, actualUnits + 2)
+    f_ensureLabelPool(unitNumberPool, actualUnits)
+    f_hideLinePool(ratioPool)
+    f_hideLabelPool(ratioLabelPool)
+    f_hideLinePool(separatorPool)
+    f_hideLabelPool(unitNumberPool)
+    if i_showFiboGrid and actualUnits > 0
+        for slot = 0 to actualUnits - 1
+            int k = slot + 1
+            UnitInfo u = array.get(units, k)
+            int leftBar = u.startBar
+            int rightBar = k == 1 ? bar_index : array.get(units, k - 1).startBar - 1
+            if u.valid and rightBar > leftBar
+                if i_showFiboRatioLines
+                    for lvlIdx = 0 to 14
+                        if f_fiboEnabled(lvlIdx)
+                            int poolIdx = slot * 15 + lvlIdx
+                            line ln = array.get(ratioPool, poolIdx)
+                            float lvl = f_fiboLevel(u, lvlIdx)
+                            line.set_extend(ln, extend.none)
+                            line.set_xy1(ln, leftBar, lvl)
+                            line.set_xy2(ln, rightBar, lvl)
+                            line.set_color(ln, f_fiboColor(lvlIdx))
+                            line.set_style(ln, f_fiboStyle(lvlIdx))
+                            line.set_width(ln, f_fiboWidth(lvlIdx))
+                            if i_showFiboRatioLabels and slot < labelUnitCount
+                                int labelIdx = slot * 15 + lvlIdx
+                                label lb = array.get(ratioLabelPool, labelIdx)
+                                label.set_xy(lb, leftBar, lvl)
+                                label.set_text(lb, f_fiboText(lvlIdx))
+                                label.set_textcolor(lb, f_fiboColor(lvlIdx))
+                                label.set_size(lb, f_fiboLabelSize())
+                line sep = array.get(separatorPool, slot)
+                bool weekStart = i_showWeekStartMarker and k < array.size(unitIsWeekStart) and array.get(unitIsWeekStart, k)
+                line.set_xy1(sep, leftBar, u.lo)
+                line.set_xy2(sep, leftBar, u.hi)
+                line.set_extend(sep, extend.both)
+                line.set_color(sep, weekStart ? i_weekMarkerColor : i_sepColor)
+                line.set_style(sep, weekStart ? line.style_dashed : line.style_dotted)
+                line.set_width(sep, weekStart ? 2 : 1)
+                if i_showUnitNumbers
+                    label un = array.get(unitNumberPool, slot)
+                    label.set_xy(un, int(math.round((leftBar + rightBar) / 2.0)), (u.hi + u.level123) / 2.0)
+                    label.set_text(un, str.tostring(k))
+                    label.set_textcolor(un, i_unitNumberColor)
+                    label.set_size(un, size.normal)
+        if array.size(unitStartBars) > 0
+            int u0 = array.get(unitStartBars, 0)
+            if i_showUnit0Separator
+                line realSep = array.get(separatorPool, actualUnits)
+                float sepLow = array.size(unitLows) > 0 ? array.get(unitLows, 0) : close - syminfo.mintick
+                float sepHigh = array.size(unitHighs) > 0 ? array.get(unitHighs, 0) : close + syminfo.mintick
+                line.set_xy1(realSep, u0, sepLow)
+                line.set_xy2(realSep, u0, sepHigh)
+                line.set_extend(realSep, extend.both)
+                line.set_color(realSep, i_sepColor)
+                line.set_style(realSep, line.style_dotted)
+                line.set_width(realSep, 1)
+            if i_showProjectedSeparator
+                line projSep = array.get(separatorPool, actualUnits + 1)
+                int projected = u0 + i_barsPerUnit
+                float projLow = array.size(unitLows) > 0 ? array.get(unitLows, 0) : close - syminfo.mintick
+                float projHigh = array.size(unitHighs) > 0 ? array.get(unitHighs, 0) : close + syminfo.mintick
+                line.set_xy1(projSep, projected, projLow)
+                line.set_xy2(projSep, projected, projHigh)
+                line.set_extend(projSep, extend.both)
+                line.set_color(projSep, i_projSepColor)
+                line.set_style(projSep, line.style_dotted)
+                line.set_width(projSep, 1)
+    actualUnits
+
+f_extendNewestFibo(line[] ratioPool) =>
+    if i_showFiboGrid and i_showFiboRatioLines and array.size(ratioPool) >= 15
+        for i = 0 to 14
+            line.set_x2(array.get(ratioPool, i), bar_index)
+
+// ═══════════════════════════════════════════════════════════════
+//  PROCESS ONE CONSECUTIVE CLOSED UNIT PAIR — ZA THROUGH ZE
+// ═══════════════════════════════════════════════════════════════
+
+f_processPair(UnitInfo refU, UnitInfo formU) =>
+    AngleResult ar = AngleResult.new()
+    ar.valid := false
+
+    if refU.valid and formU.valid and refU.hi - refU.lo > 0
+        int dir = f_runDirection(refU, formU)
+
+        if dir != 0
+            float tolerance = f_tol()
+
+            // Preserve the original extension filter used before classification.
+            bool extensionFilter = true
+            if dir == 1 and formU.hi < refU.level118 - tolerance
+                extensionFilter := false
+            if dir == -1 and formU.lo > refU.levelNeg118 + tolerance
+                extensionFilter := false
+
+            if extensionFilter and f_runMainRange(refU, formU, dir)
+                int closeState = f_runClose(refU, formU)
+
+                if closeState != 99
+                    PairEvents ev = f_extractPairEvents(refU, formU)
+                    int orderState = f_runOrder(formU, ev, dir)
+
+                    // Only the five requested main-range classifications are enabled.
+                    if orderState == 1 or orderState == 2
+                        string cls = f_classifyABCDE(dir, orderState, closeState, ev)
+
+                        if cls == "ZA" or cls == "ZB" or cls == "ZC" or cls == "ZD" or cls == "ZE"
+                            bool retest = dir == 1 ? ev.retestUp : ev.retestDown
+
+                            ar.valid := true
+                            ar.classText := cls
+                            ar.dirState := dir
+                            ar.u1High := formU.hi
+                            ar.u1Low := formU.lo
+                            ar.u2High := refU.hi
+                            ar.u2Low := refU.lo
+                            ar.u1StartBar := formU.startBar
+                            ar.u2StartBar := refU.startBar
+                            // RC4: these are the time-domain anchors consumed by
+                            // xloc.bar_time. RC3 declared them but never populated them.
+                            ar.u1StartTime := formU.startTime
+                            ar.u2StartTime := refU.startTime
+                            ar.confirmed := f_isConfirmedABCDE(cls, dir, closeState, retest)
+                            ar.unconfirmed := not ar.confirmed
+
+                            // The same closed-U2 Filter 88 is applied uniformly
+                            // to ZA, ZB, ZC, ZD and ZE.
+                            ar.filter88Passed := f_passesFilter88(refU, dir)
+                            ar.correctionPct := f_calcCorrPct(refU, formU, dir)
+
+                            if dir == 1
+                                ar.drawBar1 := refU.startBar
+                                ar.drawTime1 := refU.startTime
+                                ar.drawP1 := refU.hi
+                                ar.drawBar2 := formU.startBar
+                                ar.drawTime2 := formU.startTime
+                                ar.drawP2 := formU.lo
+                            else
+                                ar.drawBar1 := refU.startBar
+                                ar.drawTime1 := refU.startTime
+                                ar.drawP1 := refU.lo
+                                ar.drawBar2 := formU.startBar
+                                ar.drawTime2 := formU.startTime
+                                ar.drawP2 := formU.hi
+
+    ar
+
+// ═══════════════════════════════════════════════════════════════
+//  PERSISTENT DRAWING POOLS / TABLES
+// ═══════════════════════════════════════════════════════════════
+
+var line[] angleLinePool = array.new_line(0)
+var label[] angleLabelPool = array.new_label(0)
+var line[] fiboRatioPool = array.new_line(0)
+var label[] fiboRatioLabelPool = array.new_label(0)
+var line[] fiboSeparatorPool = array.new_line(0)
+var label[] fiboUnitNumberPool = array.new_label(0)
+var line[] projectionLinePool = array.new_line(0)
+var label[] projectionLabelPool = array.new_label(0)
+var line[] zoneFibLinePool = array.new_line(0)
+var label[] zoneFibLabelPool = array.new_label(0)
+var table infoTable = table.new(position.top_right, 1, 8, bgcolor=color.new(color.rgb(17, 23, 29), 15), border_width=1, border_color=color.new(color.gray, 75))
+var table zoneTable = table.new(position.bottom_right, 9, 11, bgcolor=color.new(color.rgb(17, 23, 29), 12), border_width=1, border_color=color.new(color.gray, 78))
+
+f_syncAnglePool(AngleResult[] angles) =>
+    int linesPerAngle = i_showUnitLegs ? 3 : 1
+    int maxByLines = math.max(0, int(math.floor((455 - f_perfFiboUnits() * 15 - 24) / math.max(linesPerAngle, 1))))
+    int maxAngles = math.min(i_angleHistoryDraw, maxByLines)
+    int shown = math.min(array.size(angles), maxAngles)
+    f_ensureLinePool(angleLinePool, shown * linesPerAngle)
+    f_ensureLabelPool(angleLabelPool, shown * 3)
+    f_hideLinePool(angleLinePool)
+    f_hideLabelPool(angleLabelPool)
+    int lineCursor = 0
+    int labelCursor = 0
+    int drawnAngles = 0
+    if shown > 0
+        for j = 0 to shown - 1
+            AngleResult ar = array.get(angles, j)
+            bool statusAllows = (ar.confirmed and i_showConfirmed) or (ar.unconfirmed and i_showUnconfirmed)
+            bool filterAllows = not i_enableFilter88 or ar.filter88Passed or i_showFailedFilter88
+            bool barAnchorsValid = ar.u2StartBar >= 0 and ar.u1StartBar >= 0 and ar.drawBar1 >= 0 and ar.drawBar2 >= 0 and ar.drawBar2 > ar.drawBar1
+            if statusAllows and filterAllows and barAnchorsValid
+                drawnAngles += 1
+                color verticalColor = ar.dirState == 1 ? BUY_VERTICAL_COLOR : SELL_VERTICAL_COLOR
+                color diagonalColor = ar.dirState == 1 ? BUY_DIAGONAL_COLOR : SELL_DIAGONAL_COLOR
+                if i_showUnitLegs
+                    line l1 = array.get(angleLinePool, lineCursor)
+                    line.set_extend(l1, extend.none)
+                    line.set_xy1(l1, ar.u2StartBar, ar.u2Low)
+                    line.set_xy2(l1, ar.u2StartBar, ar.u2High)
+                    line.set_color(l1, verticalColor)
+                    line.set_width(l1, i_legWidth)
+                    lineCursor += 1
+                    line l2 = array.get(angleLinePool, lineCursor)
+                    line.set_extend(l2, extend.none)
+                    line.set_xy1(l2, ar.u1StartBar, ar.u1Low)
+                    line.set_xy2(l2, ar.u1StartBar, ar.u1High)
+                    line.set_color(l2, verticalColor)
+                    line.set_width(l2, i_legWidth)
+                    lineCursor += 1
+                line dg = array.get(angleLinePool, lineCursor)
+                line.set_extend(dg, extend.none)
+                line.set_xy1(dg, ar.drawBar1, ar.drawP1)
+                line.set_xy2(dg, ar.drawBar2, ar.drawP2)
+                line.set_color(dg, diagonalColor)
+                line.set_width(dg, i_angleWidth)
+                lineCursor += 1
+                if i_showClassText
+                    label cl = array.get(angleLabelPool, labelCursor)
+                    float p = ar.dirState == 1 ? ar.drawP2 - syminfo.mintick * 18 : ar.drawP2 + syminfo.mintick * 18
+                    label.set_xy(cl, ar.drawBar2, p)
+                    label.set_text(cl, ar.classText + (ar.confirmed ? " ✓" : ""))
+                    label.set_style(cl, ar.dirState == 1 ? label.style_label_up : label.style_label_down)
+                    label.set_color(cl, color.new(color.rgb(17, 23, 29), 78))
+                    label.set_textcolor(cl, ar.classText == "ZD" or ar.classText == "ZE" ? i_classColorDE : i_classColorABC)
+                    label.set_size(cl, size.normal)
+                    labelCursor += 1
+                if i_showCorrText
+                    label cr = array.get(angleLabelPool, labelCursor)
+                    float p = ar.dirState == 1 ? ar.u1Low - syminfo.mintick * 10 : ar.u1High + syminfo.mintick * 10
+                    label.set_xy(cr, ar.drawBar2, p)
+                    label.set_text(cr, str.tostring(ar.correctionPct, "#.#") + "%")
+                    label.set_style(cr, label.style_none)
+                    label.set_textcolor(cr, i_corrColor)
+                    label.set_size(cr, size.small)
+                    labelCursor += 1
+                if i_showAngleText
+                    label dl = array.get(angleLabelPool, labelCursor)
+                    float p = math.max(ar.u1High, ar.u2High) + syminfo.mintick * 25
+                    label.set_xy(dl, ar.drawBar2, p)
+                    label.set_text(dl, (ar.confirmed ? "Confirmed " : "Unconfirmed ") + (ar.dirState == 1 ? "BUY" : "SELL"))
+                    label.set_style(dl, label.style_none)
+                    label.set_textcolor(dl, diagonalColor)
+                    label.set_size(dl, size.tiny)
+                    labelCursor += 1
+    drawnAngles
+
+f_zoneDistance(MTFZone z) =>
+    float top = f_mtfZoneTop(z)
+    float bottom = f_mtfZoneBottom(z)
+    close > top ? close - top : close < bottom ? bottom - close : 0.0
+
+f_selectNearestZone(MTFZone[] zones, int[] activeIndices, bool currentTFOnly) =>
+    int best = -1
+    float bestDist = 1e100
+    if array.size(activeIndices) > 0
+        for p = 0 to array.size(activeIndices) - 1
+            int idx = array.get(activeIndices, p)
+            if idx >= 0 and idx < array.size(zones)
+                MTFZone z = array.get(zones, idx)
+                bool allowed = z.visible and z.active and (not currentTFOnly or f_zoneSameChartTF(z))
+                if allowed
+                    float d = f_zoneDistance(z)
+                    if d < bestDist
+                        bestDist := d
+                        best := idx
+    best
+
+f_selectStrongestConfluence(MTFZone[] zones, MTFConfluence[] confs) =>
+    int bestZone = -1
+    int bestStrength = 0
+    float bestDist = 1e100
+    if array.size(confs) > 0
+        for i = 0 to array.size(confs) - 1
+            MTFConfluence c = array.get(confs, i)
+            if c.active and c.zoneAIndex >= 0 and c.zoneBIndex >= 0 and c.zoneAIndex < array.size(zones) and c.zoneBIndex < array.size(zones)
+                float mid = (c.top + c.bottom) / 2.0
+                float d = math.abs(close - mid)
+                MTFZone za = array.get(zones, c.zoneAIndex)
+                MTFZone zb = array.get(zones, c.zoneBIndex)
+                int strength = math.max(za.maxConfluenceMultiplicity, zb.maxConfluenceMultiplicity)
+                if strength > bestStrength or (strength == bestStrength and d < bestDist)
+                    bestStrength := strength
+                    bestDist := d
+                    float seca = timeframe.in_seconds(za.sourceTF)
+                    float secb = timeframe.in_seconds(zb.sourceTF)
+                    bestZone := not na(seca) and not na(secb) and seca >= secb ? c.zoneAIndex : c.zoneBIndex
+    bestZone
+
+f_syncProjection(MTFZone[] zones, int[] activeIndices, MTFConfluence[] confs) =>
+    f_ensureLinePool(projectionLinePool, 3)
+    f_ensureLabelPool(projectionLabelPool, 5)
+    f_hideLinePool(projectionLinePool)
+    f_hideLabelPool(projectionLabelPool)
+    int idx = i_projectionMode == "Nearest active zone" ? f_selectNearestZone(zones, activeIndices, false) : i_projectionMode == "Nearest current-TF zone" ? f_selectNearestZone(zones, activeIndices, true) : i_projectionMode == "Strongest confluence" ? f_selectStrongestConfluence(zones, confs) : -1
+    if idx >= 0 and idx < array.size(zones)
+        MTFZone z = array.get(zones, idx)
+        int step = i_projectionBarsPerLeg
+        int x0 = bar_index
+        color pc = color.new(z.bounceDir == 1 ? color.rgb(79, 132, 146) : color.rgb(155, 96, 100), i_projectionTransparency)
+        float[] levels = array.from(z.entry, z.tp1, z.tp2, z.tp3)
+        string[] texts = array.from("ENTRY", "TP1", "TP2", "TP3")
+        for i = 0 to 2
+            float y1 = array.get(levels, i)
+            float y2 = array.get(levels, i + 1)
+            if not na(y1) and not na(y2)
+                line ln = array.get(projectionLinePool, i)
+                line.set_extend(ln, extend.none)
+                line.set_xy1(ln, x0 + i * step, y1)
+                line.set_xy2(ln, x0 + (i + 1) * step, y2)
+                line.set_color(ln, pc)
+                line.set_style(ln, z.touched ? line.style_solid : line.style_dashed)
+                line.set_width(ln, i_projectionWidth)
+        if i_projectionShowTPLabels
+            for i = 0 to 3
+                float y = array.get(levels, i)
+                if not na(y)
+                    label lb = array.get(projectionLabelPool, i)
+                    label.set_xy(lb, x0 + i * step + i_projectionLabelOffset, y)
+                    string priceLabel = array.get(texts, i) + " " + f_priceText(y)
+                    if i == 0 and i_enableRiskSizing
+                        [projectionSize, projectionStopUnits, projectionUnit, projectionDistanceLabel, projectionRiskValid] = f_riskMetrics(z)
+                        priceLabel += projectionRiskValid ? "\nSize " + f_sizeText(projectionSize) + " " + projectionUnit : ""
+                    label.set_text(lb, priceLabel)
+                    label.set_textcolor(lb, pc)
+                    label.set_style(lb, label.style_label_left)
+                    label.set_color(lb, color.new(color.rgb(20, 27, 40), 20))
+                    label.set_size(lb, f_mtfTextSize())
+            if i_projectionShowSLLabel and not na(z.stop)
+                label slb = array.get(projectionLabelPool, 4)
+                label.set_xy(slb, x0 + i_projectionLabelOffset, z.stop)
+                label.set_text(slb, "SL " + f_priceText(z.stop))
+                label.set_textcolor(slb, i_zoneSLText)
+                label.set_style(slb, label.style_label_left)
+                label.set_color(slb, color.new(i_zoneSLColor, 30))
+                label.set_size(slb, f_mtfTextSize())
+
+// Draws the extended fib ratios of each zone's reference (U2) range wherever they
+// fall inside the zone rectangle: thick violet line + the ratio percentage beside it.
+f_enabledZoneFibRatios() =>
+    float[] a = array.new_float(0)
+    if i_fibP236
+        array.push(a, 23.6)
+    if i_fibP764
+        array.push(a, 76.4)
+    if i_fibP1236
+        array.push(a, 123.6)
+    if i_fibP1764
+        array.push(a, 176.4)
+    if i_fibP2236
+        array.push(a, 223.6)
+    if i_fibP2764
+        array.push(a, 276.4)
+    if i_fibP3236
+        array.push(a, 323.6)
+    if i_fibP3764
+        array.push(a, 376.4)
+    if i_fibP4236
+        array.push(a, 423.6)
+    if i_fibP4764
+        array.push(a, 476.4)
+    if i_fibP5236
+        array.push(a, 523.6)
+    if i_fibP5764
+        array.push(a, 576.4)
+    if i_fibP6236
+        array.push(a, 623.6)
+    if i_fibN236
+        array.push(a, -23.6)
+    if i_fibN764
+        array.push(a, -76.4)
+    if i_fibN1236
+        array.push(a, -123.6)
+    if i_fibN1764
+        array.push(a, -176.4)
+    if i_fibN2236
+        array.push(a, -223.6)
+    if i_fibN2764
+        array.push(a, -276.4)
+    if i_fibN3236
+        array.push(a, -323.6)
+    if i_fibN3764
+        array.push(a, -376.4)
+    if i_fibN4236
+        array.push(a, -423.6)
+    if i_fibN4764
+        array.push(a, -476.4)
+    if i_fibN5236
+        array.push(a, -523.6)
+    if i_fibN5764
+        array.push(a, -576.4)
+    if i_fibN6236
+        array.push(a, -623.6)
+    a
+
+f_syncZoneFibLevels(MTFZone[] zones) =>
+    f_ensureLinePool(zoneFibLinePool, i_zoneFibMaxLevels)
+    f_ensureLabelPool(zoneFibLabelPool, i_zoneFibMaxLevels)
+    f_hideLinePool(zoneFibLinePool)
+    f_hideLabelPool(zoneFibLabelPool)
+    if i_showZoneFibLevels and array.size(zones) > 0
+        float[] ratios = f_enabledZoneFibRatios()
+        int used = 0
+        for i = 0 to array.size(zones) - 1
+            MTFZone z = array.get(zones, i)
+            if used < i_zoneFibMaxLevels and not na(z.drawing) and f_zoneShouldDisplay(z)
+                float rng = z.u2High - z.u2Low
+                if rng > 0
+                    float top = f_mtfZoneTop(z)
+                    float bottom = f_mtfZoneBottom(z)
+                    int lft = na(z.startBar) ? bar_index : z.startBar
+                    int rgt = z.active ? bar_index : math.max(lft + 1, na(z.endBar) ? bar_index : z.endBar)
+                    for r = 0 to array.size(ratios) - 1
+                        if used < i_zoneFibMaxLevels
+                            float ratio = array.get(ratios, r)
+                            float price = z.u2Low + (ratio / 100.0) * rng
+                            bool insideZone = price <= top and price >= bottom
+                            if insideZone or i_zoneFibMode == "Always (whole reference range)"
+                                line ln = array.get(zoneFibLinePool, used)
+                                line.set_xy1(ln, lft, price)
+                                line.set_xy2(ln, rgt, price)
+                                line.set_color(ln, i_zoneFibColor)
+                                line.set_width(ln, i_zoneFibWidth)
+                                line.set_style(ln, line.style_solid)
+                                label lb = array.get(zoneFibLabelPool, used)
+                                label.set_xy(lb, lft, price)
+                                label.set_text(lb, str.tostring(ratio, "0.00") + "%")
+                                label.set_textcolor(lb, i_zoneFibColor)
+                                label.set_style(lb, label.style_none)
+                                label.set_color(lb, color.new(color.white, 100))
+                                label.set_size(lb, f_mtfTextSize())
+                                used += 1
+
+f_dashboardInsert(float[] dists, int[] indices, float d, int idx, int maxRows) =>
+    int pos = array.size(dists)
+    if pos < maxRows
+        array.push(dists, d)
+        array.push(indices, idx)
+        pos := array.size(dists) - 1
+    else if d < array.get(dists, pos - 1)
+        array.set(dists, pos - 1, d)
+        array.set(indices, pos - 1, idx)
+        pos := pos - 1
+    else
+        pos := -1
+    while pos > 0 and array.get(dists, pos) < array.get(dists, pos - 1)
+        float td = array.get(dists, pos - 1)
+        int ti = array.get(indices, pos - 1)
+        array.set(dists, pos - 1, array.get(dists, pos))
+        array.set(indices, pos - 1, array.get(indices, pos))
+        array.set(dists, pos, td)
+        array.set(indices, pos, ti)
+        pos -= 1
+
+f_syncDashboard(MTFZone[] zones, int[] activeIndices) =>
+    for r = 0 to 10
+        for c = 0 to 8
+            table.cell(zoneTable, c, r, "", bgcolor=color.new(color.rgb(17, 23, 29), 100))
+    if i_showDashboard
+        color hdr = color.new(color.rgb(34, 45, 55), 5)
+        string[] heads = array.from("TF", "Class", "Test", "Dir", "Distance", "State", "Conf", "SL", "Size")
+        for c = 0 to 8
+            table.cell(zoneTable, c, 0, array.get(heads, c), text_color=color.rgb(190, 198, 204), bgcolor=hdr, text_size=size.tiny)
+        float[] dists = array.new_float(0)
+        int[] inds = array.new_int(0)
+        if array.size(activeIndices) > 0
+            for p = 0 to array.size(activeIndices) - 1
+                int idx = array.get(activeIndices, p)
+                if idx >= 0 and idx < array.size(zones)
+                    MTFZone z = array.get(zones, idx)
+                    if z.visible and z.active
+                        f_dashboardInsert(dists, inds, f_zoneDistance(z), idx, i_dashboardRows)
+        int rows = math.min(i_dashboardRows, array.size(inds))
+        if rows > 0
+            for r = 0 to rows - 1
+                MTFZone z = array.get(zones, array.get(inds, r))
+                string dir = z.angleDir == 1 ? "BUY" : "SELL"
+                string distText = i_dashboardShowDistance ? str.tostring(array.get(dists, r), format.mintick) : "—"
+                string confText = "S" + str.tostring(z.sameTFConfluences) + "/X" + str.tostring(z.crossTFConfluences)
+                [dashboardSize, dashboardStopUnits, dashboardUnit, dashboardDistanceLabel, dashboardRiskValid] = f_riskMetrics(z)
+                string stopText = i_showRiskInDashboard and i_enableRiskSizing ? str.tostring(dashboardStopUnits, "#.##") + " " + dashboardDistanceLabel : "—"
+                string sizeText = i_showRiskInDashboard and i_enableRiskSizing and dashboardRiskValid ? f_sizeText(dashboardSize) + " " + dashboardUnit : "—"
+                color rowBg = color.new(z.bounceDir == 1 ? f_themeSupport() : f_themeResistance(), 88)
+                table.cell(zoneTable, 0, r + 1, f_mtfPrettyTF(z.sourceTF), text_color=f_themeText(), bgcolor=rowBg, text_size=size.tiny)
+                table.cell(zoneTable, 1, r + 1, z.classText, text_color=f_themeText(), bgcolor=rowBg, text_size=size.tiny)
+                table.cell(zoneTable, 2, r + 1, z.testName, text_color=f_themeText(), bgcolor=rowBg, text_size=size.tiny)
+                table.cell(zoneTable, 3, r + 1, dir, text_color=f_themeText(), bgcolor=rowBg, text_size=size.tiny)
+                table.cell(zoneTable, 4, r + 1, distText, text_color=f_themeText(), bgcolor=rowBg, text_size=size.tiny)
+                table.cell(zoneTable, 5, r + 1, f_mtfZoneStatus(z), text_color=f_themeText(), bgcolor=rowBg, text_size=size.tiny)
+                table.cell(zoneTable, 6, r + 1, confText, text_color=f_themeText(), bgcolor=rowBg, text_size=size.tiny)
+                table.cell(zoneTable, 7, r + 1, stopText, text_color=f_themeText(), bgcolor=rowBg, text_size=size.tiny)
+                table.cell(zoneTable, 8, r + 1, sizeText, text_color=f_themeText(), bgcolor=rowBg, text_size=size.tiny)
+
+// ═══════════════════════════════════════════════════════════════
+//  MTF REGISTRY / REQUESTS
+// ═══════════════════════════════════════════════════════════════
+
+var MTFZone[] mtfZones = array.new<MTFZone>(0)
+var int[] mtfActiveZoneIndices = array.new_int(0)
+var map<string, bool>   mtfSeenAngles     = map.new<string, bool>()
+var map<string, string> mtfPrevClassPerTF = map.new<string, string>()
+var MTFConfluence[] mtfConfluences = array.new<MTFConfluence>(0)
+var float mtfChartSecondsRawCached = timeframe.in_seconds(timeframe.period)
+var float mtfChartSecondsCached = timeframe.isticks and na(mtfChartSecondsRawCached) ? 0.0 : mtfChartSecondsRawCached
+var float mtf1SourceSecondsCached = timeframe.in_seconds(i_mtf1TF)
+var float mtf2SourceSecondsCached = timeframe.in_seconds(i_mtf2TF)
+var float mtf3SourceSecondsCached = timeframe.in_seconds(i_mtf3TF)
+var float mtf4SourceSecondsCached = timeframe.in_seconds(i_mtf4TF)
+var float mtf5SourceSecondsCached = timeframe.in_seconds(i_mtf5TF)
+var bool mtf1CanRequestCached = f_mtfCanRequest(i_mtf1TF)
+var bool mtf2CanRequestCached = f_mtfCanRequest(i_mtf2TF)
+var bool mtf3CanRequestCached = f_mtfCanRequest(i_mtf3TF)
+var bool mtf4CanRequestCached = f_mtfCanRequest(i_mtf4TF)
+var bool mtf5CanRequestCached = f_mtfCanRequest(i_mtf5TF)
+var bool mtf1VisibleCached = f_mtfDisplayAllowed(i_mtf1TF, i_mtf1CustomCharts)
+var bool mtf2VisibleCached = f_mtfDisplayAllowed(i_mtf2TF, i_mtf2CustomCharts)
+var bool mtf3VisibleCached = f_mtfDisplayAllowed(i_mtf3TF, i_mtf3CustomCharts)
+var bool mtf4VisibleCached = f_mtfDisplayAllowed(i_mtf4TF, i_mtf4CustomCharts)
+var bool mtf5VisibleCached = f_mtfDisplayAllowed(i_mtf5TF, i_mtf5CustomCharts)
+var bool mtf1UniqueCached = (not i_mtfIncludeChartTF or mtf1SourceSecondsCached != mtfChartSecondsCached)
+var bool mtf2UniqueCached = (not i_mtfIncludeChartTF or mtf2SourceSecondsCached != mtfChartSecondsCached) and (not i_mtf1Enabled or mtf2SourceSecondsCached != mtf1SourceSecondsCached)
+var bool mtf3UniqueCached = (not i_mtfIncludeChartTF or mtf3SourceSecondsCached != mtfChartSecondsCached) and (not i_mtf1Enabled or mtf3SourceSecondsCached != mtf1SourceSecondsCached) and (not i_mtf2Enabled or mtf3SourceSecondsCached != mtf2SourceSecondsCached)
+var bool mtf4UniqueCached = (not i_mtfIncludeChartTF or mtf4SourceSecondsCached != mtfChartSecondsCached) and (not i_mtf1Enabled or mtf4SourceSecondsCached != mtf1SourceSecondsCached) and (not i_mtf2Enabled or mtf4SourceSecondsCached != mtf2SourceSecondsCached) and (not i_mtf3Enabled or mtf4SourceSecondsCached != mtf3SourceSecondsCached)
+var bool mtf5UniqueCached = (not i_mtfIncludeChartTF or mtf5SourceSecondsCached != mtfChartSecondsCached) and (not i_mtf1Enabled or mtf5SourceSecondsCached != mtf1SourceSecondsCached) and (not i_mtf2Enabled or mtf5SourceSecondsCached != mtf2SourceSecondsCached) and (not i_mtf3Enabled or mtf5SourceSecondsCached != mtf3SourceSecondsCached) and (not i_mtf4Enabled or mtf5SourceSecondsCached != mtf4SourceSecondsCached)
+var int mtfChartLastHandledEvent = na
+var int mtf1LastHandledEvent = na
+var int mtf2LastHandledEvent = na
+var int mtf3LastHandledEvent = na
+var int mtf4LastHandledEvent = na
+var int mtf5LastHandledEvent = na
+var bool mtfVisualInitialized = false
+simple int mtf1CalcBars = f_perfCalcBarsForTF(i_mtf1TF)
+simple int mtf2CalcBars = f_perfCalcBarsForTF(i_mtf2TF)
+simple int mtf3CalcBars = f_perfCalcBarsForTF(i_mtf3TF)
+simple int mtf4CalcBars = f_perfCalcBarsForTF(i_mtf4TF)
+simple int mtf5CalcBars = f_perfCalcBarsForTF(i_mtf5TF)
+bool aibReportRuntimeEnabled = i_reportHistoricalLog or i_reportRealtimeAlerts
+bool mtf1RuntimeNeeded = mtf1VisibleCached or aibReportRuntimeEnabled
+bool mtf2RuntimeNeeded = mtf2VisibleCached or aibReportRuntimeEnabled
+bool mtf3RuntimeNeeded = mtf3VisibleCached or aibReportRuntimeEnabled
+bool mtf4RuntimeNeeded = mtf4VisibleCached or aibReportRuntimeEnabled
+bool mtf5RuntimeNeeded = mtf5VisibleCached or aibReportRuntimeEnabled
+bool mtfAnyAdded = false
+string mtfReportObjects = ""
+
+// The current chart timeframe is always available as an event source when
+// enabled. This closes the old gap where tests existed only for the five fixed
+// MTF slots and therefore disappeared on M1/M2/M3/M5/M10/M45/H2/H3/D/W, etc.
+if i_enableMTFZones and i_mtfIncludeChartTF
+    [chartEt, chartCc, chartDr, chartCf, chartFp, chartU1h, chartU1l, chartU2h, chartU2l, chartP1, chartP2] = f_mtfSourceEvent()
+    if not na(chartEt) and (na(mtfChartLastHandledEvent) or chartEt != mtfChartLastHandledEvent)
+        mtfChartLastHandledEvent := chartEt
+        int firstNew = array.size(mtfZones)
+        bool chartVisible = f_mtfDisplayAllowed(timeframe.period, "*")
+        int added = f_mtfIngestEvent(mtfZones, mtfActiveZoneIndices, mtfSeenAngles, mtfPrevClassPerTF, timeframe.period, i_mtfChartTFColor, chartVisible, i_mtfChartTFConfluence, chartEt, chartCc, chartDr, chartCf, chartFp, chartU1h, chartU1l, chartU2h, chartU2l, chartP1, chartP2)
+        if added > 0
+            mtfAnyAdded := true
+            string objs = f_mtfCreateConfluencesForNewZones(mtfZones, mtfActiveZoneIndices, mtfConfluences, firstNew)
+            mtfReportObjects += str.length(objs) > 0 ? (str.length(mtfReportObjects) > 0 ? "," : "") + objs : ""
+
+// Repeated source blocks are explicit to keep request contexts deterministic.
+if i_enableMTFZones and i_mtf1Enabled and mtf1UniqueCached and mtf1CanRequestCached and mtf1RuntimeNeeded
+    if mtf1SourceSecondsCached >= mtfChartSecondsCached
+        [et, cc, dr, cf, fp, u1h, u1l, u2h, u2l, p1, p2] = request.security(AIB_REQUEST_TICKER, i_mtf1TF, f_mtfSourceEvent(), gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_on, ignore_invalid_symbol=true, calc_bars_count=mtf1CalcBars)
+        if not na(et) and (na(mtf1LastHandledEvent) or et != mtf1LastHandledEvent)
+            mtf1LastHandledEvent := et
+            int firstNew = array.size(mtfZones)
+            int added = f_mtfIngestEvent(mtfZones, mtfActiveZoneIndices, mtfSeenAngles, mtfPrevClassPerTF, i_mtf1TF, i_mtf1Color, mtf1VisibleCached, i_mtf1Confluence, et, cc, dr, cf, fp, u1h, u1l, u2h, u2l, p1, p2)
+            if added > 0
+                mtfAnyAdded := true
+                string objs = f_mtfCreateConfluencesForNewZones(mtfZones, mtfActiveZoneIndices, mtfConfluences, firstNew)
+                mtfReportObjects += str.length(objs) > 0 ? (str.length(mtfReportObjects) > 0 ? "," : "") + objs : ""
+    else
+        [ets, ccs, drs, cfs, fps, u1hs, u1ls, u2hs, u2ls, p1s, p2s] = request.security_lower_tf(AIB_REQUEST_TICKER, i_mtf1TF, f_mtfSourceEvent(), ignore_invalid_symbol=true, ignore_invalid_timeframe=true, calc_bars_count=mtf1CalcBars)
+        if array.size(ets) > 0
+            for idx = 0 to array.size(ets) - 1
+                int et = array.get(ets, idx)
+                if not na(et) and (na(mtf1LastHandledEvent) or et != mtf1LastHandledEvent)
+                    mtf1LastHandledEvent := et
+                    int firstNew = array.size(mtfZones)
+                    int added = f_mtfIngestEvent(mtfZones, mtfActiveZoneIndices, mtfSeenAngles, mtfPrevClassPerTF, i_mtf1TF, i_mtf1Color, mtf1VisibleCached, i_mtf1Confluence, et, array.get(ccs, idx), array.get(drs, idx), array.get(cfs, idx), array.get(fps, idx), array.get(u1hs, idx), array.get(u1ls, idx), array.get(u2hs, idx), array.get(u2ls, idx), array.get(p1s, idx), array.get(p2s, idx))
+                    if added > 0
+                        mtfAnyAdded := true
+                        string objs = f_mtfCreateConfluencesForNewZones(mtfZones, mtfActiveZoneIndices, mtfConfluences, firstNew)
+                        mtfReportObjects += str.length(objs) > 0 ? (str.length(mtfReportObjects) > 0 ? "," : "") + objs : ""
+
+if i_enableMTFZones and i_mtf2Enabled and mtf2UniqueCached and mtf2CanRequestCached and mtf2RuntimeNeeded
+    if mtf2SourceSecondsCached >= mtfChartSecondsCached
+        [et, cc, dr, cf, fp, u1h, u1l, u2h, u2l, p1, p2] = request.security(AIB_REQUEST_TICKER, i_mtf2TF, f_mtfSourceEvent(), gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_on, ignore_invalid_symbol=true, calc_bars_count=mtf2CalcBars)
+        if not na(et) and (na(mtf2LastHandledEvent) or et != mtf2LastHandledEvent)
+            mtf2LastHandledEvent := et
+            int firstNew = array.size(mtfZones)
+            int added = f_mtfIngestEvent(mtfZones, mtfActiveZoneIndices, mtfSeenAngles, mtfPrevClassPerTF, i_mtf2TF, i_mtf2Color, mtf2VisibleCached, i_mtf2Confluence, et, cc, dr, cf, fp, u1h, u1l, u2h, u2l, p1, p2)
+            if added > 0
+                mtfAnyAdded := true
+                string objs = f_mtfCreateConfluencesForNewZones(mtfZones, mtfActiveZoneIndices, mtfConfluences, firstNew)
+                mtfReportObjects += str.length(objs) > 0 ? (str.length(mtfReportObjects) > 0 ? "," : "") + objs : ""
+    else
+        [ets, ccs, drs, cfs, fps, u1hs, u1ls, u2hs, u2ls, p1s, p2s] = request.security_lower_tf(AIB_REQUEST_TICKER, i_mtf2TF, f_mtfSourceEvent(), ignore_invalid_symbol=true, ignore_invalid_timeframe=true, calc_bars_count=mtf2CalcBars)
+        if array.size(ets) > 0
+            for idx = 0 to array.size(ets) - 1
+                int et = array.get(ets, idx)
+                if not na(et) and (na(mtf2LastHandledEvent) or et != mtf2LastHandledEvent)
+                    mtf2LastHandledEvent := et
+                    int firstNew = array.size(mtfZones)
+                    int added = f_mtfIngestEvent(mtfZones, mtfActiveZoneIndices, mtfSeenAngles, mtfPrevClassPerTF, i_mtf2TF, i_mtf2Color, mtf2VisibleCached, i_mtf2Confluence, et, array.get(ccs, idx), array.get(drs, idx), array.get(cfs, idx), array.get(fps, idx), array.get(u1hs, idx), array.get(u1ls, idx), array.get(u2hs, idx), array.get(u2ls, idx), array.get(p1s, idx), array.get(p2s, idx))
+                    if added > 0
+                        mtfAnyAdded := true
+                        string objs = f_mtfCreateConfluencesForNewZones(mtfZones, mtfActiveZoneIndices, mtfConfluences, firstNew)
+                        mtfReportObjects += str.length(objs) > 0 ? (str.length(mtfReportObjects) > 0 ? "," : "") + objs : ""
+
+if i_enableMTFZones and i_mtf3Enabled and mtf3UniqueCached and mtf3CanRequestCached and mtf3RuntimeNeeded
+    if mtf3SourceSecondsCached >= mtfChartSecondsCached
+        [et, cc, dr, cf, fp, u1h, u1l, u2h, u2l, p1, p2] = request.security(AIB_REQUEST_TICKER, i_mtf3TF, f_mtfSourceEvent(), gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_on, ignore_invalid_symbol=true, calc_bars_count=mtf3CalcBars)
+        if not na(et) and (na(mtf3LastHandledEvent) or et != mtf3LastHandledEvent)
+            mtf3LastHandledEvent := et
+            int firstNew = array.size(mtfZones)
+            int added = f_mtfIngestEvent(mtfZones, mtfActiveZoneIndices, mtfSeenAngles, mtfPrevClassPerTF, i_mtf3TF, i_mtf3Color, mtf3VisibleCached, i_mtf3Confluence, et, cc, dr, cf, fp, u1h, u1l, u2h, u2l, p1, p2)
+            if added > 0
+                mtfAnyAdded := true
+                string objs = f_mtfCreateConfluencesForNewZones(mtfZones, mtfActiveZoneIndices, mtfConfluences, firstNew)
+                mtfReportObjects += str.length(objs) > 0 ? (str.length(mtfReportObjects) > 0 ? "," : "") + objs : ""
+    else
+        [ets, ccs, drs, cfs, fps, u1hs, u1ls, u2hs, u2ls, p1s, p2s] = request.security_lower_tf(AIB_REQUEST_TICKER, i_mtf3TF, f_mtfSourceEvent(), ignore_invalid_symbol=true, ignore_invalid_timeframe=true, calc_bars_count=mtf3CalcBars)
+        if array.size(ets) > 0
+            for idx = 0 to array.size(ets) - 1
+                int et = array.get(ets, idx)
+                if not na(et) and (na(mtf3LastHandledEvent) or et != mtf3LastHandledEvent)
+                    mtf3LastHandledEvent := et
+                    int firstNew = array.size(mtfZones)
+                    int added = f_mtfIngestEvent(mtfZones, mtfActiveZoneIndices, mtfSeenAngles, mtfPrevClassPerTF, i_mtf3TF, i_mtf3Color, mtf3VisibleCached, i_mtf3Confluence, et, array.get(ccs, idx), array.get(drs, idx), array.get(cfs, idx), array.get(fps, idx), array.get(u1hs, idx), array.get(u1ls, idx), array.get(u2hs, idx), array.get(u2ls, idx), array.get(p1s, idx), array.get(p2s, idx))
+                    if added > 0
+                        mtfAnyAdded := true
+                        string objs = f_mtfCreateConfluencesForNewZones(mtfZones, mtfActiveZoneIndices, mtfConfluences, firstNew)
+                        mtfReportObjects += str.length(objs) > 0 ? (str.length(mtfReportObjects) > 0 ? "," : "") + objs : ""
+
+if i_enableMTFZones and i_mtf4Enabled and mtf4UniqueCached and mtf4CanRequestCached and mtf4RuntimeNeeded
+    if mtf4SourceSecondsCached >= mtfChartSecondsCached
+        [et, cc, dr, cf, fp, u1h, u1l, u2h, u2l, p1, p2] = request.security(AIB_REQUEST_TICKER, i_mtf4TF, f_mtfSourceEvent(), gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_on, ignore_invalid_symbol=true, calc_bars_count=mtf4CalcBars)
+        if not na(et) and (na(mtf4LastHandledEvent) or et != mtf4LastHandledEvent)
+            mtf4LastHandledEvent := et
+            int firstNew = array.size(mtfZones)
+            int added = f_mtfIngestEvent(mtfZones, mtfActiveZoneIndices, mtfSeenAngles, mtfPrevClassPerTF, i_mtf4TF, i_mtf4Color, mtf4VisibleCached, i_mtf4Confluence, et, cc, dr, cf, fp, u1h, u1l, u2h, u2l, p1, p2)
+            if added > 0
+                mtfAnyAdded := true
+                string objs = f_mtfCreateConfluencesForNewZones(mtfZones, mtfActiveZoneIndices, mtfConfluences, firstNew)
+                mtfReportObjects += str.length(objs) > 0 ? (str.length(mtfReportObjects) > 0 ? "," : "") + objs : ""
+    else
+        [ets, ccs, drs, cfs, fps, u1hs, u1ls, u2hs, u2ls, p1s, p2s] = request.security_lower_tf(AIB_REQUEST_TICKER, i_mtf4TF, f_mtfSourceEvent(), ignore_invalid_symbol=true, ignore_invalid_timeframe=true, calc_bars_count=mtf4CalcBars)
+        if array.size(ets) > 0
+            for idx = 0 to array.size(ets) - 1
+                int et = array.get(ets, idx)
+                if not na(et) and (na(mtf4LastHandledEvent) or et != mtf4LastHandledEvent)
+                    mtf4LastHandledEvent := et
+                    int firstNew = array.size(mtfZones)
+                    int added = f_mtfIngestEvent(mtfZones, mtfActiveZoneIndices, mtfSeenAngles, mtfPrevClassPerTF, i_mtf4TF, i_mtf4Color, mtf4VisibleCached, i_mtf4Confluence, et, array.get(ccs, idx), array.get(drs, idx), array.get(cfs, idx), array.get(fps, idx), array.get(u1hs, idx), array.get(u1ls, idx), array.get(u2hs, idx), array.get(u2ls, idx), array.get(p1s, idx), array.get(p2s, idx))
+                    if added > 0
+                        mtfAnyAdded := true
+                        string objs = f_mtfCreateConfluencesForNewZones(mtfZones, mtfActiveZoneIndices, mtfConfluences, firstNew)
+                        mtfReportObjects += str.length(objs) > 0 ? (str.length(mtfReportObjects) > 0 ? "," : "") + objs : ""
+
+if i_enableMTFZones and i_mtf5Enabled and mtf5UniqueCached and mtf5CanRequestCached and mtf5RuntimeNeeded
+    if mtf5SourceSecondsCached >= mtfChartSecondsCached
+        [et, cc, dr, cf, fp, u1h, u1l, u2h, u2l, p1, p2] = request.security(AIB_REQUEST_TICKER, i_mtf5TF, f_mtfSourceEvent(), gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_on, ignore_invalid_symbol=true, calc_bars_count=mtf5CalcBars)
+        if not na(et) and (na(mtf5LastHandledEvent) or et != mtf5LastHandledEvent)
+            mtf5LastHandledEvent := et
+            int firstNew = array.size(mtfZones)
+            int added = f_mtfIngestEvent(mtfZones, mtfActiveZoneIndices, mtfSeenAngles, mtfPrevClassPerTF, i_mtf5TF, i_mtf5Color, mtf5VisibleCached, i_mtf5Confluence, et, cc, dr, cf, fp, u1h, u1l, u2h, u2l, p1, p2)
+            if added > 0
+                mtfAnyAdded := true
+                string objs = f_mtfCreateConfluencesForNewZones(mtfZones, mtfActiveZoneIndices, mtfConfluences, firstNew)
+                mtfReportObjects += str.length(objs) > 0 ? (str.length(mtfReportObjects) > 0 ? "," : "") + objs : ""
+    else
+        [ets, ccs, drs, cfs, fps, u1hs, u1ls, u2hs, u2ls, p1s, p2s] = request.security_lower_tf(AIB_REQUEST_TICKER, i_mtf5TF, f_mtfSourceEvent(), ignore_invalid_symbol=true, ignore_invalid_timeframe=true, calc_bars_count=mtf5CalcBars)
+        if array.size(ets) > 0
+            for idx = 0 to array.size(ets) - 1
+                int et = array.get(ets, idx)
+                if not na(et) and (na(mtf5LastHandledEvent) or et != mtf5LastHandledEvent)
+                    mtf5LastHandledEvent := et
+                    int firstNew = array.size(mtfZones)
+                    int added = f_mtfIngestEvent(mtfZones, mtfActiveZoneIndices, mtfSeenAngles, mtfPrevClassPerTF, i_mtf5TF, i_mtf5Color, mtf5VisibleCached, i_mtf5Confluence, et, array.get(ccs, idx), array.get(drs, idx), array.get(cfs, idx), array.get(fps, idx), array.get(u1hs, idx), array.get(u1ls, idx), array.get(u2hs, idx), array.get(u2ls, idx), array.get(p1s, idx), array.get(p2s, idx))
+                    if added > 0
+                        mtfAnyAdded := true
+                        string objs = f_mtfCreateConfluencesForNewZones(mtfZones, mtfActiveZoneIndices, mtfConfluences, firstNew)
+                        mtfReportObjects += str.length(objs) > 0 ? (str.length(mtfReportObjects) > 0 ? "," : "") + objs : ""
+
+bool mtfStateChanged = false
+bool confluenceChanged = false
+if i_enableMTFZones
+    if mtfAnyAdded
+        f_mtfPruneZones(mtfZones, mtfActiveZoneIndices, mtfConfluences)
+        f_mtfPruneConfluences(mtfConfluences)
+    [changed, testObjects] = f_mtfUpdateActiveZones(mtfZones, mtfActiveZoneIndices)
+    mtfStateChanged := changed
+    if str.length(testObjects) > 0
+        mtfReportObjects += (str.length(mtfReportObjects) > 0 ? "," : "") + testObjects
+    confluenceChanged := (mtfAnyAdded or mtfStateChanged) ? f_mtfRefreshConfluenceStates(mtfZones, mtfConfluences) : false
+    bool fullVisualSync = barstate.islast and (not mtfVisualInitialized or mtfAnyAdded or mtfStateChanged or confluenceChanged)
+    bool partialVisualSync = barstate.islast and barstate.isnew
+    if fullVisualSync or partialVisualSync
+        f_mtfSyncZoneDrawings(mtfZones, mtfActiveZoneIndices, fullVisualSync, aibATR14)
+        f_mtfSyncConfluenceDrawings(mtfConfluences, fullVisualSync)
+        if i_projectionMode != "Off"
+            f_syncProjection(mtfZones, mtfActiveZoneIndices, mtfConfluences)
+        f_syncZoneFibLevels(mtfZones)
+        bool dashboardDue = fullVisualSync or (partialVisualSync and bar_index % f_dashboardRefreshInterval() == 0)
+        if i_showDashboard and dashboardDue
+            f_syncDashboard(mtfZones, mtfActiveZoneIndices)
+        mtfVisualInitialized := true
+
+if i_reportHistoricalLog and i_reportIncludeOpenSnapshots and barstate.islastconfirmedhistory and array.size(mtfZones) > 0
+    for reportIndex = 0 to array.size(mtfZones) - 1
+        MTFZone reportZone = array.get(mtfZones, reportIndex)
+        if not reportZone.testFinal and f_reportInRange(reportZone.startTime)
+            log.info("AIB_REPORT_SNAPSHOT_JSON|" + f_mtfZoneSnapshotJson(reportZone))
+
+if i_reportRealtimeAlerts and barstate.isrealtime and str.length(mtfReportObjects) > 0
+    alert("{\"schema\":\"AIB_REPORT_BATCH_V1\",\"events\":[" + mtfReportObjects + "]}", alert.freq_once_per_bar_close)
+
+// ═══════════════════════════════════════════════════════════════
+//  EVENT-DRIVEN STATIC ANGLES / FIBONACCI
+// ═══════════════════════════════════════════════════════════════
+
+var bool staticVisualInitialized = false
+var int lastStaticUnitKey = na
+var int persistedAngleCount = 0
+var int persistedFiboCount = 0
+bool fullStaticSync = barstate.islast and (not staticVisualInitialized or isNewUnit or na(lastStaticUnitKey) or lastStaticUnitKey != prevHTFTime)
+
+if fullStaticSync
+    int availableUnits = array.size(unitStartBars)
+    int visualFiboUnits = f_perfFiboUnits()
+    int nUnits = math.min(availableUnits, math.max(i_unitsToScan, visualFiboUnits + 1))
+    int nAngleUnits = math.min(nUnits, i_unitsToScan)
+    int nFiboUnits = math.min(nUnits, visualFiboUnits + 1)
+    if nUnits >= 2
+        UnitInfo[] unitArray = array.new<UnitInfo>(nUnits)
+        for i = 0 to nUnits - 1
+            array.set(unitArray, i, f_buildUnit(i))
+        persistedFiboCount := f_syncFiboGrid(fiboRatioPool, fiboRatioLabelPool, fiboSeparatorPool, fiboUnitNumberPool, unitArray, nFiboUnits, visualFiboUnits)
+        AngleResult[] angleArray = array.new<AngleResult>(0)
+        if nAngleUnits >= 3
+            for k = 1 to nAngleUnits - 2
+                UnitInfo formU = array.get(unitArray, k)
+                UnitInfo refU = array.get(unitArray, k + 1)
+                if formU.valid and refU.valid
+                    AngleResult ar = f_processPair(refU, formU)
+                    if ar.valid
+                        array.push(angleArray, ar)
+        persistedAngleCount := f_syncAnglePool(angleArray)
+    staticVisualInitialized := true
+    lastStaticUnitKey := prevHTFTime
+else if barstate.islast and barstate.isnew
+    f_extendNewestFibo(fiboRatioPool)
+
+if barstate.islast and (fullStaticSync or mtfAnyAdded or mtfStateChanged or (barstate.isnew and bar_index % f_dashboardRefreshInterval() == 0))
+    color titleColor = color.rgb(162, 139, 78)
+    table.cell(infoTable, 0, 0, "AIB Angles ABCDE — v2.30 Ultra Runtime RC1", text_color=titleColor, text_size=size.small, bgcolor=color.new(color.rgb(17, 23, 29), 8))
+    table.cell(infoTable, 0, 1, "Angles visible: " + str.tostring(persistedAngleCount) + " | Fibo units: " + str.tostring(persistedFiboCount), text_color=f_themeText(), text_size=size.tiny)
+    float effectiveUnitSeconds = timeframe.in_seconds(effectiveUnitTF)
+    float currentChartSeconds = timeframe.isticks ? 0.0 : timeframe.in_seconds(timeframe.period)
+    bool timeframeWarning = not useVirtualHigherUnit and (na(effectiveUnitSeconds) or na(currentChartSeconds) or effectiveUnitSeconds <= currentChartSeconds)
+    string unitStatus = useVirtualHigherUnit ? "Virtual unit: " + str.tostring(i_virtualHigherUnitBars) + " × " + f_mtfPrettyTF(timeframe.period) + " bars" : "Unit TF: " + f_mtfPrettyTF(effectiveUnitTF) + " | Closed U2/U1"
+    table.cell(infoTable, 0, 2, timeframeWarning ? "⚠ Select a unit TF higher than the chart TF" : unitStatus, text_color=timeframeWarning ? color.rgb(170, 88, 92) : color.rgb(132, 143, 151), text_size=size.tiny)
+    table.cell(infoTable, 0, 3, i_enableMTFZones ? "Zones: " + str.tostring(array.size(mtfZones)) + " | Active: " + str.tostring(array.size(mtfActiveZoneIndices)) + " | Visible: " + str.tostring(f_mtfCountZoneBoxes(mtfZones)) : "MTF zones: OFF", text_color=i_enableMTFZones ? color.rgb(72, 127, 139) : color.gray, text_size=size.tiny)
+    table.cell(infoTable, 0, 4, "Confluence records: " + str.tostring(array.size(mtfConfluences)) + " | Visible: " + str.tostring(f_mtfCountConfluenceBoxes(mtfConfluences)), text_color=color.rgb(145, 124, 72), text_size=size.tiny)
+    string safety = "Preset: " + i_performancePreset + " | Req bars: " + str.tostring(mtf1CalcBars) + "/" + str.tostring(mtf2CalcBars) + "/" + str.tostring(mtf3CalcBars) + "/" + str.tostring(mtf4CalcBars) + "/" + str.tostring(mtf5CalcBars)
+    table.cell(infoTable, 0, 5, i_showPerformanceWarning ? safety : "", text_color=color.rgb(132, 143, 151), text_size=size.tiny)
+    string rateTag = aibCurrencyRateAutomatic ? "auto" : "manual"
+    string riskInfo = i_enableRiskSizing ? "Risk: " + str.tostring(i_riskAmount, "#.##") + " " + i_riskAccountCurrency + " | " + syminfo.currency + "→" + i_riskAccountCurrency + " " + str.tostring(aibQuoteToAccountRate, "#.######") + " (" + rateTag + ")" : "Risk sizing: OFF"
+    table.cell(infoTable, 0, 6, riskInfo, text_color=color.rgb(132, 143, 151), text_size=size.tiny)
+    string precisionInfo = "Symbol: " + syminfo.ticker + " | " + syminfo.type + " | Tick " + str.tostring(syminfo.mintick, format.mintick) + (syminfo.type == "forex" ? " | Pip " + str.tostring(f_pipSize()) : "")
+    string chartWarning = chart.is_standard ? precisionInfo : "⚠ Use standard candles | " + precisionInfo
+    table.cell(infoTable, 0, 7, chartWarning, text_color=chart.is_standard ? color.rgb(132, 143, 151) : color.rgb(170, 88, 92), text_size=size.tiny)
