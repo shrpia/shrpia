@@ -209,10 +209,14 @@ grpCombo = "═══ Combo Filter (283) ═══"
 i_enableComboFilter = input.bool(false, "Enable 283-combo filter", group=grpCombo, tooltip="When ON, zones whose 5-char combo is in the 283 validated combos show ✓ (green text); zones outside the table show ✗ (red text). Every zone still draws.")
 
 grpTestFilter = "═══ Test Zone Visibility ═══"
-i_showTestU1 = input.bool(true, "Show U1X1 zones",   group=grpTestFilter, inline="tf1", tooltip="Upper zone above U1 high (resistance for BUY, support for SELL).")
-i_showTestU2 = input.bool(true, "Show U2X1 zones",   group=grpTestFilter, inline="tf1", tooltip="Lower zone below U2 low (support for BUY, resistance for SELL).")
-i_showTestDL = input.bool(true, "Show DLX1 zones",   group=grpTestFilter, inline="tf2", tooltip="Left diagonal zone (BZLX1 / SZLX1).")
-i_showTestDR = input.bool(true, "Show DRX1 zones",   group=grpTestFilter, inline="tf2", tooltip="Right diagonal zone (BZRX1 / SZRX1).")
+i_showTestU1B = input.bool(true, "U1X1  BUY",  group=grpTestFilter, inline="u1", tooltip="U1X1: resistance zone above U1 for BUY angles.")
+i_showTestU1S = input.bool(true, "SELL",        group=grpTestFilter, inline="u1", tooltip="U1X1: support zone below U1 for SELL angles.")
+i_showTestU2B = input.bool(true, "U2X1  BUY",  group=grpTestFilter, inline="u2", tooltip="U2X1: support zone below U2 for BUY angles.")
+i_showTestU2S = input.bool(true, "SELL",        group=grpTestFilter, inline="u2", tooltip="U2X1: resistance zone above U2 for SELL angles.")
+i_showTestDLB = input.bool(true, "DLX1  BUY",  group=grpTestFilter, inline="dl", tooltip="Left diagonal zone (BZLX1) for BUY angles.")
+i_showTestDLS = input.bool(true, "SELL",        group=grpTestFilter, inline="dl", tooltip="Left diagonal zone (SZLX1) for SELL angles.")
+i_showTestDRB = input.bool(true, "DRX1  BUY",  group=grpTestFilter, inline="dr", tooltip="Right diagonal zone (BZRX1) for BUY angles.")
+i_showTestDRS = input.bool(true, "SELL",        group=grpTestFilter, inline="dr", tooltip="Right diagonal zone (SZRX1) for SELL angles.")
 
 grpDash = "═══ Active Zones Dashboard ═══"
 i_showDashboard = input.bool(true, "Show active zones dashboard", group=grpDash)
@@ -1338,10 +1342,10 @@ f_mtfIngestEvent(MTFZone[] zones, int[] activeIndices, map<string, bool> seenAng
             float L = math.abs(drawP1 - drawP2)
             float B = 0.236 * math.abs(u2High - u2Low)
             if L > 0 and B > 0
-                bool visU1 = visible and i_showTestU1
-                bool visU2 = visible and i_showTestU2
-                bool visDL = visible and i_showTestDL
-                bool visDR = visible and i_showTestDR
+                bool visU1 = visible and (eventDir == 1 ? i_showTestU1B : i_showTestU1S)
+                bool visU2 = visible and (eventDir == 1 ? i_showTestU2B : i_showTestU2S)
+                bool visDL = visible and (eventDir == 1 ? i_showTestDLB : i_showTestDLS)
+                bool visDR = visible and (eventDir == 1 ? i_showTestDRB : i_showTestDRS)
                 if eventDir == 1
                     f_mtfAddZone(zones, activeIndices, angleKey, sourceTF, classText, eventDir, "U1X1",  -1, u1High + L, u1High + L + B, u1High - L, drawP2 - L, u2Low - L,  eventTime, visU1, includeConfluence, frameColor, eventConfirmed, eventFilterPassed, u1High, u1Low, u2High, u2Low, L, B, prevChar)
                     f_mtfAddZone(zones, activeIndices, angleKey, sourceTF, classText, eventDir, "U2X1",   1, u2Low - L,  u2Low - L - B,  u2Low + L, drawP1 + L, u1High + L,  eventTime, visU2, includeConfluence, frameColor, eventConfirmed, eventFilterPassed, u1High, u1Low, u2High, u2Low, L, B, prevChar)
